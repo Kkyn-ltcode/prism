@@ -1,0 +1,70 @@
+\begin{table*}[p]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\caption{\textbf{Báo cáo Hiệu chỉnh Đa giả thuyết Đầy đủ cho 48 Giả thuyết và Kiểm định Phi tham số trên các Mục tiêu QM9.} Các so sánh theo cặp qua 5 hạt giống ngẫu nhiên ($m = 48$ giả thuyết). $\Delta = \text{MAE}_A - \text{MAE}_B$. Kiểm định $t$ Student theo cặp chưa hiệu chỉnh ($p_t$), kiểm định dấu hạng Wilcoxon hai phía ($p_{\mathrm{Wilcox}}$), giá trị $q$ theo Tỷ lệ Khám phá Sai Benjamini-Hochberg ($q_{\mathrm{FDR}}$), và giá trị $p$ hiệu chỉnh Bonferroni ($p_{\mathrm{Bonf}}$). Giá trị $q_{\mathrm{FDR}}$ in đậm biểu thị mức ý nghĩa tại $\alpha = 0.05$ ($^{\dagger}q_{\mathrm{FDR}} < 0.05$). Chú ý: với $n = 5$ hạt giống, giá trị $p$ Wilcoxon hai phía nhỏ nhất có thể đạt được là $2/32 = 0.0625$ (đạt được khi toàn bộ 5 hạt giống đồng thuận ủng hộ mô hình $A$ vượt trội so với $B$).}
+\label{tab:full_48_fdr}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Đặc trưng Mục tiêu} & \textbf{So sánh Giả thuyết ($A$ so với $B$)} & $\boldsymbol{\Delta}$ & $\boldsymbol{p_t}$ & $\boldsymbol{p_{\mathrm{Wilcox}}}$ & $\boldsymbol{q_{\mathrm{FDR}}}$ & $\boldsymbol{p_{\mathrm{Bonf}}}$ \\
+\midrule
+HOMO ($\epsilon_{\mathrm{H}}$, eV) & Q-PRISM (PQC) so với Classical Twin ($\tanh$) & -0.0411 & $0.0573$ & $0.0625$ & $0.0723$ & $1.00$ \\
+ & Q-PRISM (PQC) so với SchNet & -0.0786 & $8.30 \times 10^{-4}$ & $0.0625$ & $\mathbf{3.07 \times 10^{-3}}^{\dagger}$ & $0.0399$ \\
+ & Q-PRISM (PQC) so với PaiNN & +0.0194 & $0.0921$ & $0.1250$ & $0.1133$ & $1.00$ \\
+ & Q-PRISM (PQC) so với EGNN-PM & -0.0625 & $1.62 \times 10^{-3}$ & $0.0625$ & $\mathbf{4.86 \times 10^{-3}}^{\dagger}$ & $0.0778$ \\
+ & Q-PRISM (PQC) so với EGNN Std & -0.0531 & $0.0126$ & $0.0625$ & $\mathbf{0.0216}^{\dagger}$ & $0.6050$ \\
+ & Q-PRISM (PQC) so với PRISM (SIREN) & +0.0334 & $4.32 \times 10^{-4}$ & $0.0625$ & $\mathbf{1.73 \times 10^{-3}}^{\dagger}$ & $0.0207$ \\
+ & Q-PRISM (PQC) so với Fourier Twin (RFF) & -0.1210 & $1.02 \times 10^{-5}$ & $0.0625$ & $\mathbf{1.62 \times 10^{-4}}^{\dagger}$ & $4.87 \times 10^{-4}$ \\
+ & PRISM (SIREN) so với Classical Twin ($\tanh$) & -0.0746 & $9.57 \times 10^{-3}$ & $0.0625$ & $\mathbf{0.0184}^{\dagger}$ & $0.4594$ \\
+\midrule
+LUMO ($\epsilon_{\mathrm{L}}$, eV) & Q-PRISM (PQC) so với Classical Twin ($\tanh$) & -0.0921 & $9.21 \times 10^{-3}$ & $0.0625$ & $\mathbf{0.0184}^{\dagger}$ & $0.4422$ \\
+ & Q-PRISM (PQC) so với SchNet & -0.0647 & $1.21 \times 10^{-3}$ & $0.0625$ & $\mathbf{4.16 \times 10^{-3}}^{\dagger}$ & $0.0583$ \\
+ & Q-PRISM (PQC) so với PaiNN & +0.2298 & $5.12 \times 10^{-5}$ & $0.0625$ & $\mathbf{3.51 \times 10^{-4}}^{\dagger}$ & $2.46 \times 10^{-3}$ \\
+ & Q-PRISM (PQC) so với EGNN-PM & -0.0677 & $4.14 \times 10^{-3}$ & $0.0625$ & $\mathbf{9.47 \times 10^{-3}}^{\dagger}$ & $0.1989$ \\
+ & Q-PRISM (PQC) so với EGNN Std & -0.0653 & $0.0115$ & $0.0625$ & $\mathbf{0.0212}^{\dagger}$ & $0.5502$ \\
+ & Q-PRISM (PQC) so với PRISM (SIREN) & +0.1484 & $1.93 \times 10^{-3}$ & $0.0625$ & $\mathbf{5.23 \times 10^{-3}}^{\dagger}$ & $0.0926$ \\
+ & Q-PRISM (PQC) so với Fourier Twin (RFF) & -0.1477 & $2.79 \times 10^{-4}$ & $0.0625$ & $\mathbf{1.49 \times 10^{-3}}^{\dagger}$ & $0.0134$ \\
+ & PRISM (SIREN) so với Classical Twin ($\tanh$) & -0.2405 & $3.67 \times 10^{-4}$ & $0.0625$ & $\mathbf{1.60 \times 10^{-3}}^{\dagger}$ & $0.0176$ \\
+\midrule
+Gap ($\Delta\epsilon$, eV) & Q-PRISM (PQC) so với Classical Twin ($\tanh$) & -0.0855 & $0.0164$ & $0.0625$ & $\mathbf{0.0272}^{\dagger}$ & $0.7882$ \\
+ & Q-PRISM (PQC) so với SchNet & -0.0479 & $0.1470$ & $0.0625$ & $0.1641$ & $1.00$ \\
+ & Q-PRISM (PQC) so với PaiNN & +0.2504 & $1.47 \times 10^{-3}$ & $0.0625$ & $\mathbf{4.72 \times 10^{-3}}^{\dagger}$ & $0.0708$ \\
+ & Q-PRISM (PQC) so với EGNN-PM & -0.0482 & $0.1424$ & $0.1875$ & $0.1628$ & $1.00$ \\
+ & Q-PRISM (PQC) so với EGNN Std & -0.0553 & $0.0489$ & $0.0625$ & $0.0652$ & $1.00$ \\
+ & Q-PRISM (PQC) so với PRISM (SIREN) & +0.1634 & $5.79 \times 10^{-3}$ & $0.0625$ & $\mathbf{0.0126}^{\dagger}$ & $0.2777$ \\
+ & Q-PRISM (PQC) so với Fourier Twin (RFF) & -0.1256 & $3.12 \times 10^{-3}$ & $0.0625$ & $\mathbf{7.49 \times 10^{-3}}^{\dagger}$ & $0.1498$ \\
+ & PRISM (SIREN) so với Classical Twin ($\tanh$) & -0.2489 & $3.46 \times 10^{-4}$ & $0.0625$ & $\mathbf{1.60 \times 10^{-3}}^{\dagger}$ & $0.0166$ \\
+\midrule
+Mômen Lưỡng cực ($\mu$, Debye) & Q-PRISM (PQC) so với Classical Twin ($\tanh$) & -0.1401 & $0.0340$ & $0.1250$ & $\mathbf{0.0494}^{\dagger}$ & $1.00$ \\
+ & Q-PRISM (PQC) so với SchNet & -0.1597 & $2.49 \times 10^{-4}$ & $0.0625$ & $\mathbf{1.49 \times 10^{-3}}^{\dagger}$ & $0.0120$ \\
+ & Q-PRISM (PQC) so với PaiNN & -0.0552 & $0.4359$ & $0.6250$ & $0.4755$ & $1.00$ \\
+ & Q-PRISM (PQC) so với EGNN-PM & -0.1148 & $0.0252$ & $0.0625$ & $\mathbf{0.0390}^{\dagger}$ & $1.00$ \\
+ & Q-PRISM (PQC) so với EGNN Std & -0.0868 & $0.0318$ & $0.0625$ & $\mathbf{0.0476}^{\dagger}$ & $1.00$ \\
+ & Q-PRISM (PQC) so với PRISM (SIREN) & +0.0526 & $3.11 \times 10^{-3}$ & $0.0625$ & $\mathbf{7.49 \times 10^{-3}}^{\dagger}$ & $0.1494$ \\
+ & Q-PRISM (PQC) so với Fourier Twin (RFF) & -0.2780 & $3.21 \times 10^{-5}$ & $0.0625$ & $\mathbf{2.57 \times 10^{-4}}^{\dagger}$ & $1.54 \times 10^{-3}$ \\
+ & PRISM (SIREN) so với Classical Twin ($\tanh$) & -0.1927 & $8.31 \times 10^{-3}$ & $0.0625$ & $\mathbf{0.0173}^{\dagger}$ & $0.3989$ \\
+\midrule
+Độ phân cực ($\alpha$, Bohr$^3$) & Q-PRISM (PQC) so với Classical Twin ($\tanh$) & -0.3943 & $0.0548$ & $0.0625$ & $0.0711$ & $1.00$ \\
+ & Q-PRISM (PQC) so với SchNet & -0.5425 & $1.96 \times 10^{-3}$ & $0.0625$ & $\mathbf{5.23 \times 10^{-3}}^{\dagger}$ & $0.0942$ \\
+ & Q-PRISM (PQC) so với PaiNN & -2.0001 & $2.20 \times 10^{-5}$ & $0.0625$ & $\mathbf{2.57 \times 10^{-4}}^{\dagger}$ & $1.06 \times 10^{-3}$ \\
+ & Q-PRISM (PQC) so với EGNN-PM & -0.2643 & $0.0409$ & $0.0625$ & $0.0577$ & $1.00$ \\
+ & Q-PRISM (PQC) so với EGNN Std & +0.0273 & $0.6067$ & $1.0000$ & $0.6331$ & $1.00$ \\
+ & Q-PRISM (PQC) so với PRISM (SIREN) & +0.0311 & $0.6347$ & $0.4375$ & $0.6450$ & $1.00$ \\
+ & Q-PRISM (PQC) so với Fourier Twin (RFF) & -2.4567 & $3.73 \times 10^{-6}$ & $0.0625$ & $\mathbf{1.62 \times 10^{-4}}^{\dagger}$ & $1.79 \times 10^{-4}$ \\
+ & PRISM (SIREN) so với Classical Twin ($\tanh$) & -0.4253 & $0.0222$ & $0.0625$ & $\mathbf{0.0355}^{\dagger}$ & $1.00$ \\
+\midrule
+Nội năng ($U_0$, eV) & Q-PRISM (PQC) so với Classical Twin ($\tanh$) & +8.9075 & $0.5971$ & $0.6250$ & $0.6331$ & $1.00$ \\
+ & Q-PRISM (PQC) so với SchNet & +5.6580 & $0.6450$ & $0.8125$ & $0.6450$ & $1.00$ \\
+ & Q-PRISM (PQC) so với PaiNN & -335.9779 & $3.10 \times 10^{-5}$ & $0.0625$ & $\mathbf{2.57 \times 10^{-4}}^{\dagger}$ & $1.49 \times 10^{-3}$ \\
+ & Q-PRISM (PQC) so với EGNN-PM & +22.2433 & $0.0487$ & $0.0625$ & $0.0652$ & $1.00$ \\
+ & Q-PRISM (PQC) so với EGNN Std & +40.4656 & $0.0124$ & $0.0625$ & $\mathbf{0.0216}^{\dagger}$ & $0.5964$ \\
+ & Q-PRISM (PQC) so với PRISM (SIREN) & -20.6143 & $0.1332$ & $0.1875$ & $0.1560$ & $1.00$ \\
+ & Q-PRISM (PQC) so với Fourier Twin (RFF) & -576.5289 & $8.97 \times 10^{-6}$ & $0.0625$ & $\mathbf{1.62 \times 10^{-4}}^{\dagger}$ & $4.30 \times 10^{-4}$ \\
+ & PRISM (SIREN) so với Classical Twin ($\tanh$) & +29.5218 & $0.1301$ & $0.1875$ & $0.1560$ & $1.00$ \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize $^{\dagger}$ Có ý nghĩa thống kê theo Tỷ lệ Khám phá Sai (FDR) Benjamini-Hochberg tại mức $\alpha = 0.05$ ($q_{\mathrm{FDR}} < 0.05$).} \\
+\multicolumn{7}{l}{\footnotesize $^*$ Đối với $n = 5$ quan sát theo cặp, $p_{\mathrm{Wilcox}} = 0.0625$ biểu thị cận dưới rời rạc lý thuyết của phân phối Wilcoxon hai phía.} \\
+\end{tabular}%
+}
+\end{table*}

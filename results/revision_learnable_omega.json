@@ -1,0 +1,2194 @@
+{
+  "metadata": {
+    "description": "Learnable omega_0 experiment for Periodic-EGNN",
+    "targets": [
+      "homo",
+      "lumo",
+      "gap"
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "epochs": 15
+  },
+  "homo": {
+    "periodic_fixed_30": {
+      "maes": {
+        "42": 0.2842645921707153,
+        "43": 0.2664919776916504,
+        "44": 0.2757525634765625
+      },
+      "omegas": {},
+      "mean": 0.2755030444463094,
+      "std": 0.007257784380245845
+    },
+    "periodic_learnable_30": {
+      "maes": {
+        "42": 0.27661475276947023,
+        "43": 0.2713361797332764,
+        "44": 0.28108473777771
+      },
+      "omegas": {
+        "42": {
+          "layer0_electronic": 30.408885955810547,
+          "layer0_topological": 29.82826805114746,
+          "layer1_electronic": 29.641918182373047,
+          "layer1_topological": 30.22340965270996
+        },
+        "43": {
+          "layer0_electronic": 29.95918083190918,
+          "layer0_topological": 31.356727600097656,
+          "layer1_electronic": 30.262556076049805,
+          "layer1_topological": 28.031007766723633
+        },
+        "44": {
+          "layer0_electronic": 30.514890670776367,
+          "layer0_topological": 29.382890701293945,
+          "layer1_electronic": 30.497798919677734,
+          "layer1_topological": 29.703670501708984
+        }
+      },
+      "trajectories": {
+        "42": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 30.728240966796875,
+            "layer0_topological": 29.911739349365234,
+            "layer1_electronic": 30.05112075805664,
+            "layer1_topological": 30.640560150146484
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 30.5687255859375,
+            "layer0_topological": 30.19623374938965,
+            "layer1_electronic": 30.079214096069336,
+            "layer1_topological": 30.44866371154785
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 30.45810890197754,
+            "layer0_topological": 29.959566116333008,
+            "layer1_electronic": 29.956645965576172,
+            "layer1_topological": 30.275293350219727
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 30.579761505126953,
+            "layer0_topological": 29.89557647705078,
+            "layer1_electronic": 29.731876373291016,
+            "layer1_topological": 30.071491241455078
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 30.408016204833984,
+            "layer0_topological": 29.9594669342041,
+            "layer1_electronic": 29.734336853027344,
+            "layer1_topological": 29.958431243896484
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 30.381404876708984,
+            "layer0_topological": 29.911191940307617,
+            "layer1_electronic": 29.635295867919922,
+            "layer1_topological": 30.02747344970703
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 30.41374397277832,
+            "layer0_topological": 29.849882125854492,
+            "layer1_electronic": 29.6114444732666,
+            "layer1_topological": 30.034137725830078
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 30.42991828918457,
+            "layer0_topological": 29.824905395507812,
+            "layer1_electronic": 29.641633987426758,
+            "layer1_topological": 30.09505271911621
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 30.413801193237305,
+            "layer0_topological": 29.812114715576172,
+            "layer1_electronic": 29.63831329345703,
+            "layer1_topological": 30.156204223632812
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 30.411169052124023,
+            "layer0_topological": 29.832826614379883,
+            "layer1_electronic": 29.643260955810547,
+            "layer1_topological": 30.136093139648438
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 30.406274795532227,
+            "layer0_topological": 29.826461791992188,
+            "layer1_electronic": 29.618343353271484,
+            "layer1_topological": 30.166105270385742
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 30.408878326416016,
+            "layer0_topological": 29.822132110595703,
+            "layer1_electronic": 29.644384384155273,
+            "layer1_topological": 30.20267105102539
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 30.413206100463867,
+            "layer0_topological": 29.82560920715332,
+            "layer1_electronic": 29.638107299804688,
+            "layer1_topological": 30.209484100341797
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 30.407325744628906,
+            "layer0_topological": 29.831220626831055,
+            "layer1_electronic": 29.638856887817383,
+            "layer1_topological": 30.220426559448242
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 30.408885955810547,
+            "layer0_topological": 29.82826805114746,
+            "layer1_electronic": 29.641918182373047,
+            "layer1_topological": 30.22340965270996
+          }
+        ],
+        "43": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 29.725688934326172,
+            "layer0_topological": 30.866451263427734,
+            "layer1_electronic": 29.821441650390625,
+            "layer1_topological": 29.726964950561523
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 29.981616973876953,
+            "layer0_topological": 31.466825485229492,
+            "layer1_electronic": 29.92582893371582,
+            "layer1_topological": 29.25692367553711
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 30.050662994384766,
+            "layer0_topological": 31.494401931762695,
+            "layer1_electronic": 29.898279190063477,
+            "layer1_topological": 28.10394287109375
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 30.11192512512207,
+            "layer0_topological": 31.480445861816406,
+            "layer1_electronic": 29.835872650146484,
+            "layer1_topological": 27.896007537841797
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 30.061132431030273,
+            "layer0_topological": 31.494775772094727,
+            "layer1_electronic": 29.910385131835938,
+            "layer1_topological": 27.85856819152832
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 30.03040885925293,
+            "layer0_topological": 31.477615356445312,
+            "layer1_electronic": 29.936967849731445,
+            "layer1_topological": 27.863384246826172
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 30.017343521118164,
+            "layer0_topological": 31.45399284362793,
+            "layer1_electronic": 29.990854263305664,
+            "layer1_topological": 27.83738899230957
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 29.97864532470703,
+            "layer0_topological": 31.422008514404297,
+            "layer1_electronic": 30.082096099853516,
+            "layer1_topological": 27.929075241088867
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 29.987844467163086,
+            "layer0_topological": 31.382972717285156,
+            "layer1_electronic": 30.13974380493164,
+            "layer1_topological": 27.911754608154297
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 29.956623077392578,
+            "layer0_topological": 31.378557205200195,
+            "layer1_electronic": 30.175189971923828,
+            "layer1_topological": 27.959457397460938
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 29.95783042907715,
+            "layer0_topological": 31.365543365478516,
+            "layer1_electronic": 30.212371826171875,
+            "layer1_topological": 27.997419357299805
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 29.95928192138672,
+            "layer0_topological": 31.366613388061523,
+            "layer1_electronic": 30.235576629638672,
+            "layer1_topological": 28.010345458984375
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 29.955224990844727,
+            "layer0_topological": 31.359561920166016,
+            "layer1_electronic": 30.256603240966797,
+            "layer1_topological": 28.02667808532715
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 29.958881378173828,
+            "layer0_topological": 31.355239868164062,
+            "layer1_electronic": 30.259374618530273,
+            "layer1_topological": 28.02515411376953
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 29.95918083190918,
+            "layer0_topological": 31.356727600097656,
+            "layer1_electronic": 30.262556076049805,
+            "layer1_topological": 28.031007766723633
+          }
+        ],
+        "44": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 29.90941619873047,
+            "layer0_topological": 29.369003295898438,
+            "layer1_electronic": 30.379470825195312,
+            "layer1_topological": 29.625730514526367
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 30.354116439819336,
+            "layer0_topological": 29.407791137695312,
+            "layer1_electronic": 30.534912109375,
+            "layer1_topological": 29.873275756835938
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 30.389179229736328,
+            "layer0_topological": 29.443368911743164,
+            "layer1_electronic": 30.848896026611328,
+            "layer1_topological": 29.815078735351562
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 30.334793090820312,
+            "layer0_topological": 29.404953002929688,
+            "layer1_electronic": 30.644622802734375,
+            "layer1_topological": 29.473196029663086
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 30.404056549072266,
+            "layer0_topological": 29.35931968688965,
+            "layer1_electronic": 30.615989685058594,
+            "layer1_topological": 29.477096557617188
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 30.433530807495117,
+            "layer0_topological": 29.401203155517578,
+            "layer1_electronic": 30.53847885131836,
+            "layer1_topological": 29.499462127685547
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 30.467472076416016,
+            "layer0_topological": 29.379514694213867,
+            "layer1_electronic": 30.43593978881836,
+            "layer1_topological": 29.53644371032715
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 30.449005126953125,
+            "layer0_topological": 29.397907257080078,
+            "layer1_electronic": 30.405601501464844,
+            "layer1_topological": 29.597576141357422
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 30.496919631958008,
+            "layer0_topological": 29.356752395629883,
+            "layer1_electronic": 30.43293571472168,
+            "layer1_topological": 29.640398025512695
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 30.46876335144043,
+            "layer0_topological": 29.388517379760742,
+            "layer1_electronic": 30.426464080810547,
+            "layer1_topological": 29.66856575012207
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 30.50165367126465,
+            "layer0_topological": 29.387935638427734,
+            "layer1_electronic": 30.455516815185547,
+            "layer1_topological": 29.67822265625
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 30.506685256958008,
+            "layer0_topological": 29.378372192382812,
+            "layer1_electronic": 30.483325958251953,
+            "layer1_topological": 29.694204330444336
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 30.518041610717773,
+            "layer0_topological": 29.38301658630371,
+            "layer1_electronic": 30.488718032836914,
+            "layer1_topological": 29.693113327026367
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 30.51323890686035,
+            "layer0_topological": 29.381244659423828,
+            "layer1_electronic": 30.495275497436523,
+            "layer1_topological": 29.701221466064453
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 30.514890670776367,
+            "layer0_topological": 29.382890701293945,
+            "layer1_electronic": 30.497798919677734,
+            "layer1_topological": 29.703670501708984
+          }
+        ]
+      },
+      "mean": 0.2763452234268189,
+      "std": 0.003984392930450447
+    },
+    "periodic_learnable_10": {
+      "maes": {
+        "42": 0.30380060863494873,
+        "43": 0.28950723934173583,
+        "44": 0.2995249719619751
+      },
+      "omegas": {
+        "42": {
+          "layer0_electronic": 10.395561218261719,
+          "layer0_topological": 10.182634353637695,
+          "layer1_electronic": 10.315277099609375,
+          "layer1_topological": 10.823674201965332
+        },
+        "43": {
+          "layer0_electronic": 11.38800048828125,
+          "layer0_topological": 11.183549880981445,
+          "layer1_electronic": 10.461599349975586,
+          "layer1_topological": 10.98766803741455
+        },
+        "44": {
+          "layer0_electronic": 10.40277099609375,
+          "layer0_topological": 11.596710205078125,
+          "layer1_electronic": 10.517160415649414,
+          "layer1_topological": 10.948808670043945
+        }
+      },
+      "trajectories": {
+        "42": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 10.055404663085938,
+            "layer0_topological": 9.980152130126953,
+            "layer1_electronic": 9.963643074035645,
+            "layer1_topological": 10.058310508728027
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 10.061948776245117,
+            "layer0_topological": 10.116313934326172,
+            "layer1_electronic": 9.881126403808594,
+            "layer1_topological": 10.19771671295166
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 10.210693359375,
+            "layer0_topological": 10.194551467895508,
+            "layer1_electronic": 9.850587844848633,
+            "layer1_topological": 10.808271408081055
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 10.3346529006958,
+            "layer0_topological": 10.182661056518555,
+            "layer1_electronic": 9.792132377624512,
+            "layer1_topological": 11.021455764770508
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 10.355319023132324,
+            "layer0_topological": 10.172818183898926,
+            "layer1_electronic": 9.782011985778809,
+            "layer1_topological": 10.90217399597168
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 10.39399242401123,
+            "layer0_topological": 10.188972473144531,
+            "layer1_electronic": 9.934588432312012,
+            "layer1_topological": 10.944925308227539
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 10.401246070861816,
+            "layer0_topological": 10.161290168762207,
+            "layer1_electronic": 10.039572715759277,
+            "layer1_topological": 10.873111724853516
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 10.386573791503906,
+            "layer0_topological": 10.171123504638672,
+            "layer1_electronic": 10.192264556884766,
+            "layer1_topological": 10.854429244995117
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 10.387845993041992,
+            "layer0_topological": 10.170875549316406,
+            "layer1_electronic": 10.190726280212402,
+            "layer1_topological": 10.852447509765625
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 10.383983612060547,
+            "layer0_topological": 10.173768997192383,
+            "layer1_electronic": 10.238993644714355,
+            "layer1_topological": 10.837721824645996
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 10.39256477355957,
+            "layer0_topological": 10.180194854736328,
+            "layer1_electronic": 10.285615921020508,
+            "layer1_topological": 10.841869354248047
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 10.395576477050781,
+            "layer0_topological": 10.175249099731445,
+            "layer1_electronic": 10.290477752685547,
+            "layer1_topological": 10.823519706726074
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 10.395013809204102,
+            "layer0_topological": 10.178177833557129,
+            "layer1_electronic": 10.305893898010254,
+            "layer1_topological": 10.822996139526367
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 10.39439868927002,
+            "layer0_topological": 10.182317733764648,
+            "layer1_electronic": 10.312237739562988,
+            "layer1_topological": 10.82432746887207
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 10.395561218261719,
+            "layer0_topological": 10.182634353637695,
+            "layer1_electronic": 10.315277099609375,
+            "layer1_topological": 10.823674201965332
+          }
+        ],
+        "43": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 10.120682716369629,
+            "layer0_topological": 10.050301551818848,
+            "layer1_electronic": 10.085553169250488,
+            "layer1_topological": 10.073232650756836
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 10.278146743774414,
+            "layer0_topological": 10.211163520812988,
+            "layer1_electronic": 10.210853576660156,
+            "layer1_topological": 10.122795104980469
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 10.62093734741211,
+            "layer0_topological": 10.482039451599121,
+            "layer1_electronic": 10.405237197875977,
+            "layer1_topological": 10.404718399047852
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 11.182147979736328,
+            "layer0_topological": 10.889107704162598,
+            "layer1_electronic": 10.402302742004395,
+            "layer1_topological": 10.741218566894531
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 11.21015739440918,
+            "layer0_topological": 10.913094520568848,
+            "layer1_electronic": 10.437990188598633,
+            "layer1_topological": 10.721108436584473
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 11.216089248657227,
+            "layer0_topological": 11.027164459228516,
+            "layer1_electronic": 10.453506469726562,
+            "layer1_topological": 10.79506778717041
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 11.250091552734375,
+            "layer0_topological": 11.08378791809082,
+            "layer1_electronic": 10.458330154418945,
+            "layer1_topological": 10.81179428100586
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 11.290203094482422,
+            "layer0_topological": 11.121248245239258,
+            "layer1_electronic": 10.457581520080566,
+            "layer1_topological": 10.865104675292969
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 11.317094802856445,
+            "layer0_topological": 11.138728141784668,
+            "layer1_electronic": 10.455388069152832,
+            "layer1_topological": 10.929620742797852
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 11.344054222106934,
+            "layer0_topological": 11.164775848388672,
+            "layer1_electronic": 10.45833683013916,
+            "layer1_topological": 10.941215515136719
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 11.36606216430664,
+            "layer0_topological": 11.16982650756836,
+            "layer1_electronic": 10.459893226623535,
+            "layer1_topological": 10.958709716796875
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 11.376315116882324,
+            "layer0_topological": 11.181867599487305,
+            "layer1_electronic": 10.46127986907959,
+            "layer1_topological": 10.97107982635498
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 11.383657455444336,
+            "layer0_topological": 11.181404113769531,
+            "layer1_electronic": 10.460549354553223,
+            "layer1_topological": 10.98344898223877
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 11.38880729675293,
+            "layer0_topological": 11.182494163513184,
+            "layer1_electronic": 10.460491180419922,
+            "layer1_topological": 10.985892295837402
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 11.38800048828125,
+            "layer0_topological": 11.183549880981445,
+            "layer1_electronic": 10.461599349975586,
+            "layer1_topological": 10.98766803741455
+          }
+        ],
+        "44": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 10.033123970031738,
+            "layer0_topological": 9.838445663452148,
+            "layer1_electronic": 9.866950035095215,
+            "layer1_topological": 10.077292442321777
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 9.923869132995605,
+            "layer0_topological": 9.7787504196167,
+            "layer1_electronic": 9.913416862487793,
+            "layer1_topological": 10.082283973693848
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 9.973718643188477,
+            "layer0_topological": 9.850480079650879,
+            "layer1_electronic": 10.044483184814453,
+            "layer1_topological": 10.167571067810059
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 10.04250717163086,
+            "layer0_topological": 10.013754844665527,
+            "layer1_electronic": 10.192699432373047,
+            "layer1_topological": 10.345386505126953
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 10.083680152893066,
+            "layer0_topological": 10.333943367004395,
+            "layer1_electronic": 10.305830001831055,
+            "layer1_topological": 10.460097312927246
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 10.168904304504395,
+            "layer0_topological": 10.929060935974121,
+            "layer1_electronic": 10.416383743286133,
+            "layer1_topological": 10.60568904876709
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 10.237617492675781,
+            "layer0_topological": 11.316093444824219,
+            "layer1_electronic": 10.412074089050293,
+            "layer1_topological": 10.77387809753418
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 10.274121284484863,
+            "layer0_topological": 11.457897186279297,
+            "layer1_electronic": 10.452159881591797,
+            "layer1_topological": 10.782021522521973
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 10.320352554321289,
+            "layer0_topological": 11.516735076904297,
+            "layer1_electronic": 10.473393440246582,
+            "layer1_topological": 10.895912170410156
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 10.354793548583984,
+            "layer0_topological": 11.574996948242188,
+            "layer1_electronic": 10.497870445251465,
+            "layer1_topological": 10.906058311462402
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 10.37840461730957,
+            "layer0_topological": 11.596014022827148,
+            "layer1_electronic": 10.505367279052734,
+            "layer1_topological": 10.919332504272461
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 10.392644882202148,
+            "layer0_topological": 11.590702056884766,
+            "layer1_electronic": 10.515027046203613,
+            "layer1_topological": 10.943171501159668
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 10.39741325378418,
+            "layer0_topological": 11.592813491821289,
+            "layer1_electronic": 10.516124725341797,
+            "layer1_topological": 10.947735786437988
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 10.400799751281738,
+            "layer0_topological": 11.595172882080078,
+            "layer1_electronic": 10.517724990844727,
+            "layer1_topological": 10.947200775146484
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 10.40277099609375,
+            "layer0_topological": 11.596710205078125,
+            "layer1_electronic": 10.517160415649414,
+            "layer1_topological": 10.948808670043945
+          }
+        ]
+      },
+      "mean": 0.29761093997955324,
+      "std": 0.005990144141857283
+    },
+    "classical_twin": {
+      "maes": {
+        "42": 0.3163738079071045,
+        "43": 0.3327254953384399,
+        "44": 0.33028947448730467
+      },
+      "omegas": {},
+      "mean": 0.3264629259109497,
+      "std": 0.007203067678354194
+    }
+  },
+  "lumo": {
+    "periodic_fixed_30": {
+      "maes": {
+        "42": 0.4103218836784363,
+        "43": 0.5519418740272521,
+        "44": 0.4179257779121399
+      },
+      "omegas": {},
+      "mean": 0.46006317853927614,
+      "std": 0.06504216998895669
+    },
+    "periodic_learnable_30": {
+      "maes": {
+        "42": 0.40709564328193665,
+        "43": 0.5531946794986725,
+        "44": 0.42031899309158327
+      },
+      "omegas": {
+        "42": {
+          "layer0_electronic": 29.40999984741211,
+          "layer0_topological": 30.188230514526367,
+          "layer1_electronic": 30.49615478515625,
+          "layer1_topological": 29.603496551513672
+        },
+        "43": {
+          "layer0_electronic": 29.720821380615234,
+          "layer0_topological": 30.123760223388672,
+          "layer1_electronic": 29.413969039916992,
+          "layer1_topological": 28.754819869995117
+        },
+        "44": {
+          "layer0_electronic": 29.280614852905273,
+          "layer0_topological": 29.136276245117188,
+          "layer1_electronic": 30.05340003967285,
+          "layer1_topological": 30.432920455932617
+        }
+      },
+      "trajectories": {
+        "42": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 29.636878967285156,
+            "layer0_topological": 29.70306968688965,
+            "layer1_electronic": 29.913944244384766,
+            "layer1_topological": 29.132823944091797
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 29.588953018188477,
+            "layer0_topological": 29.81855583190918,
+            "layer1_electronic": 30.019506454467773,
+            "layer1_topological": 29.030601501464844
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 29.549137115478516,
+            "layer0_topological": 29.932472229003906,
+            "layer1_electronic": 30.04449462890625,
+            "layer1_topological": 29.037960052490234
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 29.5335636138916,
+            "layer0_topological": 29.979394912719727,
+            "layer1_electronic": 30.101381301879883,
+            "layer1_topological": 29.042667388916016
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 29.48390007019043,
+            "layer0_topological": 30.056474685668945,
+            "layer1_electronic": 30.058982849121094,
+            "layer1_topological": 29.07080841064453
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 29.447988510131836,
+            "layer0_topological": 30.103240966796875,
+            "layer1_electronic": 30.22960662841797,
+            "layer1_topological": 29.30786895751953
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 29.4130859375,
+            "layer0_topological": 30.126596450805664,
+            "layer1_electronic": 30.337142944335938,
+            "layer1_topological": 29.484455108642578
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 29.424028396606445,
+            "layer0_topological": 30.15998649597168,
+            "layer1_electronic": 30.38496208190918,
+            "layer1_topological": 29.421720504760742
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 29.415407180786133,
+            "layer0_topological": 30.169422149658203,
+            "layer1_electronic": 30.381650924682617,
+            "layer1_topological": 29.41800308227539
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 29.41326904296875,
+            "layer0_topological": 30.204544067382812,
+            "layer1_electronic": 30.442115783691406,
+            "layer1_topological": 29.526031494140625
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 29.418296813964844,
+            "layer0_topological": 30.190677642822266,
+            "layer1_electronic": 30.467811584472656,
+            "layer1_topological": 29.57929801940918
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 29.407567977905273,
+            "layer0_topological": 30.197969436645508,
+            "layer1_electronic": 30.46189308166504,
+            "layer1_topological": 29.573501586914062
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 29.413541793823242,
+            "layer0_topological": 30.18840217590332,
+            "layer1_electronic": 30.485746383666992,
+            "layer1_topological": 29.58336639404297
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 29.411073684692383,
+            "layer0_topological": 30.189050674438477,
+            "layer1_electronic": 30.49390983581543,
+            "layer1_topological": 29.601316452026367
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 29.40999984741211,
+            "layer0_topological": 30.188230514526367,
+            "layer1_electronic": 30.49615478515625,
+            "layer1_topological": 29.603496551513672
+          }
+        ],
+        "43": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 29.39273452758789,
+            "layer0_topological": 29.336063385009766,
+            "layer1_electronic": 29.418170928955078,
+            "layer1_topological": 29.265987396240234
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 29.50732421875,
+            "layer0_topological": 29.83963394165039,
+            "layer1_electronic": 29.38487434387207,
+            "layer1_topological": 29.05200958251953
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 29.588058471679688,
+            "layer0_topological": 29.86516571044922,
+            "layer1_electronic": 29.35565185546875,
+            "layer1_topological": 28.879465103149414
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 29.63832664489746,
+            "layer0_topological": 30.10455322265625,
+            "layer1_electronic": 29.354169845581055,
+            "layer1_topological": 28.893115997314453
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 29.6530704498291,
+            "layer0_topological": 30.03491973876953,
+            "layer1_electronic": 29.364730834960938,
+            "layer1_topological": 28.83356285095215
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 29.66992950439453,
+            "layer0_topological": 30.056854248046875,
+            "layer1_electronic": 29.39436912536621,
+            "layer1_topological": 28.82489585876465
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 29.649621963500977,
+            "layer0_topological": 29.99312973022461,
+            "layer1_electronic": 29.385854721069336,
+            "layer1_topological": 28.811565399169922
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 29.647811889648438,
+            "layer0_topological": 30.02604103088379,
+            "layer1_electronic": 29.37977409362793,
+            "layer1_topological": 28.78150749206543
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 29.658218383789062,
+            "layer0_topological": 30.077062606811523,
+            "layer1_electronic": 29.428138732910156,
+            "layer1_topological": 28.79068374633789
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 29.663911819458008,
+            "layer0_topological": 30.06474494934082,
+            "layer1_electronic": 29.416698455810547,
+            "layer1_topological": 28.78192710876465
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 29.687755584716797,
+            "layer0_topological": 30.091615676879883,
+            "layer1_electronic": 29.420148849487305,
+            "layer1_topological": 28.772411346435547
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 29.70410919189453,
+            "layer0_topological": 30.095504760742188,
+            "layer1_electronic": 29.420835494995117,
+            "layer1_topological": 28.765653610229492
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 29.71601104736328,
+            "layer0_topological": 30.119823455810547,
+            "layer1_electronic": 29.422611236572266,
+            "layer1_topological": 28.757953643798828
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 29.718305587768555,
+            "layer0_topological": 30.119586944580078,
+            "layer1_electronic": 29.415210723876953,
+            "layer1_topological": 28.755794525146484
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 29.720821380615234,
+            "layer0_topological": 30.123760223388672,
+            "layer1_electronic": 29.413969039916992,
+            "layer1_topological": 28.754819869995117
+          }
+        ],
+        "44": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 29.572372436523438,
+            "layer0_topological": 29.142799377441406,
+            "layer1_electronic": 29.99564552307129,
+            "layer1_topological": 29.449974060058594
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 29.26854705810547,
+            "layer0_topological": 29.109189987182617,
+            "layer1_electronic": 29.92924690246582,
+            "layer1_topological": 29.619733810424805
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 29.335643768310547,
+            "layer0_topological": 29.08696937561035,
+            "layer1_electronic": 29.9505615234375,
+            "layer1_topological": 29.9408016204834
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 29.265518188476562,
+            "layer0_topological": 29.04837417602539,
+            "layer1_electronic": 29.922182083129883,
+            "layer1_topological": 30.153831481933594
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 29.299022674560547,
+            "layer0_topological": 28.985122680664062,
+            "layer1_electronic": 29.90167999267578,
+            "layer1_topological": 30.08649253845215
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 29.330810546875,
+            "layer0_topological": 28.981956481933594,
+            "layer1_electronic": 29.92059898376465,
+            "layer1_topological": 30.334300994873047
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 29.321950912475586,
+            "layer0_topological": 29.03813362121582,
+            "layer1_electronic": 29.943378448486328,
+            "layer1_topological": 30.432384490966797
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 29.311473846435547,
+            "layer0_topological": 29.060392379760742,
+            "layer1_electronic": 29.973934173583984,
+            "layer1_topological": 30.462284088134766
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 29.319120407104492,
+            "layer0_topological": 29.072298049926758,
+            "layer1_electronic": 30.023212432861328,
+            "layer1_topological": 30.441680908203125
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 29.28878402709961,
+            "layer0_topological": 29.106664657592773,
+            "layer1_electronic": 30.04142951965332,
+            "layer1_topological": 30.428640365600586
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 29.285327911376953,
+            "layer0_topological": 29.10085678100586,
+            "layer1_electronic": 30.05350685119629,
+            "layer1_topological": 30.420509338378906
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 29.285362243652344,
+            "layer0_topological": 29.131614685058594,
+            "layer1_electronic": 30.052532196044922,
+            "layer1_topological": 30.430505752563477
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 29.283918380737305,
+            "layer0_topological": 29.129718780517578,
+            "layer1_electronic": 30.05528450012207,
+            "layer1_topological": 30.43499755859375
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 29.279504776000977,
+            "layer0_topological": 29.130565643310547,
+            "layer1_electronic": 30.05588722229004,
+            "layer1_topological": 30.43572235107422
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 29.280614852905273,
+            "layer0_topological": 29.136276245117188,
+            "layer1_electronic": 30.05340003967285,
+            "layer1_topological": 30.432920455932617
+          }
+        ]
+      },
+      "mean": 0.4602031052907309,
+      "std": 0.06597620227678269
+    },
+    "periodic_learnable_10": {
+      "maes": {
+        "42": 0.642147132396698,
+        "43": 0.5859641993045807,
+        "44": 0.695367733001709
+      },
+      "omegas": {
+        "42": {
+          "layer0_electronic": 10.250288009643555,
+          "layer0_topological": 10.185547828674316,
+          "layer1_electronic": 10.697906494140625,
+          "layer1_topological": 11.125205993652344
+        },
+        "43": {
+          "layer0_electronic": 11.237730979919434,
+          "layer0_topological": 10.699997901916504,
+          "layer1_electronic": 10.293289184570312,
+          "layer1_topological": 10.205642700195312
+        },
+        "44": {
+          "layer0_electronic": 9.918974876403809,
+          "layer0_topological": 10.173250198364258,
+          "layer1_electronic": 10.47261905670166,
+          "layer1_topological": 10.923566818237305
+        }
+      },
+      "trajectories": {
+        "42": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 10.1795654296875,
+            "layer0_topological": 9.954119682312012,
+            "layer1_electronic": 10.144253730773926,
+            "layer1_topological": 10.472969055175781
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 10.170801162719727,
+            "layer0_topological": 9.919404983520508,
+            "layer1_electronic": 10.215960502624512,
+            "layer1_topological": 10.648406982421875
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 10.15489387512207,
+            "layer0_topological": 9.926287651062012,
+            "layer1_electronic": 10.32949447631836,
+            "layer1_topological": 10.800958633422852
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 10.155235290527344,
+            "layer0_topological": 9.962363243103027,
+            "layer1_electronic": 10.472421646118164,
+            "layer1_topological": 10.907379150390625
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 10.153736114501953,
+            "layer0_topological": 10.005447387695312,
+            "layer1_electronic": 10.574666023254395,
+            "layer1_topological": 10.960371017456055
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 10.164154052734375,
+            "layer0_topological": 10.056089401245117,
+            "layer1_electronic": 10.623680114746094,
+            "layer1_topological": 11.003612518310547
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 10.163487434387207,
+            "layer0_topological": 10.07526969909668,
+            "layer1_electronic": 10.65935230255127,
+            "layer1_topological": 11.028653144836426
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 10.179640769958496,
+            "layer0_topological": 10.1129789352417,
+            "layer1_electronic": 10.69168472290039,
+            "layer1_topological": 11.07103157043457
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 10.195703506469727,
+            "layer0_topological": 10.145341873168945,
+            "layer1_electronic": 10.698046684265137,
+            "layer1_topological": 11.100236892700195
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 10.212886810302734,
+            "layer0_topological": 10.16807746887207,
+            "layer1_electronic": 10.709879875183105,
+            "layer1_topological": 11.12899398803711
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 10.226995468139648,
+            "layer0_topological": 10.16704273223877,
+            "layer1_electronic": 10.686546325683594,
+            "layer1_topological": 11.109463691711426
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 10.238143920898438,
+            "layer0_topological": 10.182087898254395,
+            "layer1_electronic": 10.701834678649902,
+            "layer1_topological": 11.125656127929688
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 10.244941711425781,
+            "layer0_topological": 10.183459281921387,
+            "layer1_electronic": 10.698980331420898,
+            "layer1_topological": 11.126565933227539
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 10.248828887939453,
+            "layer0_topological": 10.185086250305176,
+            "layer1_electronic": 10.698049545288086,
+            "layer1_topological": 11.125566482543945
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 10.250288009643555,
+            "layer0_topological": 10.185547828674316,
+            "layer1_electronic": 10.697906494140625,
+            "layer1_topological": 11.125205993652344
+          }
+        ],
+        "43": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 10.34074592590332,
+            "layer0_topological": 10.157392501831055,
+            "layer1_electronic": 10.134868621826172,
+            "layer1_topological": 10.151616096496582
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 10.522111892700195,
+            "layer0_topological": 10.24386978149414,
+            "layer1_electronic": 10.19086742401123,
+            "layer1_topological": 10.230916976928711
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 10.700401306152344,
+            "layer0_topological": 10.344139099121094,
+            "layer1_electronic": 10.206260681152344,
+            "layer1_topological": 10.230177879333496
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 10.824153900146484,
+            "layer0_topological": 10.497560501098633,
+            "layer1_electronic": 10.201573371887207,
+            "layer1_topological": 10.20804214477539
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 10.928299903869629,
+            "layer0_topological": 10.625617980957031,
+            "layer1_electronic": 10.221006393432617,
+            "layer1_topological": 10.204572677612305
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 11.002445220947266,
+            "layer0_topological": 10.70622444152832,
+            "layer1_electronic": 10.225629806518555,
+            "layer1_topological": 10.175734519958496
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 11.067928314208984,
+            "layer0_topological": 10.743946075439453,
+            "layer1_electronic": 10.249144554138184,
+            "layer1_topological": 10.169898986816406
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 11.103923797607422,
+            "layer0_topological": 10.739241600036621,
+            "layer1_electronic": 10.280766487121582,
+            "layer1_topological": 10.17438793182373
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 11.144221305847168,
+            "layer0_topological": 10.744171142578125,
+            "layer1_electronic": 10.289339065551758,
+            "layer1_topological": 10.173415184020996
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 11.166152000427246,
+            "layer0_topological": 10.719508171081543,
+            "layer1_electronic": 10.296399116516113,
+            "layer1_topological": 10.180994987487793
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 11.192337036132812,
+            "layer0_topological": 10.709196090698242,
+            "layer1_electronic": 10.301187515258789,
+            "layer1_topological": 10.191200256347656
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 11.213969230651855,
+            "layer0_topological": 10.702465057373047,
+            "layer1_electronic": 10.295198440551758,
+            "layer1_topological": 10.19218635559082
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 11.229211807250977,
+            "layer0_topological": 10.704136848449707,
+            "layer1_electronic": 10.292136192321777,
+            "layer1_topological": 10.20469856262207
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 11.235841751098633,
+            "layer0_topological": 10.70096206665039,
+            "layer1_electronic": 10.29246997833252,
+            "layer1_topological": 10.206117630004883
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 11.237730979919434,
+            "layer0_topological": 10.699997901916504,
+            "layer1_electronic": 10.293289184570312,
+            "layer1_topological": 10.205642700195312
+          }
+        ],
+        "44": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 9.82695484161377,
+            "layer0_topological": 10.121658325195312,
+            "layer1_electronic": 10.11681079864502,
+            "layer1_topological": 10.177961349487305
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 9.763449668884277,
+            "layer0_topological": 10.089762687683105,
+            "layer1_electronic": 10.188447952270508,
+            "layer1_topological": 10.176396369934082
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 9.746282577514648,
+            "layer0_topological": 10.080598831176758,
+            "layer1_electronic": 10.308530807495117,
+            "layer1_topological": 10.327007293701172
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 9.713476181030273,
+            "layer0_topological": 10.084142684936523,
+            "layer1_electronic": 10.385575294494629,
+            "layer1_topological": 10.520505905151367
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 9.706674575805664,
+            "layer0_topological": 10.105384826660156,
+            "layer1_electronic": 10.423486709594727,
+            "layer1_topological": 10.599596977233887
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 9.71704387664795,
+            "layer0_topological": 10.117148399353027,
+            "layer1_electronic": 10.404884338378906,
+            "layer1_topological": 10.685948371887207
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 9.728033065795898,
+            "layer0_topological": 10.134260177612305,
+            "layer1_electronic": 10.447847366333008,
+            "layer1_topological": 10.76160717010498
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 9.755528450012207,
+            "layer0_topological": 10.145763397216797,
+            "layer1_electronic": 10.460479736328125,
+            "layer1_topological": 10.81500244140625
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 9.785728454589844,
+            "layer0_topological": 10.150737762451172,
+            "layer1_electronic": 10.460668563842773,
+            "layer1_topological": 10.846916198730469
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 9.829524993896484,
+            "layer0_topological": 10.154593467712402,
+            "layer1_electronic": 10.469635963439941,
+            "layer1_topological": 10.880193710327148
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 9.861404418945312,
+            "layer0_topological": 10.162220001220703,
+            "layer1_electronic": 10.476303100585938,
+            "layer1_topological": 10.90056324005127
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 9.889073371887207,
+            "layer0_topological": 10.167993545532227,
+            "layer1_electronic": 10.470457077026367,
+            "layer1_topological": 10.906854629516602
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 9.904335021972656,
+            "layer0_topological": 10.170839309692383,
+            "layer1_electronic": 10.472591400146484,
+            "layer1_topological": 10.917703628540039
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 9.916144371032715,
+            "layer0_topological": 10.17294692993164,
+            "layer1_electronic": 10.473470687866211,
+            "layer1_topological": 10.921977996826172
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 9.918974876403809,
+            "layer0_topological": 10.173250198364258,
+            "layer1_electronic": 10.47261905670166,
+            "layer1_topological": 10.923566818237305
+          }
+        ]
+      },
+      "mean": 0.6411596882343292,
+      "std": 0.04466926296560099
+    },
+    "classical_twin": {
+      "maes": {
+        "42": 0.7496740753650666,
+        "43": 0.772042483329773,
+        "44": 0.7408739347457886
+      },
+      "omegas": {},
+      "mean": 0.7541968311468761,
+      "std": 0.013120241235192481
+    }
+  },
+  "gap": {
+    "periodic_fixed_30": {
+      "maes": {
+        "42": 0.5226365957260132,
+        "43": 0.5172692975997925,
+        "44": 0.5464892244338989
+      },
+      "omegas": {},
+      "mean": 0.5287983725865683,
+      "std": 0.012699780880185479
+    },
+    "periodic_learnable_30": {
+      "maes": {
+        "42": 0.5209372968673706,
+        "43": 0.5499895696640015,
+        "44": 0.5460693502426147
+      },
+      "omegas": {
+        "42": {
+          "layer0_electronic": 29.235698699951172,
+          "layer0_topological": 29.881397247314453,
+          "layer1_electronic": 29.529438018798828,
+          "layer1_topological": 30.512643814086914
+        },
+        "43": {
+          "layer0_electronic": 29.54306411743164,
+          "layer0_topological": 30.03852081298828,
+          "layer1_electronic": 29.552637100219727,
+          "layer1_topological": 29.383150100708008
+        },
+        "44": {
+          "layer0_electronic": 29.714126586914062,
+          "layer0_topological": 29.677677154541016,
+          "layer1_electronic": 30.71255111694336,
+          "layer1_topological": 30.241106033325195
+        }
+      },
+      "trajectories": {
+        "42": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 29.560163497924805,
+            "layer0_topological": 29.70615005493164,
+            "layer1_electronic": 29.947969436645508,
+            "layer1_topological": 29.608734130859375
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 29.49538230895996,
+            "layer0_topological": 29.832122802734375,
+            "layer1_electronic": 29.84160614013672,
+            "layer1_topological": 29.841840744018555
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 29.45820426940918,
+            "layer0_topological": 29.965373992919922,
+            "layer1_electronic": 29.93036651611328,
+            "layer1_topological": 30.03221321105957
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 29.461793899536133,
+            "layer0_topological": 29.953330993652344,
+            "layer1_electronic": 29.86788558959961,
+            "layer1_topological": 30.394561767578125
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 29.40174102783203,
+            "layer0_topological": 29.984119415283203,
+            "layer1_electronic": 29.605911254882812,
+            "layer1_topological": 30.565488815307617
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 29.397031784057617,
+            "layer0_topological": 29.946455001831055,
+            "layer1_electronic": 29.563173294067383,
+            "layer1_topological": 30.730562210083008
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 29.446428298950195,
+            "layer0_topological": 29.903690338134766,
+            "layer1_electronic": 29.55858612060547,
+            "layer1_topological": 30.629539489746094
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 29.344036102294922,
+            "layer0_topological": 29.864225387573242,
+            "layer1_electronic": 29.642589569091797,
+            "layer1_topological": 30.514432907104492
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 29.343931198120117,
+            "layer0_topological": 29.876466751098633,
+            "layer1_electronic": 29.579071044921875,
+            "layer1_topological": 30.529678344726562
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 29.29958152770996,
+            "layer0_topological": 29.90180778503418,
+            "layer1_electronic": 29.537761688232422,
+            "layer1_topological": 30.493995666503906
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 29.263935089111328,
+            "layer0_topological": 29.885791778564453,
+            "layer1_electronic": 29.518491744995117,
+            "layer1_topological": 30.515647888183594
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 29.236207962036133,
+            "layer0_topological": 29.86975860595703,
+            "layer1_electronic": 29.505319595336914,
+            "layer1_topological": 30.518142700195312
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 29.243812561035156,
+            "layer0_topological": 29.87653923034668,
+            "layer1_electronic": 29.521595001220703,
+            "layer1_topological": 30.510257720947266
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 29.239986419677734,
+            "layer0_topological": 29.879053115844727,
+            "layer1_electronic": 29.53092384338379,
+            "layer1_topological": 30.514686584472656
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 29.235698699951172,
+            "layer0_topological": 29.881397247314453,
+            "layer1_electronic": 29.529438018798828,
+            "layer1_topological": 30.512643814086914
+          }
+        ],
+        "43": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 29.35167694091797,
+            "layer0_topological": 29.192527770996094,
+            "layer1_electronic": 29.433534622192383,
+            "layer1_topological": 29.402843475341797
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 29.417861938476562,
+            "layer0_topological": 29.6527042388916,
+            "layer1_electronic": 29.357080459594727,
+            "layer1_topological": 29.31657600402832
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 29.465124130249023,
+            "layer0_topological": 29.71695899963379,
+            "layer1_electronic": 29.360614776611328,
+            "layer1_topological": 29.33953857421875
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 29.49630355834961,
+            "layer0_topological": 29.93767547607422,
+            "layer1_electronic": 29.32341957092285,
+            "layer1_topological": 29.151514053344727
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 29.604887008666992,
+            "layer0_topological": 29.946176528930664,
+            "layer1_electronic": 29.407785415649414,
+            "layer1_topological": 29.30532455444336
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 29.69525909423828,
+            "layer0_topological": 30.056781768798828,
+            "layer1_electronic": 29.380964279174805,
+            "layer1_topological": 29.402463912963867
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 29.641939163208008,
+            "layer0_topological": 29.99342155456543,
+            "layer1_electronic": 29.433156967163086,
+            "layer1_topological": 29.386465072631836
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 29.608535766601562,
+            "layer0_topological": 29.96601104736328,
+            "layer1_electronic": 29.53717613220215,
+            "layer1_topological": 29.425073623657227
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 29.625709533691406,
+            "layer0_topological": 30.01090431213379,
+            "layer1_electronic": 29.575729370117188,
+            "layer1_topological": 29.42436408996582
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 29.593454360961914,
+            "layer0_topological": 30.027278900146484,
+            "layer1_electronic": 29.536943435668945,
+            "layer1_topological": 29.40064811706543
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 29.562320709228516,
+            "layer0_topological": 30.017229080200195,
+            "layer1_electronic": 29.5513916015625,
+            "layer1_topological": 29.396177291870117
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 29.562545776367188,
+            "layer0_topological": 30.03402328491211,
+            "layer1_electronic": 29.535062789916992,
+            "layer1_topological": 29.38884735107422
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 29.551532745361328,
+            "layer0_topological": 30.04485321044922,
+            "layer1_electronic": 29.548742294311523,
+            "layer1_topological": 29.386394500732422
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 29.545318603515625,
+            "layer0_topological": 30.03850746154785,
+            "layer1_electronic": 29.548776626586914,
+            "layer1_topological": 29.385665893554688
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 29.54306411743164,
+            "layer0_topological": 30.03852081298828,
+            "layer1_electronic": 29.552637100219727,
+            "layer1_topological": 29.383150100708008
+          }
+        ],
+        "44": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 29.69235610961914,
+            "layer0_topological": 29.080638885498047,
+            "layer1_electronic": 29.833873748779297,
+            "layer1_topological": 29.39142608642578
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 29.483991622924805,
+            "layer0_topological": 29.1331844329834,
+            "layer1_electronic": 29.824642181396484,
+            "layer1_topological": 29.6273136138916
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 29.613401412963867,
+            "layer0_topological": 29.0307674407959,
+            "layer1_electronic": 29.883655548095703,
+            "layer1_topological": 29.756059646606445
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 29.652915954589844,
+            "layer0_topological": 29.03512191772461,
+            "layer1_electronic": 30.039674758911133,
+            "layer1_topological": 29.897716522216797
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 29.722267150878906,
+            "layer0_topological": 29.134963989257812,
+            "layer1_electronic": 30.231611251831055,
+            "layer1_topological": 29.836063385009766
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 29.622093200683594,
+            "layer0_topological": 29.25445556640625,
+            "layer1_electronic": 30.313465118408203,
+            "layer1_topological": 29.992721557617188
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 29.6824893951416,
+            "layer0_topological": 29.4003963470459,
+            "layer1_electronic": 30.414548873901367,
+            "layer1_topological": 29.979631423950195
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 29.706985473632812,
+            "layer0_topological": 29.468320846557617,
+            "layer1_electronic": 30.582910537719727,
+            "layer1_topological": 30.075971603393555
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 29.7259521484375,
+            "layer0_topological": 29.49383544921875,
+            "layer1_electronic": 30.655935287475586,
+            "layer1_topological": 30.120391845703125
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 29.701114654541016,
+            "layer0_topological": 29.598026275634766,
+            "layer1_electronic": 30.680810928344727,
+            "layer1_topological": 30.16228675842285
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 29.697998046875,
+            "layer0_topological": 29.621570587158203,
+            "layer1_electronic": 30.683897018432617,
+            "layer1_topological": 30.186100006103516
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 29.71632957458496,
+            "layer0_topological": 29.65268898010254,
+            "layer1_electronic": 30.692049026489258,
+            "layer1_topological": 30.22467803955078
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 29.724365234375,
+            "layer0_topological": 29.668458938598633,
+            "layer1_electronic": 30.711973190307617,
+            "layer1_topological": 30.235143661499023
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 29.716548919677734,
+            "layer0_topological": 29.678377151489258,
+            "layer1_electronic": 30.7119140625,
+            "layer1_topological": 30.238611221313477
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 29.714126586914062,
+            "layer0_topological": 29.677677154541016,
+            "layer1_electronic": 30.71255111694336,
+            "layer1_topological": 30.241106033325195
+          }
+        ]
+      },
+      "mean": 0.5389987389246622,
+      "std": 0.012871254716606129
+    },
+    "periodic_learnable_10": {
+      "maes": {
+        "42": 0.712070876121521,
+        "43": 0.7836040773391724,
+        "44": 0.8277778406143188
+      },
+      "omegas": {
+        "42": {
+          "layer0_electronic": 10.096779823303223,
+          "layer0_topological": 10.483031272888184,
+          "layer1_electronic": 10.369609832763672,
+          "layer1_topological": 11.298473358154297
+        },
+        "43": {
+          "layer0_electronic": 10.461441993713379,
+          "layer0_topological": 10.90733814239502,
+          "layer1_electronic": 10.09825325012207,
+          "layer1_topological": 10.213549613952637
+        },
+        "44": {
+          "layer0_electronic": 9.734766960144043,
+          "layer0_topological": 10.214640617370605,
+          "layer1_electronic": 10.718517303466797,
+          "layer1_topological": 11.07404899597168
+        }
+      },
+      "trajectories": {
+        "42": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 10.14590072631836,
+            "layer0_topological": 10.008878707885742,
+            "layer1_electronic": 10.137242317199707,
+            "layer1_topological": 10.49886703491211
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 10.127217292785645,
+            "layer0_topological": 10.017680168151855,
+            "layer1_electronic": 10.172355651855469,
+            "layer1_topological": 10.727262496948242
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 10.096986770629883,
+            "layer0_topological": 10.016386032104492,
+            "layer1_electronic": 10.185149192810059,
+            "layer1_topological": 10.941167831420898
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 10.087056159973145,
+            "layer0_topological": 10.051326751708984,
+            "layer1_electronic": 10.222492218017578,
+            "layer1_topological": 11.024260520935059
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 10.06986141204834,
+            "layer0_topological": 10.109174728393555,
+            "layer1_electronic": 10.245342254638672,
+            "layer1_topological": 11.078575134277344
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 10.068605422973633,
+            "layer0_topological": 10.135683059692383,
+            "layer1_electronic": 10.276558876037598,
+            "layer1_topological": 11.13297176361084
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 10.059823989868164,
+            "layer0_topological": 10.21945571899414,
+            "layer1_electronic": 10.29286003112793,
+            "layer1_topological": 11.207196235656738
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 10.066762924194336,
+            "layer0_topological": 10.28337287902832,
+            "layer1_electronic": 10.31988525390625,
+            "layer1_topological": 11.230847358703613
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 10.06930160522461,
+            "layer0_topological": 10.363319396972656,
+            "layer1_electronic": 10.328184127807617,
+            "layer1_topological": 11.244434356689453
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 10.075284004211426,
+            "layer0_topological": 10.43893814086914,
+            "layer1_electronic": 10.344276428222656,
+            "layer1_topological": 11.267414093017578
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 10.090168952941895,
+            "layer0_topological": 10.440760612487793,
+            "layer1_electronic": 10.362839698791504,
+            "layer1_topological": 11.284786224365234
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 10.089274406433105,
+            "layer0_topological": 10.47164535522461,
+            "layer1_electronic": 10.361530303955078,
+            "layer1_topological": 11.28658390045166
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 10.092731475830078,
+            "layer0_topological": 10.482956886291504,
+            "layer1_electronic": 10.367236137390137,
+            "layer1_topological": 11.295761108398438
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 10.09604549407959,
+            "layer0_topological": 10.481209754943848,
+            "layer1_electronic": 10.369332313537598,
+            "layer1_topological": 11.29718017578125
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 10.096779823303223,
+            "layer0_topological": 10.483031272888184,
+            "layer1_electronic": 10.369609832763672,
+            "layer1_topological": 11.298473358154297
+          }
+        ],
+        "43": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 10.257166862487793,
+            "layer0_topological": 10.133354187011719,
+            "layer1_electronic": 10.078887939453125,
+            "layer1_topological": 10.106290817260742
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 10.249958038330078,
+            "layer0_topological": 10.174186706542969,
+            "layer1_electronic": 10.043001174926758,
+            "layer1_topological": 10.10338020324707
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 10.27669620513916,
+            "layer0_topological": 10.216094017028809,
+            "layer1_electronic": 10.098616600036621,
+            "layer1_topological": 10.169004440307617
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 10.313100814819336,
+            "layer0_topological": 10.284161567687988,
+            "layer1_electronic": 10.06315803527832,
+            "layer1_topological": 10.136565208435059
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 10.335367202758789,
+            "layer0_topological": 10.382270812988281,
+            "layer1_electronic": 10.07284164428711,
+            "layer1_topological": 10.155588150024414
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 10.35765266418457,
+            "layer0_topological": 10.485993385314941,
+            "layer1_electronic": 10.071277618408203,
+            "layer1_topological": 10.166196823120117
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 10.380760192871094,
+            "layer0_topological": 10.58945083618164,
+            "layer1_electronic": 10.076350212097168,
+            "layer1_topological": 10.173650741577148
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 10.395442962646484,
+            "layer0_topological": 10.662979125976562,
+            "layer1_electronic": 10.073020935058594,
+            "layer1_topological": 10.168701171875
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 10.431862831115723,
+            "layer0_topological": 10.755973815917969,
+            "layer1_electronic": 10.078020095825195,
+            "layer1_topological": 10.187801361083984
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 10.434900283813477,
+            "layer0_topological": 10.805769920349121,
+            "layer1_electronic": 10.08184814453125,
+            "layer1_topological": 10.193727493286133
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 10.446141242980957,
+            "layer0_topological": 10.848098754882812,
+            "layer1_electronic": 10.087929725646973,
+            "layer1_topological": 10.202056884765625
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 10.450183868408203,
+            "layer0_topological": 10.875102996826172,
+            "layer1_electronic": 10.089714050292969,
+            "layer1_topological": 10.203375816345215
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 10.461128234863281,
+            "layer0_topological": 10.897075653076172,
+            "layer1_electronic": 10.09576416015625,
+            "layer1_topological": 10.212278366088867
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 10.461459159851074,
+            "layer0_topological": 10.905244827270508,
+            "layer1_electronic": 10.09783935546875,
+            "layer1_topological": 10.213388442993164
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 10.461441993713379,
+            "layer0_topological": 10.90733814239502,
+            "layer1_electronic": 10.09825325012207,
+            "layer1_topological": 10.213549613952637
+          }
+        ],
+        "44": [
+          {
+            "epoch": 1,
+            "layer0_electronic": 9.781172752380371,
+            "layer0_topological": 10.119138717651367,
+            "layer1_electronic": 10.050637245178223,
+            "layer1_topological": 10.213598251342773
+          },
+          {
+            "epoch": 2,
+            "layer0_electronic": 9.771217346191406,
+            "layer0_topological": 10.08830451965332,
+            "layer1_electronic": 10.095246315002441,
+            "layer1_topological": 10.170417785644531
+          },
+          {
+            "epoch": 3,
+            "layer0_electronic": 9.729065895080566,
+            "layer0_topological": 10.085967063903809,
+            "layer1_electronic": 10.231743812561035,
+            "layer1_topological": 10.331192016601562
+          },
+          {
+            "epoch": 4,
+            "layer0_electronic": 9.708584785461426,
+            "layer0_topological": 10.10055923461914,
+            "layer1_electronic": 10.339774131774902,
+            "layer1_topological": 10.520275115966797
+          },
+          {
+            "epoch": 5,
+            "layer0_electronic": 9.705682754516602,
+            "layer0_topological": 10.120699882507324,
+            "layer1_electronic": 10.407102584838867,
+            "layer1_topological": 10.586100578308105
+          },
+          {
+            "epoch": 6,
+            "layer0_electronic": 9.69918441772461,
+            "layer0_topological": 10.121515274047852,
+            "layer1_electronic": 10.49155044555664,
+            "layer1_topological": 10.788249969482422
+          },
+          {
+            "epoch": 7,
+            "layer0_electronic": 9.686120986938477,
+            "layer0_topological": 10.150260925292969,
+            "layer1_electronic": 10.529909133911133,
+            "layer1_topological": 10.861038208007812
+          },
+          {
+            "epoch": 8,
+            "layer0_electronic": 9.688502311706543,
+            "layer0_topological": 10.156988143920898,
+            "layer1_electronic": 10.58243179321289,
+            "layer1_topological": 10.936427116394043
+          },
+          {
+            "epoch": 9,
+            "layer0_electronic": 9.690047264099121,
+            "layer0_topological": 10.169435501098633,
+            "layer1_electronic": 10.629322052001953,
+            "layer1_topological": 11.001089096069336
+          },
+          {
+            "epoch": 10,
+            "layer0_electronic": 9.698770523071289,
+            "layer0_topological": 10.188947677612305,
+            "layer1_electronic": 10.673152923583984,
+            "layer1_topological": 11.046893119812012
+          },
+          {
+            "epoch": 11,
+            "layer0_electronic": 9.708151817321777,
+            "layer0_topological": 10.199727058410645,
+            "layer1_electronic": 10.692765235900879,
+            "layer1_topological": 11.055181503295898
+          },
+          {
+            "epoch": 12,
+            "layer0_electronic": 9.722526550292969,
+            "layer0_topological": 10.206290245056152,
+            "layer1_electronic": 10.699505805969238,
+            "layer1_topological": 11.059038162231445
+          },
+          {
+            "epoch": 13,
+            "layer0_electronic": 9.72640323638916,
+            "layer0_topological": 10.209067344665527,
+            "layer1_electronic": 10.712260246276855,
+            "layer1_topological": 11.074234008789062
+          },
+          {
+            "epoch": 14,
+            "layer0_electronic": 9.733378410339355,
+            "layer0_topological": 10.214306831359863,
+            "layer1_electronic": 10.71734619140625,
+            "layer1_topological": 11.07255744934082
+          },
+          {
+            "epoch": 15,
+            "layer0_electronic": 9.734766960144043,
+            "layer0_topological": 10.214640617370605,
+            "layer1_electronic": 10.718517303466797,
+            "layer1_topological": 11.07404899597168
+          }
+        ]
+      },
+      "mean": 0.7744842646916706,
+      "std": 0.047675316080606066
+    },
+    "classical_twin": {
+      "maes": {
+        "42": 0.8162517833709717,
+        "43": 0.8312535409927369,
+        "44": 0.8851816530227661
+      },
+      "omegas": {},
+      "mean": 0.8442289924621583,
+      "std": 0.029598462664805442
+    }
+  }
+}

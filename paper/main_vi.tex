@@ -1,0 +1,893 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage{fontspec}
+\usepackage[vietnamese]{babel}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{microtype}
+\usepackage{cite}
+\usepackage{subcaption}
+\usepackage{multirow}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=teal,
+    urlcolor=magenta
+}
+
+\newtheorem{theorem}{Định lý}
+\newtheorem{lemma}{Bổ đề}
+\newtheorem{definition}{Định nghĩa}
+
+\title{\textbf{Mạng Nơ-ron Đồ thị Lượng tử Tương biến cho Phân tử 3D:\\Khử lượng tử hóa Thiên kiến Quy nạp của các PQC Nông thông qua Hàm kích hoạt Tuần hoàn}}
+
+\author{
+    \textbf{Kkyn}\thanks{Thư từ trao đổi gửi về: \texttt{author@quantum.org}} \\
+    \textit{Trung tâm Học máy Lượng tử \& Trí tuệ Phân tử}
+}
+\date{Tháng 8 năm 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Chúng tôi nghiên cứu nguồn gốc vật lý của các lợi thế lượng tử biểu kiến trong bài toán dự đoán tính chất phân tử 3D bằng các mạch lượng tử tham số hóa (PQC). Chúng tôi giới thiệu \textbf{Q-PRISM}, một mạng nơ-ron đồ thị lượng tử tương biến $\mathrm{E}(3)$ tích hợp các PQC 4-qubit vào quá trình truyền thông điệp trên đồ thị phân tử. Trên các mục tiêu orbital điện tử của QM9 (HOMO, LUMO, và khe HOMO-LUMO Gap), Q-PRISM ban đầu vượt trội hơn các mô hình đường cơ sở cổ điển có cùng số lượng tham số từ $10$--$13\%$.
+
+Tuy nhiên, các phân tích triệt tiêu (ablation) có hệ thống trên 20 hạt giống ngẫu nhiên chỉ ra rằng sự vướng víu đa qubit không phải là cơ chế thúc đẩy: ảnh hưởng của nó lên HOMO có thể phát hiện được về mặt thống kê nhưng không có ý nghĩa thực tiễn ($\Delta = 0.006$\,eV $\ll 0.043$\,eV độ chính xác hóa học), trong khi hoàn toàn không mang lại lợi ích nào trên LUMO và khe Gap. Thay vào đó, các phép quay đơn qubit vốn dĩ tính toán các chuỗi Fourier cắt cụt, cung cấp một hệ cơ sở tuần hoàn gọn nhẹ cho các đặc trưng góc dao động mà các hàm kích hoạt đơn điệu ở cùng mức ngân sách tham số không đủ năng lực biểu diễn để mô tả.
+
+Để cô lập thiên kiến quy nạp này, chúng tôi xây dựng \textbf{PRISM}: một bản song sinh cổ điển chính xác thay thế PQC bằng các hàm kích hoạt hình sin tuần hoàn với kỹ thuật khởi tạo SIREN~\cite{sitzmann2020siren} ở cùng số lượng tham số ($2{,}527$ tham số). PRISM đạt kết quả tương đương hoặc vượt trội Q-PRISM trên toàn bộ các mục tiêu điện tử và vượt qua PaiNN trên 4 trong số 6 tính chất của QM9 ở mức đồng tham số. Lợi thế tuần hoàn này duy trì bền bỉ từ $N = 1{,}000$ đến toàn bộ tập dữ liệu QM9 ($N = 110{,}000$) và ngày càng mở rộng khi tăng dung lượng mô hình. Bên cạnh phát hiện khử lượng tử hóa bằng thực nghiệm, PRISM chứng minh rằng việc kết hợp các hàm kích hoạt nội tuần hoàn vào các mạng GNN truyền thông điệp tương biến mang lại một thiên kiến quy nạp mạnh mẽ cho mô hình hóa phân tử mà không cần đến phần cứng lượng tử.
+\end{abstract}
+
+\section{Giới thiệu}
+\label{sec:intro}
+
+Một trong những ranh giới nổi bật trong nỗ lực tìm kiếm lợi thế lượng tử thực tiễn trong học máy tập trung vào các miền vốn dĩ mang bản chất cơ học lượng tử và bị chi phối bởi các quy luật vật lý \cite{Kandala:2017vok, Cerezo:2020mtn}. Những nỗ lực ban đầu nhằm áp dụng các mạch lượng tử tham số hóa vào các tác vụ rời rạc cổ điển, chẳng hạn như phân loại cảm xúc trong xử lý ngôn ngữ tự nhiên (NLP) \cite{Aktar:2025ihu}, vấp phải những rào cản lý thuyết nghiêm trọng: các biểu diễn cổ điển (ví dụ: embedding từ) không sở hữu các đối xứng không gian liên tục, và các kiến trúc cổ điển như Transformer có thể mở rộng lên tới hàng tỷ tham số với các tập dữ liệu tiền huấn luyện khổng lồ.
+
+Ngược lại, \textbf{hóa học lượng tử và dự đoán tính chất phân tử} vận hành trực tiếp trong không gian Euclid 3 chiều $\mathbb{R}^3$, nơi các đồ thị phân tử $\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathbf{x}, \mathbf{h})$ phải tuân thủ nghiêm ngặt các đối xứng nhóm liên tục \cite{satorras2022enequivariantgraphneural, schütt2017schnetcontinuousfilterconvolutionalneural, thomasTensorFieldNetworks2018}:
+\begin{enumerate}
+    \item \textbf{Bất biến Tịnh tiến (Translation Invariance):} Việc tịnh tiến một phân tử trong không gian ($\mathbf{x}_i \mapsto \mathbf{x}_i + \mathbf{g}$) giữ nguyên vẹn các tính chất điện tử vô hướng.
+    \item \textbf{Tương biến Quay \& Phản xạ ($\mathrm{E}(3)$):} Việc áp dụng một phép quay hoặc phản xạ không gian $\mathbf{Q} \in \mathrm{O}(3)$ bảo toàn năng lượng vô hướng trong khi biến đổi các đại lượng vector theo quy tắc $\mathbf{F}_i \mapsto \mathbf{Q}\mathbf{F}_i$.
+\end{enumerate}
+
+Mặc dù các mô hình Học Sâu Hình học cổ điển như EGNN \cite{satorras2022enequivariantgraphneural}, SchNet \cite{schütt2017schnetcontinuousfilterconvolutionalneural}, DimeNet++ \cite{klicperaFastUncertaintyAwareDirectional2020}, PaiNN \cite{schuttEquivariantMessagePassing2021}, TorchMD-Net \cite{tholke2022torchmdnet}, Allegro \cite{musaelianLearningLocalEquivariant2022}, LEFTNet \cite{duNewPerspectiveBuilding2023}, và MACE \cite{batatiaMACEHigherOrder2022} thực thi các đối xứng này bằng các mạng MLP cổ điển, độ phức tạp tham số của chúng là rất lớn, thường đòi hỏi từ hàng chục nghìn đến hàng triệu tham số cùng các tập huấn luyện quy mô lớn để đạt được độ chính xác hàng đầu.
+
+\paragraph{Thiên kiến Quy nạp Lượng giác so với Thiên kiến Phổ.}
+Trong các mạch lượng tử tham số hóa, việc tải lại dữ liệu thông qua các phép quay unita $R_Y(x)$ và $R_Z(x)$ sẽ tạo ra chuỗi Fourier cắt cụt theo các biến được mã hóa~\cite{Schuld:2020enb, Perez-Salinas:2019pjx, landman2023approximating}:
+\begin{equation}
+    f(x) = \sum_{\omega \in \Omega} c_\omega e^{i\omega x},
+\end{equation}
+trong đó phổ tần số $\Omega$ được cố định bởi các giá trị riêng của các Hamiltonian mã hóa. Các hàm kích hoạt cổ điển như $\tanh$ và SiLU thay vào đó lại tính toán các biến đổi đơn điệu dạng sigmoid. Đối với các tính chất điện tử phân tử (HOMO, LUMO, và khe HOMO-LUMO), các đại lượng quan sát vật lý biểu hiện các phụ thuộc góc vốn có thể biểu diễn toán học thông qua chuỗi Fourier. Mặc dù các tích phân xen phủ orbital thực tế liên quan đến các hàm mũ tắt dần kết hợp với các hàm điều hòa khối trong hệ cơ sở Gaussian---chứ không phải các sóng sin đơn thuần---các hàm kích hoạt tuần hoàn vẫn cung cấp một hệ cơ sở gọn gàng, có thể học được và tương thích cao với tính tuần hoàn góc của các phụ thuộc này. Chúng tôi nhấn mạnh rằng sự tương thích này mang tính gián tiếp và được học: các hàm kích hoạt tuần hoàn của PRISM tác động lên các vector đặc trưng hỗn hợp đã qua biến đổi tuyến tính $\omega_0(\mathbf{W}_1 \mathbf{u}_{ij} + \mathbf{b}_1)$, chứ không tác động trực tiếp lên các tọa độ góc thô; mạng tự học cách chiếu các kênh khoảng cách, góc, và embedding nút vào một biểu diễn nơi các hàm kích hoạt tuần hoàn phát huy hiệu quả. Các mạch lượng tử cung cấp hệ cơ sở tuần hoàn này một cách tự nhiên thông qua các phép quay đơn qubit.
+
+Ngược lại, các mạng MLP tiêu chuẩn với hàm kích hoạt đơn điệu phải đối mặt với nút thắt biểu diễn ở mức ngân sách tham số thấp: một hàm kích hoạt $\sin$ vốn dĩ tạo ra các đầu ra dao động chỉ với một nơ-ron đơn lẻ, trong khi một đơn vị $\tanh$ bị chặn và đơn điệu trên phần lớn dải động của nó, đòi hỏi nhiều đơn vị để xấp xỉ từng chu kỳ dao động. Ở các mức ngân sách tham số được sử dụng ở đây ($d_h = 4$), một mạng $\tanh$-MLP không thể biểu diễn gọn gàng các hàm góc dao động làm nền tảng cho các tích phân xen phủ orbital. Hiện tượng \textit{sự khan hiếm dung lượng biểu diễn (expressive capacity starvation)} này có liên quan, nhưng phân biệt rõ ràng với \textit{thiên kiến phổ (spectral bias)} từng được ghi nhận trong các mạng thừa tham số hóa~\cite{rahaman2019spectral, tancik2020fourier}, nơi gradient descent ưu tiên khớp các thành phần Fourier tần số thấp. Cả hai hiện tượng đều ủng hộ các hệ cơ sở tuần hoàn, nhưng hạn chế chủ đạo trong chế độ của chúng tôi là dung lượng biểu diễn chứ không phải động lực học học tập. Các hàm kích hoạt lượng giác trực tiếp cung cấp một hệ cơ sở tuần hoàn thu gọn phù hợp với bản chất vật lý góc của các orbital phân tử.
+
+\paragraph{Phương pháp Tiếp cận Khử lượng tử hóa Thực nghiệm.}
+Các thuật toán đại số tuyến tính ngẫu nhiên hóa cổ điển của Tang~\cite{Tang:2018lmw} đã chứng minh rằng những gia tốc lượng tử hàm mũ được tuyên bố thường biến mất một khi các thuật toán cổ điển được cung cấp quyền truy cập lấy mẫu tương đương. Chúng tôi áp dụng một đối trọng thực nghiệm của nguyên lý này: khi đánh giá một kiến trúc lượng tử tham số hóa, người ta nên xây dựng một mô hình cổ điển có số lượng tham số tương đương, đầu vào tương đương và lớp giả thuyết hàm tương đương.
+
+Nếu hiệu năng của một PQC xuất phát từ khả năng biểu diễn lượng giác thay vì tính bất khả mô phỏng lượng tử~\cite{Cerezo:2023nqf, landman2023approximating}, thì một mạng cổ điển với các hàm kích hoạt tuần hoàn (SIREN~\cite{sitzmann2020siren}) phải tái tạo được lợi thế đó. Mặc dù SIREN đã được khẳng định trong các biểu diễn nơ-ron ẩn trong thị giác máy tính, các hàm kích hoạt \textit{nội} tuần hoàn trước đây chưa từng được đưa vào các MLP truyền thông điệp của các mạng đồ thị tương biến. Các kiến trúc phân tử hiện có giới hạn các hàm lượng giác ở mức mã hóa tọa độ đầu vào, chẳng hạn như các hàm điều hòa cầu trong TFN~\cite{thomasTensorFieldNetworks2018}, NequIP~\cite{batznerE3equivariantGraphNeural2021}, và MACE~\cite{batatiaMACEHigherOrder2022}, để lại các phép biến đổi ở các lớp trung gian bị chi phối bởi các hàm kích hoạt đơn điệu.
+Phân tích cắt bỏ nhân tố (Mục~\ref{sec:init_ablation}) cô lập các đóng góp: hàm kích hoạt $\sin$ tuần hoàn đem lại sự cải thiện chủ đạo (hiệu ứng chính: $-0.16$ đến $-0.18$\,eV), trong khi phép khởi tạo SIREN đóng góp một hiệu ứng cộng hưởng thứ cấp ($-0.07$ đến $-0.09$\,eV). Phân tích phổ Fourier (Mục~\ref{sec:spectral_comparison}) xác nhận rằng các đầu ra cạnh của PQC và PRISM sau khi huấn luyện chia sẻ cấu trúc tần số tương tự nhau (độ tương đồng cosine $= 0.90$).
+
+\paragraph{Đóng góp của Bài báo:}
+\begin{itemize}
+    \item \textbf{Kiến trúc Q-PRISM:} Một kiến trúc đồ thị lượng tử tương biến tích hợp kỹ thuật tải lại khoảng cách RBF Gaussian, tích chập cạnh hai nhánh, giá trị đọc tương quan tử $\langle Z_i Z_j \rangle$, mã hóa góc 3 vật thể, và cập nhật tọa độ có cổng $\tanh$ vào các PQC 4-qubit.
+    \item \textbf{Giải mã Cơ chế:} Qua 20 hạt giống ngẫu nhiên ($d_{\min} = 0.47$), sự vướng víu đa qubit mang lại một mức tăng có thể phát hiện về mặt thống kê nhưng không đáng kể trong thực tế so với độ chính xác hóa học ($\Delta = 0.006$\,eV $\ll 0.043$\,eV trên HOMO, Cohen's $d = 0.85$---một hiệu ứng lớn về mặt thống kê nhưng lại nằm dưới ngưỡng liên quan hóa học---với $p > 0.15$ trên LUMO và Gap). Mức tăng hiệu năng được cô lập hoàn toàn vào năng lực biểu đạt Fourier của đơn qubit.
+    \item \textbf{Kiến trúc Cổ điển PRISM:} Một mạng GNN truyền thông điệp tương biến sử dụng các hàm kích hoạt nội tuần hoàn hình sin ($\sin(\omega_0 W x + b)$) cùng phép khởi tạo SIREN. Ở mức tham số khớp chính xác ($2{,}527$ tham số), PRISM tương đương hoặc vượt trội PQC trên tất cả các mục tiêu điện tử và vượt qua PaiNN trên $4/6$ tính chất QM9 ở các mức ngân sách cùng tham số.
+    \item \textbf{Phân tích Cắt bỏ Cơ chế Nhân tố:} Phân tích cắt bỏ nhân tố $2 \times 2$ giữa hàm kích hoạt $\times$ khởi tạo (10 hạt giống) cô lập hàm kích hoạt $\sin$ tuần hoàn là yếu tố chủ đạo (Cohen's $d = 4.9$--$9.4$), với phép khởi tạo SIREN mang lại đóng góp cộng hưởng thứ cấp.
+    \item \textbf{Mở rộng Quy mô Tham số và Kiểm chứng Phổ:} Lợi thế của PRISM so với các bản song sinh đơn điệu \textit{tăng trưởng} từ $+25\%$ tại $d_h = 4$ lên $+49\%$ tại $d_h = 64$, bác bỏ giả thuyết cho rằng lợi thế này chỉ giới hạn trong chế độ thiếu hụt tham số cực đoan. So sánh phổ Fourier khẳng định PQC và PRISM chia sẻ cấu trúc tần số tương đồng (độ tương đồng cosine $= 0.90$).
+    \item \textbf{Kiểm chứng Thống kê và Khả năng Mở rộng:} Hiệu chỉnh đa giả thuyết thông qua Benjamini-Hochberg FDR ($m = 48$ kiểm định, $q < 0.02$) và các thí nghiệm mở rộng quy mô lên tới $N = 110{,}000$ phân tử khẳng định lợi thế tuần hoàn bền bỉ. Dưới tình thế lưỡng nan giữa khả năng huấn luyện và khả năng mô phỏng~\cite{Cerezo:2023nqf}, các PQC nông phục vụ xử lý cạnh phân tử hoạt động hoàn toàn bên trong các không gian hàm có thể tiếp cận cổ điển.
+\end{itemize}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.88\textwidth]{figures/figure1_scaling_law.png}
+    \caption{\textbf{Quy luật Mở rộng Hiệu quả Mẫu trên QM9 (Khe $\Delta\epsilon$ HOMO-LUMO):} Đồ thị log-log của Sai số Tuyệt đối Trung bình (MAE) tập kiểm tra theo số lượng phân tử huấn luyện $N \in [100, 1000]$. Q-PRISM ($2{,}527$ tham số) được so sánh với EGNN cùng mức tham số ($2{,}497$ tham số) và EGNN tiêu chuẩn ($4{,}289$ tham số) qua 5 hạt giống.}
+    \label{fig:scaling_law}
+\end{figure*}
+
+\section{Các Nghiên cứu Liên quan}
+\label{sec:related}
+
+\paragraph{Học Sâu Hình học Cổ điển.}
+Công trình nền tảng của Thomas et al.~\cite{thomasTensorFieldNetworks2018} giới thiệu Mạng Trường Tensor (TFN), thiết lập cơ chế truyền thông điệp tương biến $\mathrm{SE}(3)$ trên đám mây điểm 3D sử dụng các hàm điều hòa cầu và tích tensor Clebsch-Gordan.
+Gilmer et al.~\cite{gilmer2017neural} đưa ra khung Mạng Nơ-ron Truyền Thông điệp (MPNN), thống nhất nhiều kiến trúc mạng đồ thị dưới một hình thức truyền thông điệp chung cho hóa học lượng tử.
+Satorras et al.~\cite{satorras2022enequivariantgraphneural} đề xuất Mạng Nơ-ron Đồ thị Tương biến $\mathrm{E}(n)$ (EGNN), chứng minh rằng việc truyền thông điệp bất biến kết hợp cập nhật tọa độ tương biến đạt được khả năng dự đoán tính chất phân tử cạnh tranh mà không chịu chi phí tính toán lớn từ các tensor cầu bậc cao.
+SchNet~\cite{schütt2017schnetcontinuousfilterconvolutionalneural} tiên phong trong các phép tích chập bộ lọc liên tục với mã hóa khoảng cách RBF Gaussian, trong khi PhysNet~\cite{unkePhysNetNeuralNetwork2019} mở rộng mô hình này với các hiệu chỉnh tĩnh điện và tán xạ để cải thiện dự đoán năng lượng, lực và điện tích cục bộ.
+DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020} và GemNet~\cite{klicperaGemNetUniversalDirectional2021} kết hợp truyền thông điệp định hướng và góc 3 vật thể, trong khi PaiNN~\cite{schuttEquivariantMessagePassing2021} đạt hiệu quả tham số cao với cơ chế truyền thông điệp tương biến ghép nối vô hướng-vector.
+Gần đây hơn, TorchMD-Net~\cite{tholke2022torchmdnet} kết hợp biểu diễn tương biến với cơ chế chú ý Transformer, Allegro~\cite{musaelianLearningLocalEquivariant2022} chứng minh các biểu diễn tensor bậc cao cục bộ nghiêm ngặt cho động lực học phân tử có thể mở rộng, và LEFTNet~\cite{duNewPerspectiveBuilding2023} đạt năng lực biểu đạt $\mathrm{SE}(3)$ hoàn chỉnh thông qua các hệ quy chiếu cục bộ chỉ dùng các thao tác vô hướng. Để có cái nhìn toàn diện về các phương pháp học máy cho mô phỏng phân tử, xem No{\'e} et al.~\cite{Noe:2019yup}.
+NequIP~\cite{batznerE3equivariantGraphNeural2021}, Equiformer~\cite{liao2023equiformer}, và MACE~\cite{batatiaMACEHigherOrder2022} đã thiết lập các mốc chuẩn dẫn đầu trên các tập dữ liệu lớn.
+Các kiến trúc này chủ yếu sử dụng các hàm kích hoạt đơn điệu, tuyến tính cục bộ ($\text{SiLU}$, $\text{Swish}$, hoặc softplus dịch chuyển) bên trong các MLP truyền thông điệp và cập nhật nút.
+
+\paragraph{Thiên kiến Phổ và Hàm kích hoạt Tuần hoàn.}
+Trong lý thuyết học sâu, Rahaman et al.~\cite{rahaman2019spectral} chứng minh rằng các mạng nơ-ron tiêu chuẩn thể hiện \textit{thiên kiến phổ}: gradient descent ưu tiên học các thành phần Fourier tần số thấp, với biên độ Fourier tần số cao suy giảm nhanh theo cấp $\mathcal{O}(\|k\|^{-(d+1)})$.
+Tancik et al.~\cite{tancik2020fourier} phân tích điều này qua lý thuyết Nhân Tiếp tuyến Nơ-ron (NTK), chứng minh rằng các MLP tọa độ thất bại trong việc biểu diễn các cấu trúc không gian tinh vi trừ khi các đầu vào được ánh xạ sang các đặc trưng Fourier.
+Sitzmann et al.~\cite{sitzmann2020siren} giới thiệu SIREN (Sinusoidal Representation Networks), chứng minh rằng các hàm kích hoạt tuần hoàn ($\sin(\omega_0 W x + b)$) kết hợp với lược đồ khởi tạo có cơ sở nguyên lý (phân phối đều được điều chỉnh theo $\omega_0$) có thể vượt qua hoàn toàn thiên kiến phổ và cho phép huấn luyện ổn định các đạo hàm ở mọi bậc.
+Mặc dù SIREN là chuẩn mực cho biểu diễn nơ-ron ẩn trong đồ họa tọa độ~\cite{sitzmann2020siren}, các hàm kích hoạt \textit{nội} tuần hoàn chưa từng xuất hiện bên trong các MLP truyền thông điệp của mạng đồ thị tương biến. Các mô hình hình học hiện nay thường dùng hàm lượng giác cho \textit{mã hóa không gian đầu vào}: DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020} dùng cơ sở xuyên tâm Bessel cầu, và NequIP~\cite{batznerE3equivariantGraphNeural2021} tính toán các hàm điều hòa cầu. Các phương pháp này ánh xạ tọa độ hình học thô thành các đặc trưng đầu vào mở rộng, để lại các hàm kích hoạt tầng xuôi dòng ở dạng đơn điệu (như SiLU hay $\tanh$). PRISM nhắm vào các phép biến đổi đặc trưng nội tại, thay thế các hàm kích hoạt tầng ẩn bằng các phi tuyến dạng sin để khắc phục giới hạn biểu diễn của hàm đơn điệu trong quá trình lan truyền thông điệp.
+Chúng tôi lưu ý rằng các kiến trúc tương biến hàng đầu (NequIP, MACE~\cite{batatiaMACEHigherOrder2022}) sử dụng hàm điều hòa cầu $Y_l^m(\hat{r})$ làm mã hóa góc ở cấp đầu vào, cung cấp một hệ cơ sở đa thức trực giao, hoàn chỉnh trên $S^2$. Ngược lại, các hàm kích hoạt tuần hoàn của PRISM hoạt động trên các \textit{biến đổi đặc trưng nội tại} chứ không phải tọa độ đầu vào. Hai cách tiếp cận này bổ trợ cho nhau: hàm điều hòa cầu cung cấp cơ sở góc hoàn chỉnh về mặt vật lý ở lớp đầu vào, trong khi hàm kích hoạt tuần hoàn khắc phục điểm nghẽn biểu diễn của các hàm kích hoạt đơn điệu ở các lớp truyền thông điệp trung gian. Một hướng phát triển tự nhiên trong tương lai là kết hợp cả hai---sử dụng đầu vào hàm điều hòa cầu với các lớp ẩn được kích hoạt bởi SIREN.
+
+\paragraph{Mô hình Đại diện Cổ điển và Khử lượng tử hóa.}
+Việc đánh giá các tuyên bố về lợi thế lượng tử đòi hỏi các mô hình cơ sở cổ điển tương đương. Theo khuôn khổ khử lượng tử hóa của Tang~\cite{Tang:2018lmw}, những gia tốc lượng tử giả định thường tiêu tan khi các mô hình cổ điển được trao quyền truy cập cấu trúc hoặc các phép toán lấy mẫu tương tự.
+Schreiber et al.~\cite{Schreiber:2022roq} chứng minh rằng các PQC tính toán các chuỗi Fourier cắt cụt và các mô hình đại diện cổ điển trải rộng một lớp giả thuyết tương đương hoặc lớn hơn luôn đạt hiệu năng tương đương.
+K\"ubler et al.~\cite{kubler2021inductive} chỉ ra rằng hiệu năng của nhân lượng tử được chi phối bởi sự tương thích của thiên kiến quy nạp chứ không phải việc thực thi trên phần cứng lượng tử.
+Pegg et al.~\cite{pegg2026isoqgnn} đề xuất phương pháp Iso-QGNN, cho thấy các bản song sinh cổ điển có thể bắt kịp các mô hình lượng tử trong bài toán dự đoán khe HOMO-LUMO khi việc tiền xử lý cổ điển được cô lập.
+Landman et al.~\cite{landman2023approximating} khẳng định rằng các mạch lượng tử biến phân với kỹ thuật tải lại dữ liệu thực chất là các chuỗi Fourier cắt cụt đa chiều có thể được xấp xỉ cổ điển qua Đặc trưng Fourier Ngẫu nhiên (RFF) với độ phức tạp mẫu đa thức.
+
+\paragraph{Các Giới hạn Căn bản của QML: Khả năng Huấn luyện so với Khả năng Mô phỏng.}
+Các mạch lượng tử biến phân hoạt động dưới những ràng buộc lý thuyết nghiêm ngặt.
+Cerezo, Holmes et al.~\cite{Cerezo:2023nqf} đã xác lập \textit{tình thế lưỡng nan giữa khả năng huấn luyện và khả năng mô phỏng}: các mạch lượng tử tham số hóa có thể chứng minh được là tránh được hiện tượng cao nguyên cằn cỗi (barren plateaus)~\cite{Cerezo:2020mtn, McClean:2018jps} (thông qua độ sâu nông, các toán tử quan sát cục bộ, hoặc sự vướng víu hạn chế) thường nằm trong, hoặc thể hiện sự chồng lấn lý thuyết mạnh mẽ với, các lớp độ phức tạp có thể mô phỏng cổ điển (chẳng hạn qua Trạng thái Tích Ma trận - MPS hoặc ma trận truyền Pauli).
+Ngược lại, việc mở rộng sang các mạch sâu hơn, vướng víu cao có nguy cơ gây ra hiện tượng tập trung độ đo hàm mũ (Thanasilp et al.~\cite{Thanasilp:2022agd}), trong đó các vector trạng thái lượng tử tập trung trên siêu mặt cầu, buộc các nhân lượng tử suy biến về các hằng số tầm thường và gradient triệt tiêu theo cấp $\mathcal{O}(2^{-n/2})$.
+Jerbi et al.~\cite{Jerbi:2021qnz} đã phân định các ranh giới biểu diễn giữa mạch biến phân và phương pháp nhân, nhấn mạnh những điều kiện cấu trúc khắt khe cần thiết để duy trì lợi thế trước các bộ học cổ điển.
+Những ranh giới lý thuyết này là động lực mạnh mẽ cho phương pháp khử lượng tử hóa của chúng tôi: thấu hiểu cơ chế chính xác đằng sau hiệu năng biểu kiến của PQC và tái tạo nó qua PRISM cổ điển.
+
+\paragraph{Học Máy Lượng tử Tương biến (Equivariant Quantum Machine Learning).}
+Các nghiên cứu gần đây đã thiết lập các khuôn khổ hình thức để kết hợp các ràng buộc đối xứng vào các mạch lượng tử tham số hóa.
+Meyer et al.~\cite{meyer2023exploiting} phát triển một khung lý thuyết nhóm đối xứng để xây dựng các PQC tương biến, chứng minh rằng việc áp đặt các đối xứng nhóm làm thu hẹp không gian giả thuyết hiệu dụng của mạch về các không gian con có ý nghĩa vật lý, cải thiện cả hiệu quả mẫu lẫn khả năng tổng quát hóa.
+Skolik et al.~\cite{skolik2023equivariant} chứng minh rằng các mạch lượng tử tương biến đạt được khả năng tổng quát hóa tốt hơn trên các tác vụ học tập có tính đối xứng với ít tham số huấn luyện hơn.
+Tính tương biến $\mathrm{E}(3)$ của Q-PRISM đạt được ở \textit{cấp độ kiến trúc đồ thị}---thông qua các đầu vào cạnh bất biến và các cập nhật tọa độ tương biến---thay vì thông qua thiết kế mạch đối xứng, bổ trợ cho các hướng tiếp cận ở cấp độ mạch này. PRISM kế thừa cùng các đảm bảo tương biến ở cấp đồ thị (Định lý~\ref{thm:equivariance}) mà không cần đến phần cứng lượng tử.
+
+\section{Q-PRISM: Kiến trúc Đồ thị Lượng tử Tương biến}
+\label{sec:method}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure_architecture.png}
+    \caption{\textbf{Kiến trúc Q-PRISM:} (1) Đồ thị phân tử 3D đầu vào với các đặc trưng khoảng cách RBF bất biến $\boldsymbol{\phi}(d_{ij})$ và các góc liên kết bất biến SO(3) $\bar{\theta}_{ij}$. (2) Hai nhánh PQC 4-qubit song song (Điện tử \& Tô pô) với kỹ thuật tải lại khoảng cách RBF đa tần số, mã hóa góc, các phép quay biến phân và vướng víu CNOT dạng vòng. (3) Đọc 8 toán tử quan sát cho mỗi nhánh: 4 đơn qubit $\langle Z_q \rangle$ + 4 tương quan tử $\langle Z_i Z_j \rangle$. (4) Cập nhật tọa độ tương biến có cổng $\tanh$ và truyền thông điệp đặc trưng bất biến để đưa ra dự đoán tính chất phân tử toàn cục.}
+    \label{fig:architecture}
+\end{figure*}
+
+\subsection{Công thức Toán học}
+
+Như được minh họa trong Hình~\ref{fig:architecture}, giả sử một phân tử 3D được biểu diễn dưới dạng đồ thị $\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathbf{x}, \mathbf{h})$, trong đó mỗi nguyên tử $i \in \mathcal{V}$ sở hữu tọa độ không gian $\mathbf{x}_i \in \mathbb{R}^3$ và vector đặc trưng nguyên tử bất biến $\mathbf{h}_i \in \mathbb{R}^{d_{\mathrm{in}}}$. Các cạnh $(i, j) \in \mathcal{E}$ kết nối các cặp nguyên tử tương tác trong phạm vi bán kính giới hạn, xác định vùng lân cận $\mathcal{N}(i) = \{j : (i, j) \in \mathcal{E}\}$. Khoảng cách Euclid bình phương là:
+\begin{equation}
+    d_{ij} = \|\mathbf{x}_i - \mathbf{x}_j\|^2 \in \mathbb{R}_{\ge 0}
+\end{equation}
+
+\subsection{Mở rộng Khoảng cách RBF Gaussian (Nâng cấp 2.1)}
+
+Thay vì mã hóa các khoảng cách thô qua một trọng số vô hướng đơn lẻ $w_d^{(l)} \cdot d_{ij}$, chúng tôi mở rộng khoảng cách thành một hệ cơ sở xuyên tâm Gaussian đa tần số \cite{schütt2017schnetcontinuousfilterconvolutionalneural}:
+\begin{equation}
+    \phi_k(d_{ij}) = \exp\left(-\gamma_k (d_{ij} - \mu_k)^2\right), \quad k = 1, \ldots, K
+    \label{eq:rbf}
+\end{equation}
+trong đó $\mu_k$ là các tâm cách đều nhau trong khoảng $[0, 10]$~\AA$^2$ và $\gamma_k$ là các độ rộng nghịch đảo có thể học được. Dưới góc nhìn phân tích Fourier của kỹ thuật tải lại dữ liệu \cite{Perez-Salinas:2019pjx, Schuld:2020enb}, điều này biến PQC thành một bộ xấp xỉ Fourier $K$-thành phần cắt cụt cho các bề mặt thế năng phân tử.
+
+Mỗi qubit nhận một pha có trọng số theo từng lớp, từng qubit:
+\begin{equation}
+    R_z\!\left(\sum_{k=1}^K w_{d,q,k}^{(l)} \cdot \phi_k(d_{ij})\right), \quad q = 0, \ldots, 3
+\end{equation}
+
+\subsection{Tích chập Cạnh Lượng tử Đa nhánh (Nâng cấp 2.2)}
+
+Noi theo các thiết kế cơ chế chú ý đa đầu, chúng tôi sử dụng hai nhánh PQC song song (\textit{Điện tử} và \textit{Tô pô}). Mỗi nhánh sử dụng một phép chiếu đặc trưng độc lập $\mathbf{W}_p^{(s)}: \mathbb{R}^{d_{\mathrm{hidden}}} \to \mathbb{R}^2$ để dẫn hướng các không gian con đặc trưng riêng biệt vào mạch lượng tử tương ứng:
+\begin{equation}
+    \mathbf{h}_i^{p,(s)} = \mathbf{W}_p^{(s)} \mathbf{h}_i, \quad s \in \{1, 2\}
+\end{equation}
+Cả hai nhánh đều dùng chung các đặc trưng khoảng cách RBF và góc đầu vào nhưng xử lý chúng qua các bộ tham số PQC độc lập.
+
+\subsection{Mạch Lượng tử Tham số hóa 4-Qubit}
+
+Với mỗi nhánh $s$ và cạnh có hướng $(i, j)$, vector đầu vào kết hợp là:
+\begin{equation}
+    \mathbf{u}_{ij}^{(s)} = \left[h_{i,0}^{p,(s)}, h_{i,1}^{p,(s)}, h_{j,0}^{p,(s)}, h_{j,1}^{p,(s)}, \boldsymbol{\phi}(d_{ij})^T, \bar{\theta}_{ij}\right]^T
+\end{equation}
+
+Qua $L$ lớp biến phân, mạch xen kẽ các bước:
+\begin{enumerate}
+    \item \textbf{Mã hóa Đặc trưng Đa trục:}
+    \begin{equation}
+        U_{\mathrm{feat}}(\mathbf{u}_{ij}^{(s)}) = \bigotimes_{q=0}^1 R_y(h_{i,q}^{p,(s)}) \otimes \bigotimes_{q=0}^1 R_y(h_{j,q}^{p,(s)})
+    \end{equation}
+    \item \textbf{Tải lại Khoảng cách Đa tần số RBF (Nâng cấp 2.1):}
+    \begin{equation}
+        U_{\mathrm{dist}}^{(l)} = \bigotimes_{q=0}^3 R_z\!\left(\sum_{k=1}^K w_{d,q,k}^{(l)} \cdot \phi_k(d_{ij})\right)
+    \end{equation}
+    \item \textbf{Tải lại Góc Bất biến SO(3) (Nâng cấp 2.4):}
+    \begin{equation}
+        U_{\mathrm{ang}}(\bar{\theta}_{ij}) = \bigotimes_{q=0}^3 R_y(\bar{\theta}_{ij})
+    \end{equation}
+    \item \textbf{Các Phép quay Biến phân Đơn Qubit:}
+    \begin{equation}
+        U_{\mathrm{rot}}(\boldsymbol{\theta}_l) = \bigotimes_{q=0}^3 R_z(\theta_{l,q,2}) R_y(\theta_{l,q,1}) R_x(\theta_{l,q,0})
+    \end{equation}
+    \item \textbf{Vướng víu CNOT Dạng Vòng Tròn:}
+    \begin{equation}
+        U_{\mathrm{ent}} = \prod_{q=0}^3 \mathrm{CNOT}_{q, (q+1)\bmod 4}
+    \end{equation}
+\end{enumerate}
+
+\subsection{Mã hóa Góc Bất biến SO(3) 3-Vật thể (Nâng cấp 2.4)}
+
+Với mỗi cạnh $(i, j)$, chúng tôi tính toán góc liên kết trung bình $\bar{\theta}_{ij}$ qua tất cả các nguyên tử thứ ba $k \in \mathcal{N}(i), k \neq j$ thông qua các thao tác vector hóa $O(E)$:
+\begin{align}
+    \bar{\cos}_{ij} &= \frac{\hat{\mathbf{r}}_{ij} \cdot \sum_{k \in \mathcal{N}(i)} \hat{\mathbf{r}}_{ik} - 1}{\deg(i) - 1}, \label{eq:angle} \\
+    \bar{\theta}_{ij} &= \arccos\!\left(\mathrm{clamp}(\bar{\cos}_{ij}, -1, 1)\right) \nonumber
+\end{align}
+trong đó $\hat{\mathbf{r}}_{ij} = (\mathbf{x}_j - \mathbf{x}_i) / \|\mathbf{x}_j - \mathbf{x}_i\|$. Đại lượng này bất biến nghiêm ngặt đối với $\mathrm{O}(3)$ vì $\cos \theta_{ijk} = \hat{\mathbf{r}}_{ij} \cdot \hat{\mathbf{r}}_{ik}$ chỉ phụ thuộc vào tích vô hướng của các vector tương đối: $(\mathbf{Q}\hat{\mathbf{r}}_{ij})^T (\mathbf{Q}\hat{\mathbf{r}}_{ik}) = \hat{\mathbf{r}}_{ij}^T \mathbf{Q}^T \mathbf{Q} \hat{\mathbf{r}}_{ik} = \hat{\mathbf{r}}_{ij}^T \hat{\mathbf{r}}_{ik}$.
+
+\paragraph{Sự Suy biến Góc của Phép Gộp Trung bình.}
+Một hạn chế của biểu diễn góc trung bình $\bar{\theta}_{ij}$ là nó có thể ánh xạ các môi trường phối trí có cấu trúc khác biệt về các giá trị vô hướng tương tự nhau. Ví dụ, một nguyên tử carbon tứ diện ($\mathrm{sp}^3$, 4 liên kết lân cận ở $\sim 109.5^\circ$) và một carbon tam giác phẳng ($\mathrm{sp}^2$, 3 liên kết lân cận ở $\sim 120^\circ$) tạo ra các góc trung bình chỉ chênh lệch khoảng $\sim 10^\circ$, có khả năng hạn chế sự phân biệt giữa các trạng thái lai hóa.
+Trong thực tế, sự suy biến này được giảm thiểu một phần nhờ ba yếu tố: (i) vector nhúng đặc trưng nút $\mathbf{h}_i$ mã hóa số hiệu nguyên tử và do đó ngầm mã hóa xu hướng phối trí, (ii) các đặc trưng khoảng cách RBF $\phi_k(d_{ij})$ cung cấp thông tin hình học bổ trợ ở nhiều thang đo độ dài, và (iii) trên QM9, các nguyên tố chủ đạo (C, N, O, F, H) có số phối trí và độ dài liên kết phân tách rõ ràng, giúp phân biệt trạng thái lai hóa cho các phân tử hữu cơ đơn giản.
+Sự nén hình học này giới hạn kiến trúc hiện tại vào các tập dữ liệu hợp chất hữu cơ cứng với các môi trường phối trí phân tách rõ. Đối với các tập dữ liệu có hóa học phối trí đa dạng hơn (ví dụ: phức chất kim loại chuyển tiếp, phân tử biến dạng liên tục), việc thay thế phép gộp góc trung bình bằng việc mở rộng góc theo từng bộ ba~\cite{klicperaFastUncertaintyAwareDirectional2020, klicperaGemNetUniversalDirectional2021} là một hướng mở rộng cần thiết trong tương lai (xem Hạn chế 2).
+
+\subsection{Đọc Giá trị Tương quan tử Vướng víu (Nâng cấp 2.3)}
+
+Mỗi nhánh tạo ra 8 đại lượng quan sát từ trạng thái đầu ra $|\psi_{ij}^{(s)}\rangle$:
+\begin{align}
+    \text{Đơn qubit:} \quad & \langle Z_q \rangle_{ij}^{(s)}, \quad q = 0, 1, 2, 3 \\
+    \text{Tương quan tử:} \quad & \langle Z_q Z_{(q+1)\bmod 4} \rangle_{ij}^{(s)}, \quad q = 0, 1, 2, 3
+\end{align}
+
+Phân tách đầu ra theo từng nhánh:
+\begin{align}
+    \mathbf{m}_{ij}^{(s)} &= \big[\langle Z_0 \rangle, \langle Z_1 \rangle, \langle Z_2 \rangle, \nonumber \\
+    &\quad \langle Z_0 Z_1 \rangle, \langle Z_1 Z_2 \rangle, \langle Z_2 Z_3 \rangle, \langle Z_3 Z_0 \rangle\big]^T \in \mathbb{R}^7 \\
+    \phi_x^{(s)} &= \langle Z_3 \rangle_{ij}^{(s)} \in [-1, 1]
+\end{align}
+
+Các thông điệp từ hai nhánh được nối lại với nhau: $\mathbf{m}_{ij} = [\mathbf{m}_{ij}^{(1)}, \mathbf{m}_{ij}^{(2)}] \in \mathbb{R}^{14}$.
+
+\subsection{Cập nhật Tọa độ Tương biến có Cổng $\tanh$ (Nâng cấp 2.5)}
+
+Hệ số vô hướng cho tọa độ được tính bằng một hàm cổng học được với hàm kích hoạt $\tanh$ nhằm ngăn chặn sự bùng nổ tọa độ trong quá trình lan truyền ngược qua các lớp sâu ($L \ge 4$):
+\begin{equation}
+    \phi_x(\mathbf{m}_{ij}) = \tanh\!\left(\mathbf{W}_g \left[\phi_x^{(1)}, \phi_x^{(2)}\right]^T\right) \in (-1, 1)
+\end{equation}
+\begin{equation}
+    \mathbf{x}_i^{l+1} = \mathbf{x}_i^l + \frac{1}{|\mathcal{N}(i)|} \sum_{j \in \mathcal{N}(i)} (\mathbf{x}_i^l - \mathbf{x}_j^l) \cdot \phi_x(\mathbf{m}_{ij})
+    \label{eq:coord_update}
+\end{equation}
+
+\paragraph{Truyền Thông điệp Đặc trưng Bất biến:}
+\begin{align}
+    \mathbf{m}_i &= \sum_{j \in \mathcal{N}(i)} \mathbf{m}_{ij} \\
+    \mathbf{h}_i^{l+1} &= \mathbf{h}_i^l + \mathrm{MLP}\left([\mathbf{h}_i^l, \mathbf{m}_i]\right)
+    \label{eq:feat_update}
+\end{align}
+
+\subsection{Các Bản Song sinh Cổ điển được Khử lượng tử hóa: PRISM}
+\label{sec:periodic_egnn}
+
+Để kiểm tra xem hiệu năng của PQC bắt nguồn từ các tính chất cơ học lượng tử hay từ năng lực biểu đạt lượng giác cổ điển, chúng tôi xây dựng các mô hình đại diện cổ điển tương đương về mặt cấu trúc theo khuôn khổ khử lượng tử hóa thực nghiệm~\cite{Tang:2018lmw, Schreiber:2022roq, pegg2026isoqgnn}.
+Mỗi mô hình đại diện thay thế PQC 4-qubit bằng một toán tử truyền thẳng cổ điển nhận các đầu vào cạnh giống hệt $\mathbf{u}_{ij}^{(s)} \in \mathbb{R}^{13}$ và tạo ra 8 giá trị đại diện quan sát bị chặn $\in [-1, 1]$.
+
+\paragraph{Ghi chú về Thuật ngữ.}
+Chúng tôi sử dụng thuật ngữ ``khử lượng tử hóa'' theo nghĩa kinh nghiệm, thực nghiệm đã được xác lập bởi Schreiber et al.~\cite{Schreiber:2022roq} và Bowles et al.~\cite{bowles2024better}: xây dựng một mô hình cổ điển có lớp giả thuyết tương đồng về cấu trúc (cùng số tham số, cùng cấu trúc đầu vào/đầu ra, năng lực biểu đạt lớp hàm tương đồng) và chứng minh rằng nó đạt hiệu năng tương đương hoặc vượt trội.
+Điều này khác biệt với sự khử lượng tử hóa hình thức trong lý thuyết độ phức tạp của Tang~\cite{Tang:2018lmw}, vốn cung cấp các thuật toán cổ điển thời gian đa thức với các đảm bảo xấp xỉ có thể chứng minh được.
+Việc chúng tôi sử dụng thuật ngữ ``khử lượng tử hóa'' không hàm ý rằng PQC được nghiên cứu từng ở trong một chế độ tính toán phi cổ điển.
+Việc các PQC tải lại dữ liệu tính toán chuỗi Fourier cắt cụt là một kết quả lý thuyết đã biết~\cite{Schuld:2020enb, landman2023approximating}; đóng góp của chúng tôi là \textit{minh chứng thực nghiệm} cho thấy sự tương đương lý thuyết này chuyển hóa thành hiện thực khi các hàm kích hoạt SIREN được đặt bên trong các MLP truyền thông điệp của mạng đồ thị tương biến---một bối cảnh mà lược đồ khởi tạo cụ thể (trọng số tỉ lệ theo $\omega_0$) và các tham số tần số có thể học được đóng vai trò sống còn, như thất bại của Đặc trưng Fourier Ngẫu nhiên (RFF) đã chỉ ra (Bảng~\ref{tab:main_results}).
+
+\paragraph{Sự Bất đối xứng về Chiều Không gian Nội tại.}
+Dưới sự tương đương tham số nghiêm ngặt, PQC 4-qubit xử lý các đặc trưng cạnh thông qua không gian Hilbert phức $2^4 = 16$ chiều ($\mathbb{C}^{16}$), trong khi các bản song sinh cổ điển hoạt động trên biểu diễn ẩn thực 4 chiều ($\mathbb{R}^4$). Điều này tạo ra sự thiên vị \textit{bất lợi} cho mô hình cổ điển về mặt dung lượng biểu diễn: PQC có quyền tiếp cận không gian trạng thái ngầm định lớn hơn nhiều trong mỗi lần đánh giá. Việc PRISM vẫn vượt trội hơn Q-PRISM trên tất cả các mục tiêu điện tử (Bảng~\ref{tab:main_results}) càng củng cố kết luận khử lượng tử hóa: không gian trạng thái lớn hơn theo hàm mũ của PQC không mang lại lợi thế thực tiễn dưới các phép đo Pauli cục bộ, bởi các phép đo đó làm sụp đổ không gian trạng thái $2^n$ chiều về một số lượng đa thức ($2n$) các giá trị kỳ vọng thực $\langle Z_q \rangle, \langle Z_q Z_{q'} \rangle \in [-1,1]$.
+
+\paragraph{Bản Song sinh Cổ điển ($\tanh$-MLP):}
+Bản song sinh cổ điển tiêu chuẩn sử dụng mạng MLP hai lớp với các hàm kích hoạt thuộc họ sigmoid:
+\begin{equation}
+    \mathbf{o}_{ij}^{(s)} = \tanh\left(\mathbf{W}_2 \operatorname{SiLU}(\mathbf{W}_1 \mathbf{u}_{ij}^{(s)} + \mathbf{b}_1)\right)
+\end{equation}
+trong đó $\mathbf{W}_1 \in \mathbb{R}^{4 \times 13}$ và $\mathbf{W}_2 \in \mathbb{R}^{8 \times 4}$ (không có độ lệch bias). Ngân sách tham số có thể huấn luyện trên mỗi nhánh chính xác là $4 \times (13 + 1) + 4 \times 8 = 88$, khớp hoàn toàn với 88 tham số của PQC 4-qubit ($24$ góc quay $+ 64$ trọng số tải lại khoảng cách) tạo nên mức độ tương đương toàn mô hình chính xác là $2{,}527$ tham số.
+
+\paragraph{PRISM (Bản Song sinh Tuần hoàn SIREN):}
+Để vượt qua các giới hạn biểu diễn của hàm kích hoạt đơn điệu ở mức ngân sách tham số thấp~\cite{rahaman2019spectral, sitzmann2020siren}, chúng tôi thay thế hàm kích hoạt đơn điệu bằng phi tuyến hình sin tuần hoàn với phép khởi tạo SIREN~\cite{sitzmann2020siren}:
+\begin{equation}
+    \mathbf{o}_{ij}^{(s)} = \tanh\left(\mathbf{W}_2 \sin\left(\omega_0 (\mathbf{W}_1 \mathbf{u}_{ij}^{(s)} + \mathbf{b}_1)\right)\right)
+\end{equation}
+với siêu tham số tần số $\omega_0 = 30.0$.
+Theo Sitzmann et al.~\cite{sitzmann2020siren}, các trọng số được khởi tạo như sau:
+\begin{equation}
+    \mathbf{W}_1 \sim \mathcal{U}\left(-\frac{1}{d_{\mathrm{in}}}, \frac{1}{d_{\mathrm{in}}}\right), \quad \mathbf{W}_2 \sim \mathcal{U}\left(-\frac{\sqrt{6/d_h}}{\omega_0}, \frac{\sqrt{6/d_h}}{\omega_0}\right)
+\end{equation}
+với $d_{\mathrm{in}} = 13$ và $d_h = 4$.
+Lược đồ này đảm bảo sự lan truyền phương sai đồng đều qua các hàm kích hoạt tuần hoàn, bảo toàn gradient góc dao động mà không bị bão hòa số học. Số lượng tham số có thể huấn luyện vẫn giữ nguyên ở mức chính xác $2{,}527$ tham số.
+
+\paragraph{Tính Hợp lệ Vật lý của Hàm kích hoạt Tuần hoàn.}
+Một mối quan ngại tiềm ẩn là liệu việc áp dụng các hàm kích hoạt tuần hoàn cho các đặc trưng phụ thuộc khoảng cách có thể tạo ra các giả tượng dao động phi vật lý trong các tính chất phân tử dự đoán hay không, đặc biệt đối với các cấu hình hình học nằm ngoài phân phối huấn luyện.
+Chúng tôi lưu ý rằng phi tuyến hình sin tác động lên vector đặc trưng hỗn hợp \textit{đã qua biến đổi tuyến tính} $\omega_0(\mathbf{W}_1 \mathbf{u}_{ij}^{(s)} + \mathbf{b}_1)$, chứ không tác động trực tiếp lên khoảng cách giữa các nguyên tử thô $d_{ij}$.
+Phép chiếu học được $\mathbf{W}_1$ tự thích ứng tỉ lệ và kết hợp các kênh khoảng cách, góc và embedding nút, trong khi hàm chặn đầu ra $\tanh$ cuối cùng $\in (-1, 1)$ ngăn chặn sự ngoại suy dao động không giới hạn.
+Tuy nhiên, đối với các ứng dụng đòi hỏi sự ngoại suy đáng tin cậy vượt ra ngoài các cấu hình hình học huấn luyện (ví dụ: động lực học phản ứng với các hiện tượng bẻ gãy liên kết), các hàm kích hoạt nội tuần hoàn cần được kiểm chứng cẩn trọng trước các mô hình thế năng đơn điệu.
+
+\paragraph{Lựa chọn Hàm Kích hoạt Hình Sin (Choice of Sinusoidal Activation).}
+Một câu hỏi tự nhiên là vì sao lại là các hàm kích hoạt hình sin cụ thể, mà không phải các giải pháp tuần hoàn hoặc gần tuần hoàn khác như hàm cơ sở xuyên tâm Gaussian, wavelet Gabor, hay sóng răng cưa. Ba yếu tố ưu tiên cho $\sin$: (i) \textit{sự tương thích hàm số với các đầu ra của PQC}---các PQC tải lại dữ liệu vốn tính toán chuỗi Fourier cắt cụt theo $\sin$ và $\cos$ theo cấu trúc xây dựng~\cite{Schuld:2020enb}, do đó các hàm kích hoạt hình sin trực tiếp tái tạo lớp hàm đang được kiểm định; (ii) \textit{lý thuyết khởi tạo có cơ sở nguyên lý}---SIREN~\cite{sitzmann2020siren} cung cấp một lược đồ khởi tạo dạng tường minh đảm bảo lan truyền phương sai đồng đều qua các tầng đối với hàm kích hoạt $\sin$, trong khi chưa có kết quả tương tự nào cho các hàm tuần hoàn khác; và (iii) \textit{tính ổn định huấn luyện đã được xác lập}---y văn về SIREN cung cấp một công thức đã được kiểm nghiệm kỹ lưỡng để huấn luyện các mạng tuần hoàn sâu mà không gặp bất ổn định số học. Chúng tôi không khẳng định rằng $\sin$ là tối ưu duy nhất; các hàm kích hoạt tuần hoàn khác (ví dụ: $\cos$, bộ lọc Gabor) có thể đạt hiệu năng tương đương trên các tác vụ dự đoán phân tử. Tuy nhiên, lập luận khử lượng tử hóa của chúng tôi đòi hỏi cụ thể sự tương thích hàm số với đầu ra của PQC, điều này ủng hộ hệ cơ sở Fourier. Việc so sánh thực nghiệm với các hàm kích hoạt tuần hoàn thay thế là một hướng phát triển tự nhiên cho các nghiên cứu tương lai.
+
+\paragraph{Độ nhạy đối với $\omega_0$.}
+Hệ số tỉ lệ tần số SIREN $\omega_0$ kiểm soát băng thông của hệ cơ sở tuần hoàn. Để xác minh rằng kết quả khử lượng tử hóa không phải là một hiện tượng ngẫu nhiên của một giá trị $\omega_0$ cụ thể, chúng tôi đánh giá PRISM trên tập $\omega_0 \in \{10, 20, 30, 50\}$ qua 5 hạt giống (Bảng~\ref{tab:omega_sensitivity}):
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Độ nhạy của SIREN theo $\omega_0$} ($N = 1{,}000$, 5 hạt giống). MAE tập kiểm tra (eV), trung bình $\pm$ độ lệch chuẩn. Mọi giá trị $\omega_0$ đều vượt trội đáng kể so với Bản song sinh Cổ điển ($\tanh$-MLP) trên mọi mục tiêu ($p < 0.05$). $^{*}p < 0.05$, $^{**}p < 0.01$, $^{***}p < 0.001$ (kiểm định $t$ theo cặp so với Bản song sinh Cổ điển). Kết quả tốt nhất mỗi hàng được \textbf{in đậm}.}
+\label{tab:omega_sensitivity}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Mục tiêu} & \textbf{Song sinh Cổ điển} & $\boldsymbol{\omega_0 = 10}$ & $\boldsymbol{\omega_0 = 20}$ & $\boldsymbol{\omega_0 = 30}$ & $\boldsymbol{\omega_0 = 50}$ \\
+\midrule
+HOMO & $0.360 \pm 0.057$ & $0.326 \pm 0.064^{*}$ & $0.279 \pm 0.006^{**}$ & $0.306 \pm 0.063^{**}$ & $\mathbf{0.268 \pm 0.008}^{***}$ \\
+LUMO & $0.738 \pm 0.029$ & $0.620 \pm 0.040^{***}$ & $0.528 \pm 0.058^{***}$ & $0.465 \pm 0.059^{***}$ & $\mathbf{0.456 \pm 0.057}^{***}$ \\
+Gap  & $0.818 \pm 0.041$ & $0.742 \pm 0.036^{***}$ & $0.576 \pm 0.057^{***}$ & $0.549 \pm 0.071^{***}$ & $\mathbf{0.534 \pm 0.025}^{***}$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Chúng tôi chọn $\omega_0 = 30$ làm mặc định theo khuyến nghị của Sitzmann et al.~\cite{sitzmann2020siren}, những người đã chứng minh quá trình huấn luyện ổn định trên nhiều tác vụ biểu diễn ẩn ở thang đo tần số này. \textbf{Không có tập kiểm định hoặc sự lựa chọn hậu nghiệm trên tập kiểm tra nào được sử dụng cho $\omega_0$}; giá trị này được cố định \textit{tiên nghiệm} dựa trên y văn SIREN. Bảng~\ref{tab:omega_sensitivity} xác nhận hậu nghiệm rằng kết quả khử lượng tử hóa vững chắc trên mọi thang đo tần số. Mọi $\omega_0$ được thử nghiệm đều mang lại MAE thấp hơn đáng kể so với Bản song sinh Cổ điển trên cả ba mục tiêu ($p < 0.05$, 5 hạt giống). Tần số tối ưu phụ thuộc vào tính chất: HOMO thiên về tần số cao hơn ($\omega_0 = 50$: $0.268$\,eV), trong khi LUMO và Gap đạt kết quả tốt nhất tại $\omega_0 \in [30, 50]$, cho thấy các mục tiêu orbital chưa lấp đầy được hưởng lợi thực nghiệm từ băng thông tuần hoàn rộng hơn.
+Sự tương quan giữa $\omega_0$ tối ưu và tính chất mục tiêu nên được diễn giải như một quan sát thực nghiệm về sự tương thích lớp hàm giữa hệ cơ sở tuần hoàn và mặt hồi quy học được, chứ không phải một sự tương ứng vật lý trực tiếp với các tần số không gian của orbital.
+
+\paragraph{Học Tham số $\omega_0$.}
+Để kiểm tra xem liệu $\omega_0$ có thể được coi là một tham số có thể học được hay không, chúng tôi tham số hóa nó dưới dạng $\omega_0 = \exp(\log \omega_0)$ với một \texttt{nn.Parameter} cho mỗi nhánh (bổ sung 4 tham số cho mỗi mô hình) và so sánh với mô hình cơ sở cố định $\omega_0 = 30$ (3 hạt giống, $N = 1{,}000$, 15 epoch; Bảng~\ref{tab:learnable_omega}):
+
+\begin{table}[ht]
+\centering
+\small
+\caption{\textbf{Thí nghiệm Tham số $\omega_0$ có thể Học} ($N = 1{,}000$, 3 hạt giống). MAE tập kiểm tra (eV). Khi khởi tạo ở 30, $\omega_0$ học được hội tụ về $28$--$31$ trên mọi nhánh và lớp, khớp với hiệu năng của $\omega_0 = 30$ cố định. Khi khởi tạo ở 10, $\omega_0$ duy trì gần $10$--$12$ và không thoát ra để đến bồn trũng $\omega_0 \approx 30$ ưu việt hơn.}
+\label{tab:learnable_omega}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Mô hình} & \textbf{HOMO} & \textbf{LUMO} & \textbf{Gap} \\
+\midrule
+PRISM ($\omega_0 = 30$, cố định) & $\mathbf{0.276 \pm 0.007}$ & $\mathbf{0.460 \pm 0.065}$ & $\mathbf{0.529 \pm 0.013}$ \\
+PRISM ($\omega_0 = 30$, có thể học) & $0.276 \pm 0.004$ & $0.460 \pm 0.066$ & $0.539 \pm 0.013$ \\
+PRISM ($\omega_0 = 10$, có thể học) & $0.298 \pm 0.006$ & $0.641 \pm 0.045$ & $0.774 \pm 0.048$ \\
+Bản song sinh Cổ điển ($\tanh$) & $0.326 \pm 0.007$ & $0.754 \pm 0.013$ & $0.844 \pm 0.030$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Trong Bảng~\ref{tab:learnable_omega}, việc khởi tạo $\omega_0 = 30$ đặt mô hình vào một bồn trũng tối ưu hóa ổn định: các tần số học được hội tụ về khoảng $28$--$31$ trên mọi nhánh và mọi lớp với sự thay đổi không đáng kể trong MAE tập kiểm tra. Việc khởi tạo thấp hơn ($\omega_0 = 10$) vẫn bị giữ lại trong cực tiểu địa phương quanh $10$--$12$. Dẫu vậy, ngay cả với $\omega_0 = 10$, mô hình tuần hoàn vẫn vượt trội hơn mạng $\tanh$-MLP cổ điển (HOMO: $0.298$ so với $0.326$\,eV). Vì giá trị cố định $\omega_0 = 30$ tránh được các tham số tối ưu hóa bổ sung trong khi vẫn bảo toàn hiệu năng, chúng tôi giữ nguyên thiết lập cố định được khuyến nghị bởi Sitzmann et al.~\cite{sitzmann2020siren}.
+
+\paragraph{Bản Song sinh Đặc trưng Fourier (RFF):}
+Như một đường cơ sở thay thế, chúng tôi triển khai Đặc trưng Fourier Ngẫu nhiên (RFF) theo Tancik et al.~\cite{tancik2020fourier}:
+$\gamma(\mathbf{u}) = [\cos(2\pi \mathbf{B}\mathbf{u}), \sin(2\pi \mathbf{B}\mathbf{u})]^T$, trong đó $\mathbf{B} \in \mathbb{R}^{13 \times 4}$ là một ma trận ngẫu nhiên Gaussian cố định ($\sigma = 10.0$), tiếp theo là một phép chiếu tuyến tính khớp mức $2{,}515$ tham số ($\Delta = -12$).
+
+Bởi vì tất cả các đầu vào $\mathbf{u}_{ij}^{(s)}$ đều bất biến nghiêm ngặt đối với $\mathrm{O}(3)$, Định lý~\ref{thm:equivariance} được áp dụng tương tự cho PRISM, Bản song sinh Cổ điển ($\tanh$), và bản song sinh Đặc trưng Fourier, đảm bảo tính tương biến $\mathrm{E}(3)$ chính xác ở độ chính xác máy cho toàn bộ các biến thể cổ điển.
+
+\subsection{Chứng minh Tính Tương biến $\mathrm{E}(3)$}
+
+\begin{theorem}[Tính Tương biến $\mathrm{E}(3)$ của Lớp Q-PRISM]
+\label{thm:equivariance}
+Ký hiệu $\mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}) = \mathbf{x} \mathbf{Q}^T + \mathbf{g}$ là một phép biến đổi Euclid liên tục tùy ý với phép quay/phản xạ $\mathbf{Q} \in \mathrm{O}(3)$ và phép tịnh tiến $\mathbf{g} \in \mathbb{R}^3$.\footnote{Chúng tôi áp dụng quy ước vector hàng xuyên suốt bài báo: tọa độ được lưu trữ dưới dạng $\mathbf{x}_i \in \mathbb{R}^{1 \times 3}$ (vector hàng), do đó phép biến đổi là $\mathbf{x} \mathbf{Q}^T + \mathbf{g}$ thay vì $\mathbf{Q}\mathbf{x} + \mathbf{g}$. Điều này tương thích hoàn toàn với bố cục batch-of-row-vectors mặc định của PyTorch.} Khi đó đối với lớp Q-PRISM được định nghĩa trong các Phương trình~(\ref{eq:coord_update}--\ref{eq:feat_update}):
+\begin{align}
+    \mathbf{h}_i^{l+1}(\mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}), \mathbf{h}) &= \mathbf{h}_i^{l+1}(\mathbf{x}, \mathbf{h}) \quad (\text{Tính Bất biến}) \\
+    \mathbf{x}_i^{l+1}(\mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}), \mathbf{h}) &= \mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}_i^{l+1}(\mathbf{x}, \mathbf{h})) \quad (\text{Tính Tương biến})
+\end{align}
+\end{theorem}
+
+\begin{proof}
+Dưới phép biến đổi $\mathcal{T}_{\mathbf{Q}, \mathbf{g}}$, vector tọa độ tương đối biến đổi thành $\mathbf{r}_{ij}' = \mathbf{r}_{ij}\mathbf{Q}^T$, mang lại khoảng cách bình phương bất biến $d_{ij}' = d_{ij}$.
+
+Các đặc trưng RBF $\phi_k(d_{ij})$ là các hàm của đại lượng bất biến $d_{ij}$ và do đó là bất biến. Các góc 3 vật thể $\bar{\theta}_{ij}$ chỉ phụ thuộc vào tích vô hướng của các vector đơn vị (Phương trình~\ref{eq:angle}), vốn thỏa mãn $(\mathbf{Q}\hat{\mathbf{r}}_{ij}) \cdot (\mathbf{Q}\hat{\mathbf{r}}_{ik}) = \hat{\mathbf{r}}_{ij} \cdot \hat{\mathbf{r}}_{ik}$ nhờ tính trực giao của $\mathbf{Q}$. Do tất cả các đầu vào PQC $\mathbf{u}_{ij}^{(s)}$ đều bất biến, trạng thái lượng tử $|\psi_{ij}^{(s)}\rangle$ và toàn bộ các đại lượng quan sát ($\mathbf{m}_{ij}$, $\phi_x$) đều bất biến. Hàm cổng $\tanh$ là một hàm vô hướng của các đầu vào bất biến và do đó cũng bất biến.
+
+Thay thế vào công thức cập nhật tọa độ:
+\begin{align}
+    \mathbf{x}_i^{l+1}(\mathbf{x}', \mathbf{h}) &= \mathbf{x}_i' + \frac{1}{|\mathcal{N}(i)|} \sum_{j} \mathbf{r}_{ij}' \cdot \phi_x(\mathbf{m}_{ij}) \nonumber \\
+    &= (\mathbf{x}_i \mathbf{Q}^T + \mathbf{g}) + \left[\frac{1}{|\mathcal{N}(i)|} \sum_{j} \mathbf{r}_{ij} \phi_x(\mathbf{m}_{ij})\right] \mathbf{Q}^T \nonumber \\
+    &= \mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}_i^{l+1}(\mathbf{x}, \mathbf{h}))
+\end{align}
+Các đặc trưng nút chỉ phụ thuộc vào các đại lượng bất biến, chứng minh tính bất biến tuyệt đối của đặc trưng.\footnote{Cấu trúc tương biến $\mathrm{E}(3)$ của chúng tôi coi toàn bộ các đại lượng vector là vector cực (polar vectors). Đối với các tính chất biến đổi như giả vector (pseudovectors) dưới các phép quay không thực sự (ví dụ: mômen từ, mômen động lượng), mô hình sẽ đòi hỏi các kênh tương biến nhận biết tính chẵn lẻ (parity-aware)~\cite{batatiaMACEHigherOrder2022}. Toàn bộ các mục tiêu QM9 được nghiên cứu ở đây đều là các bất biến vô hướng nên không bị ảnh hưởng bởi hạn chế này.}
+\end{proof}
+
+\noindent\textit{Kiểm chứng thực nghiệm.} Kiểm tra số học với các phép quay $\mathrm{O}(3)$ ngẫu nhiên xác nhận sai số tương biến $\le 2.38 \times 10^{-7}$ (SM~A).
+
+\section{Đánh giá Thực nghiệm}
+\label{sec:experiments}
+
+\subsection{Thiết lập Chuẩn Thực nghiệm}
+
+Chúng tôi đánh giá Q-PRISM trên \textbf{tập dữ liệu chuẩn QM9} \cite{ramakrishnan2014quantum}, bao gồm $130{,}831$ phân tử hữu cơ nhỏ với các tính chất điện tử lượng tử được tính toán ở mức DFT B3LYP/6-31G(2df,p).
+Chúng tôi thực hiện đánh giá trên \textbf{6 mục tiêu vật lý} sử dụng \textbf{5 hạt giống ngẫu nhiên độc lập} ($42$--$46$) trên $N = 1{,}000$ phân tử huấn luyện và $500$ phân tử kiểm tra.
+Chúng tôi lựa chọn các mục tiêu bao quát ba cơ chế vật lý phân biệt: các tính chất điện tử nồng độ (intensive electronic properties: HOMO, LUMO, Gap) thăm dò sự xen phủ orbital góc đóng vai trò trung tâm trong giả thuyết thiên kiến phổ; các tính chất tĩnh điện dung lượng (extensive electrostatic properties: mômen lưỡng cực $\mu$, độ phân cực $\alpha$) kiểm tra sự phân bố điện tích phụ thuộc tọa độ; và năng lượng nhiệt động dung lượng ($U_0$). Chúng tôi lưu ý rằng năng lượng LUMO KS-DFT, không giống như năng lượng HOMO (vốn xấp xỉ thế ion hóa qua định lý Koopmans tương đương trong Kohn-Sham), thiếu cách diễn giải vật lý chặt chẽ và phụ thuộc nhiều vào hệ cơ sở; các kết quả LUMO nên được hiểu cùng lưu ý này. Các tính chất QM9 còn lại ($U$, $H$, và $G$) dẫn xuất tuyến tính từ $U_0$ qua các hiệu chỉnh nhiệt và entropy, khiến các so sánh riêng biệt trở nên dư thừa. Các tính chất dao động ($\text{ZPVE}$ và $C_v$) nằm ngoài dung lượng của các mô hình thu gọn $\sim 2{,}500$ tham số.
+Phân chia $1{,}000 / 500$ (tỷ lệ 2:1) đại diện cho một giao thức chuẩn cho việc đánh giá hóa học trong chế độ dữ liệu ít, cung cấp đủ năng lực thống kê cho các so sánh theo cặp trong khi vẫn duy trì tính khả thi tính toán trên 8 mô hình và các đợt quét đa hạt giống.
+
+\paragraph{Giao thức Hạt giống Ngẫu nhiên.}
+Tất cả các hạt giống ngẫu nhiên ($42$--$46$ cho thí nghiệm 5 hạt giống; $42$--$61$ cho các phân tích cắt bỏ 20 hạt giống) đều kiểm soát cả việc khởi tạo tham số mô hình lẫn việc phân chia dữ liệu train/test. Nghĩa là, mỗi hạt giống tạo ra một phân hoạch ngẫu nhiên khác nhau của các phân tử QM9 thành tập huấn luyện và kiểm tra, cũng như một sự khởi tạo ngẫu nhiên khác nhau của toàn bộ trọng số huấn luyện được. Phương sai được báo cáo qua các hạt giống do đó nắm bắt được cả độ nhạy của bộ tối ưu hóa lẫn tính biến thiên của việc chia dữ liệu, cung cấp một ước lượng thận trọng hơn về độ tin cậy của mô hình so với phương sai chỉ tính riêng phần khởi tạo. Chúng tôi lưu ý rằng giao thức này đo lường phương sai kết hợp giữa khởi tạo và phân chia thay vì phương sai tổng quát hóa thuần túy qua kiểm định chéo K-fold. Một thiết kế nhân tố (cố định một yếu tố trong khi thay đổi yếu tố kia) hoặc kiểm định chéo phân tầng K-fold sẽ cho phép phân rã phương sai chính quy; chúng tôi thừa nhận đây là một hạn chế về phương pháp luận. Tuy nhiên, kích thước hiệu ứng lớn được quan sát (Cohen's $d > 0.85$ cho các so sánh chính) và tính nhất quán qua 20 hạt giống cung cấp bằng chứng vững chắc rằng các kết quả không phải là sản phẩm ngẫu nhiên của một phân chia thuận lợi đơn lẻ.
+Chúng tôi thừa nhận rằng với $n = 5$ hạt giống, giả định phân phối chuẩn làm nền tảng cho kiểm định $t$ theo cặp có tham số không thể được xác minh một cách chặt chẽ. Do đó, các so sánh cốt lõi được khẳng định lại bởi phân tích cắt bỏ 20 hạt giống (Mục~\ref{sec:mechanism}), nơi tính phân phối chuẩn trở nên hợp lý hơn, và bởi kiểm định phi tham số dấu hạng Wilcoxon mang lại các kết luận nhất quán trên toàn bộ các so sánh có ý nghĩa.
+Tuy nhiên, chúng tôi lưu ý rằng giá trị $p$ Wilcoxon hai phía nhỏ nhất có thể đạt được tại $n = 5$ là $p = 2/2^5 = 0.0625$ (đòi hỏi toàn bộ 5 hiệu số cặp đều cùng một hướng), do đó kiểm định này vốn dĩ thiếu năng lực thống kê ở kích thước mẫu này và không thể đạt mức ý nghĩa thông thường ($\alpha = 0.05$). Phân tích cắt bỏ 20 hạt giống cung cấp năng lực đầy đủ cho các kiểm định dựa trên thứ hạng.
+Phân tích năng lực hậu nghiệm chỉ ra rằng thiết kế 5 hạt giống ($n = 5$, theo cặp) đủ năng lực để phát hiện kích thước hiệu ứng Cohen's $d \ge 1.53$ tại $\alpha = 0.05$ và $1-\beta = 0.80$, chỉ ứng với các hiệu ứng rất lớn. Phân tích 20 hạt giống ($n = 20$) có năng lực phát hiện $d \ge 0.66$ (hiệu ứng trung bình-lớn), phù hợp với giá trị quan sát $d = 0.85$ cho so sánh vướng víu trên HOMO.
+
+\paragraph{Hệ Thống Phân Cấp Mô Hình Cơ Sở Mở Rộng (8 Mô Hình).}
+Để cô lập sự đóng góp của mạch lượng tử khỏi chu trình kỹ thuật đặc trưng cổ điển, chúng tôi đánh giá trên một hệ phân cấp 8 mô hình:
+\begin{itemize}
+    \item \textbf{Tầng 1 (Bản song sinh Cổ điển \& Lượng giác Cùng Cấu trúc, $\sim 2{,}527$ tham số):} 
+    (i) \textit{Bản song sinh Cổ điển ($\tanh$-MLP)} ($2{,}527$ p): Thay thế PQC bằng một MLP tiêu chuẩn $\text{SiLU} \to \text{Linear} \to \tanh$ khớp chính xác 88 tham số mỗi nhánh.
+    (ii) \textit{PRISM (SIREN)} ($2{,}527$ p): Thay thế PQC bằng hàm kích hoạt tuần hoàn hình sin ($\sin(\omega_0 W x + b)$) với khởi tạo SIREN~\cite{sitzmann2020siren}, duy trì sự tương đương tuyệt đối về tham số.
+    (iii) \textit{Bản song sinh Đặc trưng Fourier (RFF)} ($2{,}515$ p): Ánh xạ đầu vào qua các đặc trưng Fourier ngẫu nhiên tĩnh~\cite{tancik2020fourier} trước khi đọc tuyến tính.
+    \item \textbf{Tầng 2 (Các Mô hình Cơ sở Tương biến SOTA):} Các triển khai khớp tham số của SchNet~\cite{schütt2017schnetcontinuousfilterconvolutionalneural} ($2{,}473$ tham số) và PaiNN~\cite{schuttEquivariantMessagePassing2021} ($2{,}721$ tham số), đại diện cho các kiến trúc tương biến định hướng và tích chập bộ lọc liên tục cổ điển đã được xác lập.
+    \item \textbf{Tầng 3 (EGNN Cùng Tham số \& Tiêu chuẩn):} EGNN khớp tham số~\cite{satorras2022enequivariantgraphneural} ($2{,}497$ tham số) và EGNN tiêu chuẩn ($4{,}289$ tham số, $\texttt{hidden}=16$).
+    \item \textbf{Tầng 4 (Kiểm soát Đối xứng):} Mạng GNN không tương biến nối trực tiếp tọa độ Descartes thô, nhằm xác minh rằng đối xứng $\mathrm{E}(3)$ liên tục là bắt buộc về mặt vật lý.
+\end{itemize}
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\caption{\textbf{Chuẩn So sánh Đa Mục tiêu QM9 trên 8 Mô hình với các Bản Song sinh Lượng giác Khử lượng tử hóa và các Mô hình Cơ sở SOTA} ($N = 1{,}000$, Trung bình $\pm$ Độ lệch chuẩn qua 5 Hạt giống). Kết quả tốt nhất mỗi hàng được \textbf{in đậm}. Để tham khảo, độ chính xác hóa học là $0.043$\,eV ($1$\,kcal/mol); toàn bộ các mô hình đều hoạt động trên ngưỡng này trong chế độ giới hạn tham số. Ý nghĩa thống kê của PRISM (SIREN) so với Bản song sinh Cổ điển ($\tanh$) theo hiệu chỉnh đa giả thuyết Benjamini-Hochberg FDR ($m = 48$ giả thuyết): $^{\dagger}q < 0.05$, $^{\dagger\dagger}q < 0.01$. Ý nghĩa của Q-PRISM so với Bản song sinh Cổ điển ($\tanh$): $^*p < 0.05$, $^{**}p < 0.01$ (kiểm định $t$ theo cặp chưa hiệu chỉnh; xem Mục~\ref{sec:fdr_analysis} để có báo cáo FDR đầy đủ).}
+\label{tab:main_results}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccccc}
+\toprule
+\textbf{Tính chất Mục tiêu} & \textbf{Đơn vị} & \textbf{Loại} & \textbf{Q-PRISM} & \textbf{PRISM} & \textbf{Trig Twin} & \textbf{Song sinh Cổ điển} & \textbf{SchNet} & \textbf{PaiNN} & \textbf{EGNN-PM} & \textbf{EGNN Std} \\
+ & & & (Của chúng tôi - PQC) & \textbf{(Của chúng tôi - SIREN)} & (Fourier) & ($\tanh$-MLP) & & & & \\
+ & & & $2{,}527$\,p & $2{,}527$\,p & $2{,}515$\,p & $2{,}527$\,p & $2{,}473$\,p & $2{,}721$\,p & $2{,}497$\,p & $4{,}289$\,p \\
+\midrule
+\multicolumn{11}{l}{\textit{Tính chất Orbital Điện tử (Nồng độ - Intensive)}} \\
+\quad HOMO ($\epsilon_{\mathrm{H}}$) & eV & Điện tử & $0.303 \pm 0.014$ & $\mathbf{0.269 \pm 0.015}^{\dagger}$ & $0.424 \pm 0.016$ & $0.344 \pm 0.045$ & $0.381 \pm 0.025$ & $0.283 \pm 0.030$ & $0.365 \pm 0.020$ & $0.356 \pm 0.024$ \\
+\quad LUMO ($\epsilon_{\mathrm{L}}$) & eV & Điện tử & $0.628 \pm 0.031^{**}$ & $0.479 \pm 0.015^{\dagger\dagger}$ & $0.775 \pm 0.030$ & $0.720 \pm 0.037$ & $0.692 \pm 0.023$ & $\mathbf{0.398 \pm 0.033}$ & $0.695 \pm 0.040$ & $0.693 \pm 0.024$ \\
+\quad Gap ($\Delta\epsilon$) & eV & Điện tử & $0.721 \pm 0.055^{*}$ & $0.557 \pm 0.020^{\dagger\dagger}$ & $0.846 \pm 0.036$ & $0.806 \pm 0.041$ & $0.769 \pm 0.036$ & $\mathbf{0.470 \pm 0.069}$ & $0.769 \pm 0.047$ & $0.776 \pm 0.036$ \\
+\midrule
+\multicolumn{11}{l}{\textit{Tính chất Phân tử (Dung lượng - Extensive)}} \\
+\quad Lưỡng cực ($\mu$) & Debye & Dung lượng & $0.764 \pm 0.032^{*}$ & $\mathbf{0.711 \pm 0.020}^{\dagger}$ & $1.042 \pm 0.029$ & $0.904 \pm 0.088$ & $0.924 \pm 0.020$ & $0.819 \pm 0.098$ & $0.879 \pm 0.039$ & $0.851 \pm 0.057$ \\
+\quad Độ phân cực ($\alpha$) & Bohr$^3$ & Dung lượng & $1.446 \pm 0.090$ & $\mathbf{1.415 \pm 0.088}^{\dagger}$ & $3.903 \pm 0.196$ & $1.841 \pm 0.226$ & $1.989 \pm 0.208$ & $3.446 \pm 0.257$ & $1.711 \pm 0.181$ & $1.419 \pm 0.058$ \\
+\quad Nội năng ($U_0$) & eV & Dung lượng & $110.0 \pm 18.2$ & $130.6 \pm 29.3$ & $686.5 \pm 40.0$ & $101.1 \pm 16.7$ & $104.3 \pm 11.0$ & $446.0 \pm 25.1$ & $87.7 \pm 22.2$ & $\mathbf{69.5 \pm 12.3}$ \\
+\midrule
+\multicolumn{3}{l}{\textbf{Tham số Huấn luyện được}} & $\mathbf{2{,}527}$ & $\mathbf{2{,}527}$ & $2{,}515$ & $2{,}527$ & $2{,}473$ & $2{,}721$ & $2{,}497$ & $4{,}289$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\subsection{Khử lượng tử hóa Thực nghiệm Thiên kiến Quy nạp: PRISM qua Hàm kích hoạt SIREN}
+\label{sec:periodic_results}
+
+Các kết quả trong Bảng~\ref{tab:main_results} cung cấp một kiểm định trực tiếp cho giả thuyết thiên kiến quy nạp lượng tử:
+
+\paragraph{1. Ưu thế Lượng tử Biểu kiến so với các Mô hình Cơ sở Tiêu chuẩn.}
+So với Bản song sinh Cổ điển tiêu chuẩn ($\tanh$-MLP) và EGNN khớp tham số ($2{,}497$ tham số), PQC 4-qubit trong Q-PRISM thể hiện MAE kiểm tra thấp hơn trên các tính chất điện tử: sai số giảm $11.9\%$ trên HOMO ($0.303$ so với $0.344$\,eV), $12.8\%$ trên LUMO ($0.628$ so với $0.720$\,eV), $10.5\%$ trên Gap ($0.721$ so với $0.806$\,eV), và $15.5\%$ trên Mômen Lưỡng cực ($0.764$ so với $0.904$\,Debye).
+Trong khi các đánh giá thực nghiệm ban đầu của các mạch biến phân thường quy kết những mức tăng quan sát được cho năng lực biểu đạt không gian Hilbert lượng tử, phân tích Fourier nền tảng của các mạch tải lại dữ liệu~\cite{Schuld:2020enb, Perez-Salinas:2019pjx} chứng minh rằng chúng chủ yếu tạo ra các đa thức lượng giác cắt cụt.
+
+\paragraph{2. Khử lượng tử hóa thông qua Hàm kích hoạt Tuần hoàn SIREN.}
+Tuy nhiên, khi bản song sinh cổ điển được trang bị các hàm kích hoạt hình sin tuần hoàn và phép khởi tạo SIREN~\cite{sitzmann2020siren} (\textbf{PRISM}), ưu thế lượng tử biểu kiến hoàn toàn biến mất.
+Ở cùng mức số lượng tham số ($2{,}527$ p), PRISM vượt trội hoàn toàn so với Q-PRISM trên toàn bộ các tính chất điện tử (Hình~\ref{fig:dequantization_bars}):
+\begin{itemize}
+    \item \textbf{HOMO:} PRISM đạt $0.269 \pm 0.015$\,eV so với $0.303 \pm 0.014$\,eV của Q-PRISM ($\Delta = 0.034$\,eV, $q_{\mathrm{FDR}} = 0.0017$). Mặc dù có ý nghĩa thống kê, độ chênh lệch này vẫn nằm trong ngưỡng độ chính xác hóa học $0.043$\,eV và cần được diễn giải một cách cẩn trọng.
+    \item \textbf{LUMO:} PRISM đạt $0.479 \pm 0.015$\,eV so với $0.628 \pm 0.031$\,eV của Q-PRISM ($\Delta = 0.149$\,eV, gấp $3.5\times$ độ chính xác hóa học, $q_{\mathrm{FDR}} = 0.0052$).
+    \item \textbf{Gap:} PRISM đạt $0.557 \pm 0.020$\,eV so với $0.721 \pm 0.055$\,eV của Q-PRISM ($\Delta = 0.163$\,eV, gấp $3.8\times$ độ chính xác hóa học, $q_{\mathrm{FDR}} = 0.0126$).
+    \item \textbf{Lưỡng cực:} PRISM đạt $0.711 \pm 0.020$\,Debye so với $0.764 \pm 0.032$\,Debye của Q-PRISM ($q_{\mathrm{FDR}} = 0.0075$).
+\end{itemize}
+Bằng chứng chính cho sự tương đương lượng giác cổ điển xuất phát từ LUMO và Gap, nơi ưu thế của PRISM so với PQC vượt qua độ chính xác hóa học từ $3.5$--$3.8$ lần. Trên HOMO, độ lệch ($0.034$\,eV) nằm trong biên độ chính xác hóa học---nhất quán với cách chúng tôi đánh giá hiệu ứng vướng víu ($0.006$\,eV) trong Mục~\ref{sec:mechanism}.
+PRISM cũng cải thiện độ chính xác so với PaiNN ($2{,}721$ tham số) trên 4 trong số 6 mục tiêu QM9: HOMO ($0.269$ so với $0.283$\,eV), Lưỡng cực ($0.711$ so với $0.819$\,Debye), Độ phân cực ($1.415$ so với $3.446$\,Bohr$^3$), và Nội năng ($130.6$ so với $446.0$\,eV).
+Chúng tôi nhấn mạnh rằng so sánh này được thực hiện ở các mức ngân sách cùng tham số ($\sim 2{,}500$ tham số), một chế độ thấp hơn nhiều so với dung lượng thiết kế của PaiNN (hơn $100$k tham số). Ở dung lượng tự nhiên của mình, PaiNN được kỳ vọng sẽ vượt trội PRISM trên các mục tiêu mà các kênh tương biến vector mang lại ưu thế cấu trúc (xem Bảng~\ref{tab:param_scaling}). Phép so sánh cùng tham số chứng minh \textit{tính hiệu quả tham số} của PRISM, chứ không phải sự vượt trội tuyệt đối trước các kiến trúc tương biến hoàn thiện.
+Tuy nhiên, trên mục tiêu nội năng ($U_0$), PRISM ($130.6 \pm 29.3$\,eV) kém hơn Bản song sinh Cổ điển ($101.1 \pm 16.7$\,eV, $p = 0.13$, không có ý nghĩa thống kê). Tính đặc thù theo mục tiêu này mang tính gợi mở chứ không phải vấn đề: lợi thế của hàm kích hoạt tuần hoàn tập trung vào các tính chất orbital điện tử có sự phụ thuộc góc (HOMO, LUMO, Gap, Lưỡng cực), trong khi các đại lượng nhiệt động dung lượng mở rộng ($U_0$) phụ thuộc vào sự tổng hòa năng lượng mượt mà, đơn điệu không được hưởng lợi từ các hệ cơ sở tuần hoàn. Tính chọn lọc này khẳng định rằng sự cải thiện của PRISM mang tính \textit{cơ chế}---xuất phát từ năng lực biểu đạt góc tuần hoàn phù hợp với vật lý orbital---chứ không phải là một sự gia tăng dung lượng chung chung có lợi đồng đều cho mọi mục tiêu.
+
+\paragraph{So sánh Kiến trúc với PaiNN (Độ phân giải M3).}
+Mặc dù PRISM vượt qua PaiNN trên 4 tính chất, PaiNN vẫn duy trì ưu thế trên LUMO ($0.398$ so với $0.479$\,eV) và khe HOMO-LUMO ($0.470$ so với $0.557$\,eV).
+Sự khác biệt này bắt nguồn trực tiếp từ thiên kiến quy nạp kiến trúc: PaiNN sử dụng cơ chế truyền thông điệp ghép nối vô hướng-vector~\cite{schuttEquivariantMessagePassing2021}, duy trì và cập nhật các kênh vector định hướng 3D ($\vec{v}_i \in \mathbb{R}^{d \times 3}$) qua các lớp liên tiếp.
+Ngược lại, các phép tích chập cạnh của chúng tôi (cả PQC 4-qubit và PRISM) đều chiếu hình học định hướng 3D thành các khoảng cách vô hướng bất biến ($d_{ij}$) và góc trung bình ($\bar{\theta}_{ij}$), truyền các thông điệp hoàn toàn vô hướng trước khi cập nhật tọa độ thông qua hệ số tỷ lệ vô hướng có cổng.
+Việc truyền thông điệp vector liên tục cung cấp dung lượng biểu diễn phong phú hơn cho hiện tượng giao thoa định hướng không gian phi cục bộ chi phối hình dạng orbital chưa lấp đầy (LUMO), giải thích cho sức mạnh của PaiNN trên các mục tiêu này.
+Hàm sóng LUMO chưa lấp đầy thường khuếch tán rộng hơn các orbital HOMO đã lấp đầy, đòi hỏi độ nhạy cao đối với sự sắp xếp không gian 3D. Các kênh vector tương biến của PaiNN nắm bắt trực tiếp các định hướng không gian này. Để so sánh, các mô hình vô hướng như PRISM phải tái tạo lại các biến thiên định hướng từ các góc cặp được lấy trung bình, làm hạn chế dung lượng của chúng trên các mục tiêu orbital chưa lấp đầy.
+Mặc dù vậy, PRISM vẫn đạt độ chính xác vượt trội trên năng lượng orbital đã lấp đầy (HOMO), mômen lưỡng cực tĩnh điện và độ phân cực trong cùng mức ngân sách $\sim 2{,}500$ tham số.
+
+\subsection{Hướng tới PRISM-PaiNN: Kết hợp Kênh Tương biến Vector và Tuần hoàn}
+\label{sec:prism_painn}
+
+Hồ sơ hiệu năng bổ trợ lẫn nhau của PRISM và PaiNN gợi ý một sự tổng hợp kiến trúc tự nhiên. Ưu thế của PaiNN trên LUMO và Gap bắt nguồn từ việc truyền thông điệp ghép nối vô hướng-vector~\cite{schuttEquivariantMessagePassing2021}, duy trì các kênh vector định hướng 3D tường minh ($\vec{v}_i \in \mathbb{R}^{d \times 3}$) qua các lớp truyền thông điệp. Ưu thế của PRISM trên HOMO, Lưỡng cực và Độ phân cực bắt nguồn từ các hàm kích hoạt hình sin tuần hoàn giúp vượt qua các giới hạn biểu diễn của hàm đơn điệu trong nhánh tương tác vô hướng.
+
+Hai thiên kiến quy nạp này \textit{trực giao về mặt kiến trúc}: các hàm kích hoạt tuần hoàn hoạt động trên các đặc trưng vô hướng bất biến (khoảng cách $d_{ij}$ và góc $\bar{\theta}_{ij}$), trong khi các kênh vector của PaiNN lan truyền thông tin định hướng qua các tích tensor tương biến. Một mô hình lai \textbf{PRISM-PaiNN} sẽ thay thế các hàm kích hoạt SiLU trong nhánh tương tác vô hướng của PaiNN bằng các hàm kích hoạt tuần hoàn SIREN ($\sin(\omega_0 W x + b)$) trong khi vẫn bảo toàn nguyên vẹn các kênh cập nhật tương biến vector. Bản thiết kế kiến trúc này không đòi hỏi bất kỳ sửa đổi nào đối với các đảm bảo tương biến của PaiNN, vì hàm kích hoạt tuần hoàn chỉ tác động duy nhất trên đường dẫn vô hướng bất biến.
+
+Một kiến trúc lai như vậy sẽ kế thừa năng lực biểu đạt góc của hàm kích hoạt tuần hoàn cho các tính chất orbital đã lấp đầy (HOMO) và các mômen tĩnh điện (Lưỡng cực, Độ phân cực) trong khi vẫn giữ được độ nhạy của kênh vector cho các orbital chưa lấp đầy (LUMO) và các phản ứng khe định hướng.
+Một cân nhắc thực tế là tính ổn định của gradient: hằng số Lipschitz của $\sin(\omega_0 x)$ tỉ lệ theo $\omega_0$, do đó tại $\omega_0 = 30$ đường dẫn tuần hoàn khuếch đại gradient lên tới $30\times$ so với hàm đồng nhất. Trong PRISM-PaiNN, cơ chế cổng từ vô hướng sang vector phải dung nạp được các gradient được khuếch đại này mà không làm mất ổn định quá trình cập nhật vector tương biến. Cắt tỉa gradient (gradient clipping), giảm $\omega_0$ trong đường dẫn cổng, hoặc sự ghép nối vô hướng-vector còn lại trong các phương trình cập nhật của PaiNN có thể cung cấp sự điều chuẩn đầy đủ, nhưng chúng tôi dành việc kiểm chứng thực nghiệm cho các nghiên cứu tương lai.
+
+\paragraph{3. Vì sao Đặc trưng Fourier Ngẫu nhiên (RFF) Thất bại.}
+Ngược lại với SIREN, bản song sinh Đặc trưng Fourier Ngẫu nhiên ($2{,}515$ tham số) đạt độ chính xác kém hơn trên mọi mục tiêu ($0.424$\,eV HOMO, $0.775$\,eV LUMO, $0.846$\,eV Gap, $3.903$\,Bohr$^3$ $\alpha$).
+Khoảng cách này phản ánh một sự khác biệt kiến trúc cốt lõi: RFF chiếu các đầu vào qua một ma trận Gaussian cố định $\mathbf{B}$~\cite{tancik2020fourier, landman2023approximating}.
+Trong các hệ phân tử, các góc liên kết giữa các nguyên tử và sự lai hóa orbital biến đổi linh hoạt qua các nguyên tố hóa học và hình học phối trí khác nhau.
+SIREN cho phép các trọng số tần số $\mathbf{W}_1$ được học từ đầu đến cuối thông qua lan truyền ngược, tự động điều chỉnh phổ tuần hoàn tương thích với cấu trúc điện tử của phân tử.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/figure9_dequantization_comparison.png}
+    \caption{\textbf{So sánh Khử lượng tử hóa trên các Mục tiêu Điện tử QM9 và Mômen Lưỡng cực:} MAE kiểm tra trên bốn mô hình cạnh cùng dung lượng ($2{,}527 \pm 12$ tham số mỗi mô hình): Bản song sinh Cổ điển ($\tanh$), Bản song sinh Đặc trưng Fourier Ngẫu nhiên (RFF), Q-PRISM (PQC 4-qubit), và PRISM (SIREN). Viền đỏ biểu thị mô hình đạt thành tích cao nhất trên từng mục tiêu. PRISM vượt trội hoàn toàn so với PQC và $\tanh$-MLP tiêu chuẩn trên cả bốn mục tiêu.}
+    \label{fig:dequantization_bars}
+\end{figure*}
+
+\subsection{Phân tích So sánh Bội và Mức Ý nghĩa FDR}
+\label{sec:fdr_analysis}
+
+Một mối quan ngại phương pháp luận quan trọng khi đánh giá trên tập dữ liệu phân tử đa mục tiêu là nguy cơ phát sinh các phát hiện sai từ việc kiểm định đa giả thuyết không được hiệu chỉnh.
+Việc kiểm tra 8 mô hình trên 6 mục tiêu vật lý tạo ra $m = 8 \times 6 = 48$ phép so sánh thống kê theo cặp, trong đó mỗi mô hình được so sánh với mô hình cơ sở cổ điển chỉ định (Bản song sinh Cổ điển $\tanh$-MLP) qua kiểm định $t$ theo cặp trên 5 hạt giống ngẫu nhiên.
+
+Để giải quyết vấn đề này, chúng tôi áp dụng hai khung kiểm soát bội số chuẩn mực:
+\begin{enumerate}
+    \item \textbf{Kiểm soát Tỷ lệ Sai số theo Họ (FWER) qua Bonferroni:}
+    $p_{\mathrm{Bonf}} = \min(1.0, m \cdot p_{\mathrm{raw}})$, đảm bảo mức FWER nghiêm ngặt $\le 0.05$.
+    \item \textbf{Kiểm soát Tỷ lệ Khám phá Sai (FDR) qua Benjamini-Hochberg (BH):}
+    $q_{\mathrm{FDR}} = \min_{k \ge i} \left(\frac{m}{k} p_{(k)}\right)$, kiểm soát tỷ lệ dương tính giả kỳ vọng ở mức $\alpha = 0.05$.
+\end{enumerate}
+
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Mức Ý nghĩa Thống kê Đã Hiệu chỉnh Đa giả thuyết cho PRISM và Q-PRISM} trên các mục tiêu QM9 ($m = 48$ giả thuyết). Hiệu số trung bình ($\Delta = \text{MAE}_{\text{Mô hình}} - \text{MAE}_{\text{Song sinh}}$), giá trị $p$ kiểm định $t$ theo cặp thô, giá trị $q$ theo FDR Benjamini-Hochberg, và giá trị $p_{\mathrm{Bonf}}$ theo Bonferroni.}
+\label{tab:fdr_summary}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Phép so sánh} & \textbf{Mục tiêu} & $\boldsymbol{\Delta}$ & $\boldsymbol{p_{\mathrm{raw}}}$ & $\boldsymbol{q_{\mathrm{FDR}}}$ & $\boldsymbol{p_{\mathrm{Bonf}}}$ \\
+\midrule
+\multicolumn{6}{l}{\textit{PRISM (SIREN) so với Bản song sinh Cổ điển ($\tanh$-MLP)}} \\
+ & HOMO (eV) & $-0.0746$ & $9.57 \times 10^{-3}$ & $\mathbf{0.0184}^{\dagger}$ & $0.459$ \\
+ & LUMO (eV) & $-0.2405$ & $3.67 \times 10^{-4}$ & $\mathbf{0.0016}^{\dagger\dagger}$ & $\mathbf{0.0176}^{*}$ \\
+ & Gap (eV) & $-0.2489$ & $3.47 \times 10^{-4}$ & $\mathbf{0.0016}^{\dagger\dagger}$ & $\mathbf{0.0166}^{*}$ \\
+ & Lưỡng cực (D) & $-0.1927$ & $8.31 \times 10^{-3}$ & $\mathbf{0.0173}^{\dagger}$ & $0.399$ \\
+ & Độ phân cực ($\alpha$) & $-0.4253$ & $2.22 \times 10^{-2}$ & $\mathbf{0.0355}^{\dagger}$ & $1.000$ \\
+\midrule
+\multicolumn{6}{l}{\textit{Q-PRISM (PQC) so với PRISM (SIREN)}} \\
+ & HOMO (eV) & $+0.0334$ & $4.32 \times 10^{-4}$ & $\mathbf{0.0017}^{\dagger\dagger}$ & $\mathbf{0.0207}^{*}$ \\
+ & LUMO (eV) & $+0.1484$ & $1.93 \times 10^{-3}$ & $\mathbf{0.0052}^{\dagger\dagger}$ & $0.0926$ \\
+ & Gap (eV) & $+0.1634$ & $5.79 \times 10^{-3}$ & $\mathbf{0.0126}^{\dagger}$ & $0.2777$ \\
+ & Lưỡng cực (D) & $+0.0526$ & $3.11 \times 10^{-3}$ & $\mathbf{0.0075}^{\dagger\dagger}$ & $0.1494$ \\
+\midrule
+\multicolumn{6}{l}{\textit{Q-PRISM (PQC) so với Bản song sinh Cổ điển ($\tanh$-MLP)}} \\
+ & LUMO (eV) & $-0.0921$ & $9.21 \times 10^{-3}$ & $\mathbf{0.0184}^{\dagger}$ & $0.4422$ \\
+ & Gap (eV) & $-0.0855$ & $1.64 \times 10^{-2}$ & $\mathbf{0.0272}^{\dagger}$ & $0.7882$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Như được báo cáo trong Bảng~\ref{tab:fdr_summary} (và phân tích 48 giả thuyết đầy đủ trong Phụ lục~\ref{sec:appendix_fdr}, Bảng~\ref{tab:full_48_fdr}):
+\begin{itemize}
+    \item Lợi thế hiệu năng của PRISM so với Bản song sinh Cổ điển ($\tanh$) duy trì ý nghĩa thống kê sau khi hiệu chỉnh Benjamini-Hochberg FDR trên $5$ trong số $6$ mục tiêu QM9 ($q < 0.02$ cho HOMO, LUMO, Gap, Lưỡng cực; $q = 0.0355$ cho $\alpha$). Trên LUMO và Gap, ưu thế rõ rệt đến mức vượt qua cả phép hiệu chỉnh Bonferroni bảo thủ ($p_{\mathrm{Bonf}} = 0.017$ và $0.016$).
+    \item PRISM vượt trội có ý nghĩa thống kê so với Q-PRISM trên toàn bộ bốn mục tiêu điện tử/lưỡng cực nồng độ ($q_{\mathrm{FDR}} \le 0.0126$), khẳng định rằng biểu diễn lượng giác cổ điển vượt trội về mặt hàm số so với PQC 4-qubit.
+    \item Các kiểm định dấu hạng Wilcoxon phi tham số mang lại $p = 0.0625$ cho toàn bộ các so sánh chính khi mà cả 5 hiệu số cặp đều đi theo cùng một hướng. Như đã lưu ý trong Mục~\ref{sec:experiments}, đây là mức $p$-value Wilcoxon nhỏ nhất có thể đạt được tại $n = 5$ và do đó phản ánh giới hạn năng lực của phép kiểm định chứ không phải bằng chứng yếu. Chiều hướng của toàn bộ các cặp chênh lệch hoàn toàn nhất quán với kết luận từ kiểm định $t$.
+\end{itemize}
+
+\subsection{Quy luật Tỷ lệ Hiệu quả Mẫu}
+
+Như thể hiện trong Hình~\ref{fig:scaling_law}, Q-PRISM luôn thể hiện khả năng tổng quát hóa vượt trội trên mọi chế độ mẫu đối với mục tiêu khe HOMO-LUMO, với mức cải thiện dốc nhất trong chế độ $N \in [100, 500]$, nơi các mô hình cổ điển bị thiếu hụt tham số trầm trọng nhất.
+
+\subsection{Kiểm tra Ứng suất Đối xứng Liên tục}
+
+Chúng tôi đã xác minh tính tương biến $\mathrm{E}(3)$ chính xác thông qua $1{,}000$ phép quay và tịnh tiến ngẫu nhiên: Q-PRISM đạt tính bất biến ở cấp độ chính xác máy ($\sim 10^{-7}$--$10^{-8}$\,eV), tương đương với EGNN cổ điển, trong khi một mạng GNN Không Tương biến thất bại nặng nề ($1.62$\,eV). Toàn bộ kết quả và hình ảnh trực quan được cung cấp trong SM~C.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.88\textwidth]{figures/figure3_ablations.png}
+    \caption{\textbf{Bộ Thử nghiệm Cắt bỏ Kiến trúc Lượng tử (Khe QM9 Gap, $N=250$):} \textit{Cắt bỏ Kiến trúc Nền tảng:} (a) Mã hóa Đặc trưng: Tải lại Đa trục so với Phép cộng Phương trình (6) của bài báo gốc. (b) Tô pô Vướng víu: Dạng Vòng, Tuyến tính, Toàn phần, và Tách biệt. (c) Động lực học Tọa độ: Dịch chuyển Tương biến Động so với Hình học Tĩnh. (d) Độ sâu Mạch PQC Biến phân $L \in \{1, 2, 4\}$.}
+    \label{fig:ablations}
+\end{figure*}
+
+\subsection{Các Nghiên cứu Cắt bỏ (Ablation Studies)}
+
+\paragraph{Cắt bỏ Kiến trúc Nền tảng.}
+Trong Hình~\ref{fig:ablations}, chúng tôi đánh giá các quyết định thiết kế kiến trúc nền tảng trên mục tiêu khe HOMO-LUMO:
+\begin{enumerate}
+    \item \textbf{Mã hóa Đặc trưng:} Kỹ thuật tải lại đa trục bảo tồn các biểu diễn tọa độ riêng biệt và cho phép năng lực biểu đạt không gian Hilbert phong phú hơn so với phép cộng phá hủy thông tin.
+    \item \textbf{Tô pô Vướng víu:} Ở quy mô mô hình cơ sở ban đầu, các tô pô CNOT Dạng Vòng và Toàn phần cho thấy sự cải thiện so với các qubit tách biệt. Tuy nhiên, phát hiện này được đánh giá lại với các phép đối chứng cùng tham số chặt chẽ trong Mục~\ref{sec:mechanism}, nơi các phân tích cắt bỏ cùng tham số tách biệt tác động của vướng víu khỏi các phép quay đơn qubit.
+    \item \textbf{Động lực học Tọa độ:} Tinh chỉnh tọa độ động cải thiện sự hội tụ không gian so với hình học tĩnh.
+    \item \textbf{Độ sâu Mạch:} Tăng từ $L=1$ lên $L=4$ giảm dần MAE kiểm tra.
+\end{enumerate}
+
+\paragraph{Cắt bỏ các Nâng cấp Kiến trúc Q-PRISM.}
+Việc vô hiệu hóa có chọn lọc từng nâng cấp riêng lẻ của Q-PRISM khẳng định rằng mỗi thành phần đều đóng góp tích cực: việc bổ sung các tương quan tử $\langle Z_i Z_j \rangle$ làm giảm MAE kiểm tra từ $0.818$\,eV xuống $0.804$\,eV, và $L = 2$ đạt độ hiệu chuẩn tối ưu so với $L = 1$ ($0.820$\,eV). Chi tiết đầy đủ về các phân tích cắt bỏ và hình ảnh được cung cấp trong SM~D.
+
+\subsection{Cơ chế của Ưu thế Lượng tử}
+\label{sec:mechanism}
+
+Một phản biện tự nhiên đối với các tuyên bố về lợi thế lượng tử là một mạng MLP cổ điển với kích hoạt đầu ra $\tanh$ cũng tạo ra các đầu ra bị chặn tương tự $\in (-1, 1)$, có khả năng tái tạo bất kỳ thiên kiến quy nạp nào từ các toán tử quan sát Pauli~\cite{bowles2024better}. Để cô lập \textit{cơ chế tác động thực sự} của ưu thế lượng tử, chúng tôi thực hiện ba phân tích bổ trợ.
+
+\subsubsection{Phân tích Cắt bỏ Vướng víu 4 Tầng Cùng Cấu trúc}
+
+Noi theo phương pháp luận đánh giá chuẩn của Bowles et al.~\cite{bowles2024better}, chúng tôi xây dựng bốn mô hình ở mức số lượng tham số nghiêm ngặt ($2{,}527$ tham số) chia sẻ cùng khung xương GNN, embedding, pooling, và readout:
+
+\begin{enumerate}
+    \item \textbf{Q-PRISM (PQC Vướng víu):} Kiến trúc hoàn chỉnh với vướng víu CNOT dạng vòng.
+    \item \textbf{Q-PRISM Tách biệt (Không Vướng víu):} Giống hệt (1) ngoại trừ việc toàn bộ cổng CNOT bị loại bỏ. Mỗi qubit xử lý đặc trưng một cách độc lập.
+    \item \textbf{MLP $\tanh$ Cổ điển:} Thay thế PQC bằng một nhánh cổ điển $\text{Linear}(13, 4) \to \text{SiLU} \to \text{Linear}(4, 8) \to \tanh$, tạo ra các đầu ra bị chặn $(-1, 1)$ giống hệt với đúng 88 tham số huấn luyện được mỗi nhánh (khớp với ngân sách tham số PQC).
+    \item \textbf{EGNN Khớp Tham số:} EGNN cổ điển tiêu chuẩn với số chiều ẩn được tự động tìm kiếm để khớp $\sim 2{,}500$ tham số.
+\end{enumerate}
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Phân tích Cắt bỏ 4 Tầng Cùng Dung lượng trên các Mục tiêu Điện tử QM9} ($N = 1{,}000$, 20 hạt giống, $d_{\min} = 0.47$). $d_{\min}$: chỉ số Cohen's $d$ tối thiểu có thể phát hiện ở năng lực 80\% với $n = 20$ quan sát theo cặp và $\alpha = 0.05$ (kiểm định một phía). So sánh khớp tham số cô lập cơ chế của ưu thế lượng tử. Giá trị $p$ của kiểm định $t$ theo cặp: $^{*}p < 0.05$, $^{**}p < 0.01$, $^{***}p < 0.001$, so sánh giữa Vướng víu và Tách biệt cũng như từng biến thể PQC so với đường cơ sở MLP $\tanh$ Cổ điển (hàng 3). EGNN Khớp Tham số sử dụng 5 hạt giống từ đợt quét ban đầu. Lưu ý: MAE HOMO của Q-PRISM ($0.310$) khác với Bảng~\ref{tab:main_results} ($0.303$) do lấy trung bình trên 20 hạt giống so với 5 hạt giống với tập khởi tạo ngẫu nhiên chồng lấn một phần nhưng phân biệt.}
+\label{tab:iso_ablation}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Mô hình} & \textbf{Toán tử Cạnh} & \textbf{Tham số} & \textbf{HOMO (eV)} & \textbf{LUMO (eV)} & \textbf{Gap (eV)} \\
+\midrule
+Q-PRISM (Của chúng tôi) & PQC Vướng víu & $2{,}527$ & $\mathbf{0.310 \pm 0.016}^{**\dagger}$ & $0.666 \pm 0.033^{***}$ & $0.740 \pm 0.047^{***}$ \\
+Q-PRISM Tách biệt & PQC Không Vướng víu & $2{,}527$ & $0.317 \pm 0.017^{**}$ & $\mathbf{0.656 \pm 0.035}^{***}$ & $\mathbf{0.719 \pm 0.046}^{***}$ \\
+MLP $\tanh$ Cổ điển & Bị chặn Cổ điển & $2{,}527$ & $0.334 \pm 0.023$ & $0.747 \pm 0.029$ & $0.827 \pm 0.029$ \\
+EGNN Khớp Tham số & SiLU Cổ điển & $2{,}497$ & $0.369 \pm 0.020$ & $0.726 \pm 0.034$ & $0.779 \pm 0.048$ \\
+\bottomrule
+\multicolumn{6}{l}{\footnotesize $\dagger$ Vướng víu so với Tách biệt: $p = 0.002$ (HOMO), $p = 0.33$ (LUMO), $p = 0.16$ (Gap).}
+\end{tabular}
+\end{table*}
+
+Bảng~\ref{tab:iso_ablation} tóm tắt so sánh qua 20 hạt giống ($d_{\min} = 0.47$, $\alpha = 0.05$). Sự vướng víu chỉ mang lại một khác biệt có thể phát hiện trên HOMO ($\Delta = 0.006$\,eV, $p = 0.002$, Cohen's $d = 0.85$). Sự khác biệt đó là không đáng kể trong thực tế: $0.006$\,eV đại diện cho sự thay đổi tương đối $2\%$, nằm sâu bên trong biên độ chính xác hóa học $0.043$\,eV. Trên LUMO ($p = 0.33$) và Gap ($p = 0.16$), sự vướng víu không mang lại sự gia tăng có ý nghĩa thống kê nào. Việc loại bỏ hoàn toàn sự vướng víu vẫn giúp PQC tách biệt bỏ xa MLP $\tanh$ cổ điển: sai số HOMO giảm $5.1\%$ ($p = 0.001$), LUMO giảm $12.2\%$ ($p < 10^{-7}$), và Gap giảm $13.0\%$ ($p < 10^{-8}$). Những dữ liệu này chỉ ra rằng chính phép quay lượng giác đơn qubit, chứ không phải sự vướng víu đa qubit, đã tạo ra sự khác biệt về hiệu năng so với các mạng MLP tiêu chuẩn.
+
+\subsubsection{Phân tích Đáp ứng Hàm số: Sự Khan hiếm Dung lượng so với Năng lực Biểu đạt Tuần hoàn}
+
+Để hình dung trực quan nguồn gốc cơ chế của hành vi này, chúng tôi trích xuất các hàm đáp ứng cấp cạnh $f(\theta)$ từ các mô hình đã huấn luyện bằng cách quét góc liên kết 3 vật thể $\theta \in [0^\circ, 180^\circ]$ ở khoảng cách nguyên tử cố định ($d = 2.25$~\AA$^2$) và các embedding nút cố định (trung vị tập huấn luyện).
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.88\textwidth]{figures/figure_angular_response.png}
+    \caption{\textbf{Đáp ứng Hàm số Cạnh theo Góc Liên kết 3 Vật thể} ($\theta \in [0^\circ, 180^\circ]$, cố định $d = 2.25$~\AA$^2$). Trái: PQC Vướng víu tạo ra các đa thức lượng giác đa tần số phong phú trải rộng $[-1, 1]$. Giữa: PQC Tách biệt (không có CNOT) tạo ra các dao động hình sin phong phú tương đương. Phải: Đầu ra của MLP $\tanh$ Cổ điển vẫn phẳng lì; ở ngân sách tham số này ($d_h = 4$), mạng thiếu năng lực biểu diễn để mô tả sự phụ thuộc góc dao động.}
+    \label{fig:angular_response}
+\end{figure*}
+
+Như thể hiện trong Hình~\ref{fig:angular_response}, các mạch lượng tử (cả vướng víu và tách biệt) tạo ra các dao động hình sin mượt mà, biên độ lớn trên toàn bộ miền góc.
+Dưới khuôn khổ chuỗi Fourier của Schuld et al.~\cite{Schuld:2020enb} và Landman et al.~\cite{landman2023approximating}, mỗi phép quay đơn qubit $R_Y(\theta) = \exp(-i \theta \sigma_y / 2)$ cấu thành nên các phần tử cơ sở Fourier $\cos(\theta)$ và $\sin(\theta)$ vốn kết hợp thành các đa thức lượng giác phong phú trên các đầu ra quan sát.
+
+Ngược lại, MLP $\tanh$ cổ điển tạo ra một đáp ứng phẳng lì trên cùng dải góc đó.
+Ở mức ngân sách tham số này ($d_h = 4$), đáp ứng phẳng phản ánh giới hạn biểu diễn cứng của một mạng $\tanh$ 4 đơn vị thay vì thiên kiến phổ trong chế độ NTK~\cite{rahaman2019spectral}, vốn mô tả động lực học học tập trong các mạng thừa tham số hóa.
+Một nơ-ron $\sin$ đơn lẻ vốn dĩ tạo ra các dao động với một tham số tần số điều chỉnh được; một nơ-ron $\tanh$ lại đơn điệu trên phần lớn dải động của nó, đòi hỏi nhiều đơn vị để xấp xỉ từng chu kỳ dao động.
+Chỉ với 4 đơn vị ẩn xử lý 13 đầu vào hỗn hợp, MLP $\tanh$ cổ điển chịu ảnh hưởng của \textit{sự khan hiếm dung lượng biểu diễn}: nó không thể biểu diễn sự phụ thuộc góc dao động mà các tính chất điện tử phân tử đòi hỏi.
+Mặc dù khuôn khổ thiên kiến phổ của Rahaman et al.~\cite{rahaman2019spectral} được áp dụng hình thức cho các mạng thừa tham số, nguyên lý nền tảng---rằng các hệ cơ sở tuần hoàn biểu diễn gọn gàng các đặc trưng dao động mà các hàm kích hoạt đơn điệu không thể diễn đạt hiệu quả---vẫn mở rộng sang chế độ ít tham số này như một lợi thế về dung lượng biểu diễn.
+\textit{Sự mù góc} này giải thích lý do tại sao các mô hình cơ sở cổ điển tiêu chuẩn gặp khó khăn trên các tính chất orbital điện tử, vốn phụ thuộc cơ bản vào các tích phân xen phủ góc tuần hoàn.
+
+Khi chúng tôi xem xét PRISM (SIREN), hàm kích hoạt hình sin tuần hoàn $\sin(\omega_0 W x + b)$ trực tiếp cung cấp hệ cơ sở dao động gọn nhẹ mà mạng $\tanh$-MLP còn thiếu~\cite{sitzmann2020siren}.
+Đầu nhánh SIREN cổ điển tạo ra các đa thức dao động không bão hòa, biên độ lớn tương tự như PQC, khôi phục hoàn toàn độ nhạy góc mà không cần đến các mạch lượng tử hay việc mô phỏng vector trạng thái.
+Điều này tương thích trực tiếp với \textbf{tình thế lưỡng nan giữa khả năng huấn luyện và khả năng mô phỏng} của Cerezo et al.~\cite{Cerezo:2023nqf}: bởi vì PQC 4-qubit của chúng tôi sử dụng độ sâu nông và các toán tử quan sát cục bộ để tránh cao nguyên cằn cỗi, nó thuộc về một lớp giả thuyết có thể mô phỏng cổ điển.
+PRISM cung cấp một kiến trúc cổ điển rõ ràng, thực tiễn thâu tóm toàn bộ lớp giả thuyết này.
+Chúng tôi nhấn mạnh rằng sự tương thích này mang tính \textit{động lực thúc đẩy hơn là một chứng minh toán học hình thức}: các thí nghiệm của chúng tôi chứng minh rằng một mạng SIREN cổ điển \textit{nắm bắt được trên thực nghiệm} các biểu diễn học được của PQC ở mức tương đương tham số, nhưng không khẳng định rằng lớp hàm SIREN bao hàm chặt chẽ lớp hàm PQC theo nghĩa lý thuyết độ phức tạp. Tình thế lưỡng nan giữa khả năng huấn luyện và khả năng mô phỏng cung cấp động lực lý thuyết để kỳ vọng khả năng mô phỏng cổ điển như vậy, nhưng khoảng cách giữa ``có thể mô phỏng thực tiễn'' và ``tương đương có thể chứng minh hình thức'' vẫn là một vấn đề mở.
+Phân tích cắt bỏ nhân tố $2 \times 2$ của chúng tôi (Mục~\ref{sec:init_ablation}) trực tiếp cô lập các yếu tố này: hàm kích hoạt tuần hoàn mang lại sự cải thiện chủ đạo (hiệu ứng lớn gấp $2\times$ so với khởi tạo), trong khi phép khởi tạo mang lại đóng góp cộng hưởng thứ cấp. Ngoài ra, Đặc trưng Fourier Ngẫu nhiên (RFF) cũng cung cấp hệ cơ sở tuần hoàn nhưng không hội tụ tốt (Bảng~\ref{tab:main_results}), khẳng định rằng các trọng số tuần hoàn có thể huấn luyện với sự tương thích tần số học được, chứ không phải các cơ sở tuần hoàn tùy ý hay riêng động lực học khởi tạo, mới là động lực thúc đẩy sự cải tiến.
+
+\subsubsection{Mở rộng Quy mô Độ phức tạp Mẫu}
+
+Để kiểm tra xem liệu lợi thế lượng giác có phải là một hiện tượng phát sinh do ít dữ liệu hay không, chúng tôi đánh giá toàn bộ các mô hình trên tập $N \in \{100, 5{,}000\}$ phân tử huấn luyện (3 hạt giống mỗi mô hình) trên HOMO với các phép khớp hàm lũy thừa $\text{MAE} \sim N^{-\alpha}$ (SM~J). Các mô hình có năng lực biểu đạt lượng giác (PQC và PRISM) duy trì MAE kiểm tra thấp hơn so với MLP $\tanh$ cổ điển ở \textit{mọi} kích thước mẫu ($N = 100$: $0.441$ so với $0.448$~eV; $N = 5{,}000$: $0.244$ so với $0.258$~eV). Khoảng cách tổng quát hóa không đáng kể ($< 0.01$~eV ở $N \ge 500$) bác bỏ giả thuyết ``điều chuẩn unita'' của Caro et al.~\cite{Caro:2021mgf}. Thay vào đó, lợi thế biểu hiện như một sự dịch chuyển hệ số chặn trong đồ thị quy mô log-log ($\alpha_{\tanh} = 0.160$ so với $\alpha_{\mathrm{PQC}} = 0.142$), nhất quán với lợi thế \textit{thiên kiến quy nạp cấu trúc} hoàn toàn có thể tiếp cận cổ điển thông qua PRISM.
+
+\paragraph{Kiểm chứng trên Quy mô Lớn ($N$ lên tới $110{,}000$).}
+\label{sec:scaling}
+Để khẳng định rằng lợi thế của hàm kích hoạt tuần hoàn không phải là một hiện tượng của chế độ dữ liệu thấp, chúng tôi mở rộng đánh giá lên $N \in \{1{,}000,\; 5{,}000,\; 10{,}000,\; 25{,}000,\; 50{,}000,\; 110{,}000\}$ phân tử huấn luyện trên cả ba mục tiêu điện tử với 3 hạt giống độc lập (hạt giống $42$--$44$). Do PRISM và Bản song sinh Cổ điển hoàn toàn là cổ điển, nghiên cứu quy mô này hoàn toàn khả thi về mặt tính toán; Q-PRISM được đưa vào cho đến $N = 10{,}000$, nơi việc mô phỏng vector trạng thái PennyLane vẫn còn có thể thực hiện được.
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Đánh giá Toàn Quy mô QM9: Lợi thế của Hàm kích hoạt Tuần hoàn từ $N = 1{,}000$ đến $N = 110{,}000$}. MAE kiểm tra (eV) cho PRISM (SIREN) cùng mức tham số so với Bản song sinh Cổ điển ($\tanh$-MLP), cả hai đều ở mức $2{,}527$ tham số, 20 epoch. Các giá trị $N = 1{,}000$ là giá trị trung bình qua 5 hạt giống từ Bảng~\ref{tab:main_results}; các giá trị $N \ge 10{,}000$ là giá trị trung bình qua 3 hạt giống (hạt giống $42$--$44$) từ thí nghiệm mở rộng quy mô. Ưu thế tuần hoàn duy trì xuyên suốt toàn bộ hệ phân cấp mẫu, thu hẹp từ $\sim 30\%$ ở $N = 1{,}000$ xuống $\sim 10$--$11\%$ ở $N = 110{,}000$ nhưng không bao giờ biến mất.}
+\label{tab:full_scale}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Mục tiêu} & \textbf{N} & \textbf{PRISM (SIREN)} & \textbf{Song sinh Cổ điển} & \textbf{Ưu thế} \\
+\midrule
+HOMO & $1{,}000$ & $0.269$ & $0.344$ & $22\%$ \\
+ & $10{,}000$ & $0.213$ & $0.247$ & $14\%$ \\
+ & $25{,}000$ & $0.197$ & $0.231$ & $15\%$ \\
+ & $50{,}000$ & $0.181$ & $0.204$ & $12\%$ \\
+ & $110{,}000$ & $\mathbf{0.159}$ & $0.177$ & $11\%$ \\
+\midrule
+LUMO & $1{,}000$ & $0.479$ & $0.720$ & $33\%$ \\
+ & $10{,}000$ & $0.257$ & $0.413$ & $38\%$ \\
+ & $25{,}000$ & $0.210$ & $0.327$ & $36\%$ \\
+ & $50{,}000$ & $0.182$ & $0.246$ & $26\%$ \\
+ & $110{,}000$ & $\mathbf{0.162}$ & $0.181$ & $11\%$ \\
+\midrule
+Gap & $1{,}000$ & $0.557$ & $0.806$ & $31\%$ \\
+ & $10{,}000$ & $0.319$ & $0.502$ & $36\%$ \\
+ & $25{,}000$ & $0.278$ & $0.414$ & $33\%$ \\
+ & $50{,}000$ & $0.260$ & $0.329$ & $21\%$ \\
+ & $110{,}000$ & $\mathbf{0.235}$ & $0.262$ & $10\%$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Bảng~\ref{tab:full_scale} báo cáo kết quả qua các thang đo dữ liệu. PRISM giữ vững MAE kiểm tra thấp hơn so với Bản song sinh Cổ điển trên mọi tính chất và mọi quy mô dữ liệu. Tại $N = 10{,}000$, mức giảm sai số so với Bản song sinh Cổ điển vẫn rất rõ nét: HOMO giảm $14\%$, LUMO giảm $38\%$, và Gap giảm $36\%$. Khi mở rộng ra toàn bộ tập dữ liệu QM9 ($N = 110{,}000$), lợi thế tuần hoàn thu hẹp lại nhưng \textit{không bao giờ biến mất}: PRISM đạt $0.159$\,eV trên HOMO (lợi thế $11\%$), $0.162$\,eV trên LUMO (lợi thế $11\%$), và $0.235$\,eV trên Gap (lợi thế $10\%$). Sự thu hẹp này phù hợp với kỳ vọng rằng gradient descent có thể khắc phục một phần thiên kiến phổ khi có đủ dữ liệu~\cite{rahaman2019spectral}, nhưng khoảng cách bền bỉ $10$--$11\%$ khẳng định rằng các hàm kích hoạt tuần hoàn cung cấp một lợi thế thiên kiến quy nạp mang tính \textit{cấu trúc} mà riêng khối lượng dữ liệu không thể bù đắp hoàn toàn.
+
+PRISM cũng vượt trội so với Q-PRISM (mô hình PQC) tại mọi điểm dữ liệu cho đến $N = 10{,}000$, với toàn bộ các so sánh theo cặp đều có ý nghĩa thống kê tại $p < 0.001$. Biên độ chênh lệch lớn nhất là trên LUMO tại $N = 5{,}000$ ($0.246$ so với $0.433$~eV, giảm $-43\%$). Các kết quả này khẳng định rằng phát hiện khử lượng tử hóa không phải là một hiện tượng cục bộ của dữ liệu ít: lợi thế của hàm kích hoạt tuần hoàn là một thiên kiến quy nạp cấu trúc bền vững có khả năng mở rộng từ $N = 1{,}000$ cho đến toàn bộ tập dữ liệu QM9.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.92\textwidth]{figures/figure_p21_scaling.png}
+    \caption{\textbf{Đánh giá Toàn Quy mô QM9} ($N \in \{1{,}000,\; 5{,}000,\; 10{,}000,\; 25{,}000,\; 50{,}000,\; 110{,}000\}$, 20 epoch, 3 hạt giống). PRISM (xanh lục) duy trì MAE thấp hơn Bản song sinh Cổ điển (đỏ) trên toàn bộ các mục tiêu và quy mô dữ liệu. Ưu thế của hàm kích hoạt tuần hoàn thu hẹp từ $\sim 30\%$ ở $N = 1{,}000$ xuống $\sim 10$--$11\%$ ở $N = 110{,}000$ nhưng không bao giờ biến mất, khẳng định một thiên kiến quy nạp cấu trúc bền vững.}
+    \label{fig:p21_scaling}
+\end{figure*}
+
+\subsection{Hàm kích hoạt so với Khởi tạo: Cắt bỏ Nhân tố}
+\label{sec:init_ablation}
+
+Một yếu tố gây nhiễu tiềm ẩn trong kiến trúc PRISM là cả hàm kích hoạt ($\sin$ so với $\tanh$) lẫn lược đồ khởi tạo (SIREN tỷ lệ theo $\omega_0$ so với PyTorch tiêu chuẩn) đều được thay đổi đồng thời so với Bản song sinh Cổ điển. Để tách biệt các đóng góp này, chúng tôi thực hiện phân tích cắt bỏ nhân tố $2 \times 2$ đan chéo các hàm kích hoạt $\{\sin,\; \mathrm{SiLU}/\tanh\}$ với các lược đồ khởi tạo $\{\text{SIREN},\; \text{Xavier}\}$, mang lại bốn mô hình cùng mức tham số ($2{,}527$ tham số mỗi mô hình):
+
+\begin{itemize}
+    \item \textbf{PRISM} (Kích hoạt Sin + Khởi tạo SIREN): kiến trúc PRISM hoàn chỉnh (đường cơ sở A).
+    \item \textbf{Sin + Xavier}: hàm kích hoạt tuần hoàn $\sin(\omega_0 \cdot)$ với phép khởi tạo đều Xavier tiêu chuẩn---cô lập hàm kích hoạt khỏi phép khởi tạo.
+    \item \textbf{SiLU + Khởi tạo SIREN}: hàm kích hoạt đơn điệu SiLU$\to\tanh$ với phép khởi tạo đều tương tự SIREN ($\mathbf{W}_1 \sim \mathcal{U}(-1/d_{\mathrm{in}}, 1/d_{\mathrm{in}})$)---cô lập phép khởi tạo khỏi hàm kích hoạt.
+    \item \textbf{Bản song sinh Cổ điển} (SiLU + Khởi tạo chuẩn): Bản song sinh Cổ điển ban đầu (đường cơ sở D).
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Phân tích Cắt bỏ Nhân tố $2 \times 2$: Hàm kích hoạt $\times$ Khởi tạo} ($N = 1{,}000$, 10 hạt giống). MAE tập kiểm tra (eV), trung bình $\pm$ độ lệch chuẩn. Toàn bộ bốn mô hình đều có chính xác $2{,}527$ tham số. Hàm kích hoạt $\sin$ tuần hoàn là yếu tố chủ đạo; phép khởi tạo SIREN đóng góp hiệu ứng cộng hưởng thứ cấp. Mọi chênh lệch theo cặp giữa PRISM và các biến thể khác đều có ý nghĩa thống kê ($p < 0.002$, Cohen's $d > 2.0$).}
+\label{tab:init_ablation}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Mục tiêu} & \textbf{PRISM} & \textbf{Sin + Xavier} & \textbf{SiLU + SIREN} & \textbf{Song sinh Cổ điển} \\
+ & (Sin + SIREN) & & (khởi tạo) & (SiLU + Chuẩn) \\
+\midrule
+HOMO & $\mathbf{0.272 \pm 0.014}$ & $0.357 \pm 0.025$ & $0.409 \pm 0.030$ & $0.343 \pm 0.041$ \\
+LUMO & $\mathbf{0.494 \pm 0.031}$ & $0.669 \pm 0.037$ & $0.762 \pm 0.023$ & $0.727 \pm 0.034$ \\
+Gap  & $\mathbf{0.540 \pm 0.030}$ & $0.730 \pm 0.036$ & $0.823 \pm 0.029$ & $0.815 \pm 0.035$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Bảng~\ref{tab:init_ablation} cho thấy một cấu trúc nhân tố rõ ràng. Phân rã các hiệu ứng chính (lấy trung bình trên LUMO và Gap):
+
+\begin{itemize}
+    \item \textbf{Hiệu ứng hàm kích hoạt} ($\sin$ tuần hoàn so với SiLU đơn điệu): $-0.16$ đến $-0.18$\,eV---yếu tố \textit{chủ đạo}.
+    \item \textbf{Hiệu ứng khởi tạo} (SIREN so với chuẩn): $-0.07$ đến $-0.09$\,eV---đóng góp thứ cấp nhưng có ý nghĩa.
+    \item \textbf{Hiệu ứng tương tác}: $-0.20$ đến $-0.21$\,eV---sự kết hợp mang tính \textit{cộng hưởng}, chứ không đơn thuần là cộng gộp tuyến tính. Cả hàm kích hoạt tuần hoàn đơn lẻ (Sin + Xavier: $0.669$\,eV trên LUMO) lẫn riêng phép khởi tạo SIREN (SiLU + khởi tạo SIREN: $0.762$\,eV) đều không thể tiếp cận hiệu năng hoàn chỉnh của PRISM ($0.494$\,eV).
+\end{itemize}
+
+Những kết quả này khẳng định rằng hàm kích hoạt tuần hoàn là động lực chính của ưu thế PRISM, trong khi phép khởi tạo SIREN mang lại sự bổ trợ quan trọng. Hiệu ứng tương tác mạnh mẽ khẳng định PRISM là một thiết kế kiến trúc nhất quán chứ không phải một tập hợp các mẹo vặt độc lập. Mọi so sánh theo cặp giữa PRISM và từng biến thể cắt bỏ đều có ý nghĩa thống kê tại $p < 0.002$ (kiểm định $t$ theo cặp, 10 hạt giống) với Cohen's $d$ dao động từ $2.2$ đến $9.4$, biểu thị kích thước hiệu ứng từ lớn đến rất lớn.
+
+\subsection{Mở rộng Quy mô Tham số: Ưu thế Tuần hoàn ở Dung lượng Thực tế}
+\label{sec:param_scaling}
+
+Một mối lo ngại tự nhiên là liệu ưu thế của PRISM so với các bản song sinh cổ điển có biến mất khi số chiều ẩn được tăng lên vượt quá $d_h = 4$ hay không, điều vốn sẽ giới hạn đóng góp của công trình trong một chế độ thiếu hụt tham số nhân tạo. Chúng tôi đánh giá PRISM và Bản song sinh Cổ điển tại ba quy mô tham số với việc khớp chính xác số lượng tham số tại từng quy mô, đặt cạnh PaiNN để tham khảo (Bảng~\ref{tab:param_scaling}).
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Phân tích Cắt bỏ Mở rộng Tham số} ($N = 1{,}000$, 3 hạt giống). PRISM so với Bản song sinh Cổ điển khi tăng số chiều ẩn. PRISM và Bản song sinh khớp cùng số lượng tham số tại từng quy mô. Ưu thế của hàm kích hoạt tuần hoàn \textit{tăng trưởng} cùng dung lượng mô hình. PaiNN được đưa ra để tham khảo (không cùng số tham số).}
+\label{tab:param_scaling}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Quy mô} & \textbf{Mục tiêu} & \textbf{PRISM} & \textbf{Song sinh} & \textbf{Ưu thế} & \textbf{PaiNN} \\
+\midrule
+$d_h\!=\!4$ & HOMO & $0.318$ & $0.425$ & $+25\%$ & $1.706$ \\
+(2,527\,p) & LUMO & $0.520$ & $0.755$ & $+31\%$ & $0.459$ \\
+ & Gap & $0.712$ & $0.891$ & $+20\%$ & $0.760$ \\
+\midrule
+$d_h\!=\!16$ & HOMO & $0.289$ & $0.425$ & $+32\%$ & $0.287$ \\
+(8,287\,p) & LUMO & $0.395$ & $0.695$ & $+43\%$ & $0.261$ \\
+ & Gap & $0.606$ & $0.863$ & $+30\%$ & $0.436$ \\
+\midrule
+$d_h\!=\!64$ & HOMO & $0.278$ & $0.412$ & $+33\%$ & $0.229$ \\
+(29,599\,p) & LUMO & $0.323$ & $0.632$ & $+49\%$ & $0.210$ \\
+ & Gap & $0.534$ & $0.830$ & $+36\%$ & $0.316$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Ưu thế của hàm kích hoạt tuần hoàn không hề suy giảm theo quy mô---mà thực tế \textit{ngày càng mở rộng}. Trên LUMO, mức cải thiện tăng đơn điệu từ $+31\%$ tại $d_h = 4$ lên $+49\%$ tại $d_h = 64$, và xu hướng tương tự diễn ra trên tất cả các mục tiêu. Điều này trực tiếp bác bỏ giả thuyết cho rằng ưu thế của PRISM chỉ đơn thuần là hệ quả ngẫu nhiên của việc hoạt động trong một chế độ thiếu tham số nhân tạo: các hàm kích hoạt đơn điệu không thể bù đắp sự thiếu vắng thiên kiến quy nạp tuần hoàn chỉ bằng cách tăng dung lượng mạng.
+
+Tại quy mô trung bình và lớn, PaiNN vượt qua PRISM trên LUMO và Gap, nhưng PaiNN sử dụng $28{,}545$--$396{,}801$ tham số so với $8{,}287$--$29{,}599$ của PRISM (nhiều hơn gấp $3.4$--$13.4\times$). Tại quy mô nhỏ cùng tham số, PRISM cạnh tranh hoặc vượt trội hơn PaiNN trên HOMO ($0.318$ so với $1.706$\,eV) và Gap ($0.712$ so với $0.760$\,eV). Ưu thế của PaiNN ở quy mô lớn hơn phản ánh kiến trúc ghép nối vô hướng-vector của nó chứ không chỉ đơn thuần là dung lượng lớn hơn.
+
+\subsection{So sánh Phổ Fourier: PQC so với PRISM}
+\label{sec:spectral_comparison}
+
+Để đánh giá liệu PRISM có nắm bắt cùng cấu trúc tần số như PQC hay không---một mắt xích cốt lõi trong lập luận khử lượng tử hóa---chúng tôi so sánh phổ năng lượng Fourier của các đầu ra cạnh giữa PQC và PRISM đã qua huấn luyện. Với mỗi mô hình, chúng tôi quét góc liên kết 3 vật thể $\theta \in [0^\circ, 180^\circ]$ ở khoảng cách nguyên tử cố định ($d = 2.25$\,\AA$^2$) và tính toán biến đổi Fourier rời rạc 1D của đầu ra 8 kênh của nhánh cạnh.
+
+Bảng~\ref{tab:spectral_comparison} tóm tắt các chỉ số tương đồng phổ. PQC và PRISM chia sẻ độ tương đồng phổ rất cao (độ tương đồng cosine $= 0.90$, vượt xa ngưỡng $0.8$ cho sự đồng thuận cấu trúc) với sự chồng lấn $100\%$ trong 5 tần số chi phối hàng đầu. PRISM thể hiện phổ tập trung nhất (độ tập trung top-5: $97.5\%$) và entropy phổ thấp hơn ($1.24$ bit) so với PQC vướng víu ($1.89$ bit), gợi ý rằng PRISM đạt được biểu diễn tuần hoàn hiệu quả hơn. Bản song sinh Cổ điển, với entropy cao nhất ($2.21$ bit) và độ tập trung thấp nhất ($90.0\%$), khẳng định sự bất lực trong việc tạo ra các đầu ra tuần hoàn có cấu trúc ở mức ngân sách tham số này.
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{So sánh Phổ Fourier} của các đầu ra nhánh cạnh đã huấn luyện (HOMO, $N=1{,}000$, hạt giống 42). Độ tương đồng Cosine (Đồng độ Cos) và sự chồng lấn top-5 tần số được tính giữa từng mô hình và đường cơ sở Q-PRISM.}
+\label{tab:spectral_comparison}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Mục tiêu} & \textbf{Entropy} & \textbf{Độ tập trung} & \textbf{Đồng độ} & \textbf{Chồng lấn} \\
+ & (bits) & (top-5) & \textbf{Cos} & \textbf{Top-5} \\
+\midrule
+Q-PRISM (PQC) & $1.89$ & $95.4\%$ & $1.00$ & $100\%$ \\
+Q-PRISM Tách biệt & $1.12$ & $96.1\%$ & $0.83$ & $100\%$ \\
+Song sinh Cổ điển & $2.21$ & $90.0\%$ & $0.91$ & $100\%$ \\
+\textbf{PRISM (SIREN)} & $\mathbf{1.24}$ & $\mathbf{97.5\%}$ & $\mathbf{0.90}$ & $\mathbf{100\%}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Độ tương đồng phổ cao giữa PQC và PRISM ủng hộ cách diễn giải khử lượng tử hóa: PRISM nắm bắt cùng lớp hàm biến đổi cạnh tuần hoàn mà PQC tính toán qua các phép quay đơn qubit. Sự thất bại của RFF (Bảng~\ref{tab:main_results}) giờ đây có thể được thấu hiểu theo khía cạnh phổ: các phép chiếu ngẫu nhiên cố định tạo ra nội dung tần số bị lệch pha, trong khi cả các phép quay PQC lẫn hàm $\sin(\omega_0 \mathbf{W}_1 \mathbf{u} + \mathbf{b}_1)$ học được của PRISM đều hội tụ về các dải tần số tương tự nhau, tương thích với tác vụ thông qua quá trình huấn luyện đầu-cuối.
+
+\subsection{Nhiễu Phần cứng NISQ \& Triển vọng Phần cứng Lý thuyết}
+\label{sec:hardware_outlook}
+
+\textit{Toàn bộ các phân tích nhiễu phần cứng trong công trình này đều dựa trên các mô hình nhiễu giải tích và các phép chiếu mô phỏng đã hiệu chuẩn; không có mạch nào được thực thi trên phần cứng lượng tử vật lý.}
+Toàn bộ các đánh giá PQC xuyên suốt bài báo đều sử dụng bộ mô phỏng vector trạng thái \texttt{default.qubit} của PennyLane, tương ứng với giới hạn số lần đo vô hạn (infinite-shot, giá trị kỳ vọng chính xác). Trên phần cứng vật lý, ngân sách số lần đo hữu hạn (Bảng~\ref{tab:resources}) sẽ gây ra nhiễu đo lường tỉ lệ thuận với $1/\sqrt{N_{\mathrm{shots}}}$; việc mô tả đặc tính nhiễu lần đo trong SM~E định lượng tác động này và ước tính ngân sách lần đo cần thiết để bảo toàn các phép đo đạt độ chính xác hóa học.
+
+Chúng tôi mô tả tính khả thi triển khai dự kiến của Q-PRISM dưới các kênh nhiễu khử phân cực trên mỗi cổng bao trùm khoảng $\lambda \in [10^{-5}, 5 \times 10^{-2}]$, từ các bộ xử lý siêu dẫn thế hệ tiếp theo (qubit dạng cánh tay - arm qubit, $\lambda \sim 10^{-5}$~\cite{Kline:2025ecg}) đến các QPU transmon hiện tại của IBM ($\lambda \sim 10^{-3}$~\cite{Kim:2023bwr}). Phương pháp Ngoại suy Không Nhiễu (ZNE) với các hệ số co giãn nhiễu $s \in [1.0, 3.0]$~\cite{Temme:2016vkz, Giurgica-Tiron:2020rcf} đạt mức giảm sai số $97.7\%$ tại $\lambda = 0.005$ và $92.0\%$ tại $\lambda = 0.010$. Trong chế độ arm qubit dự kiến ($\lambda \sim 10^{-5}$), các giá trị kỳ vọng thô chưa qua giảm thiểu của Q-PRISM được dự phóng đạt độ trung thực dưới ngưỡng chính xác hóa học dưới các giả định nhiễu lý tưởng hóa, có khả năng loại bỏ chi phí của việc giảm thiểu lỗi. Chúng tôi nhấn mạnh rằng các dự phóng này đại diện cho \textit{những cận trên lý thuyết lạc quan} dựa trên các thông số thiết bị đã công bố cho các kiến trúc chưa tồn tại trong phần cứng thương mại đa qubit; hiệu năng thực tế có thể khác biệt do hiện tượng nhiễu xuyên kênh (crosstalk), chi phí điều khiển kết hợp và sự biến thiên trong chế tạo. Việc kiểm chứng dựa trên mô hình giả lập đã hiệu chuẩn IBM Brisbane FakeBackend ($r = 0.87$, $p < 10^{-4}$) xác nhận sự tương đồng về mặt cấu trúc. Việc mô tả đặc tính nhiễu toàn diện, phân tích ZNE, tác động của nhiễu xuyên kênh $ZZ$ ký sinh, phân tích cắt bỏ nhiễu đo đạc, và phân tích điểm giao cắt của arm qubit được trình bày chi tiết trong SM~E--F.
+
+\subsection{Mở rộng Độ sâu Mạch và Số lượng Qubit}
+\label{sec:circuit_scaling}
+
+Đánh giá Q-PRISM ở các độ sâu biến phân $L \in \{1, 2, 4, 8, 16\}$ và các thanh ghi qubit $n \in \{4, 6, 8\}$ (SM~G), các mạch sâu hơn mang lại sự gia tăng đáng kể về năng lực biểu đạt trên mục tiêu Gap (giảm $21.0\%$ MAE từ $L = 1$ đến $L = 16$). Dưới nhiễu arm qubit dự kiến, hiệu năng hầu như không thể phân biệt được với mô phỏng lý tưởng (suy giảm $< 0.2\%$ tại $L = 16$); dưới nhiễu transmon, cùng độ sâu đó bị suy giảm tới $31.5\%$, vượt ra ngoài cửa sổ kết hợp. Mở rộng lên các thanh ghi 8-qubit mang lại sự cải thiện đơn điệu về độ chính xác (giảm $6.6\%$ sai số) trong khi vẫn nằm trong ngân sách thời gian kết hợp của arm qubit ($\tau/T_2^E \approx 0.40\%$).
+
+\subsection{Các Bộ chuẩn Bổ sung: N-Vật thể \& MD17}
+\label{sec:additional_benchmarks}
+
+Chúng tôi kiểm chứng bổ sung Q-PRISM và PRISM trên bài toán dự báo quỹ đạo N-vật thể mang điện tích trong không gian 3D~\cite{satorras2022enequivariantgraphneural} và dự đoán năng lượng cấu hình MD17~\cite{chmielaMachineLearningAccurate2016} (SM~H--I). Những bộ chuẩn này phục vụ hai vai trò quan trọng vượt ra ngoài QM9: (i) xác minh rằng các hàm kích hoạt tuần hoàn không tạo ra các giả tượng dao động trên các hình học phi cân bằng, và (ii) kiểm tra khả năng tổng quát hóa trên các miền vật lý mà thiên kiến quy nạp góc không mang lại lợi thế.
+
+Trên động lực học N-vật thể ($5$ hạt, tương tác Coulomb), Q-PRISM duy trì sai số tọa độ thấp hơn so với Bản song sinh Cổ điển cùng tham số ($0.6759$ so với $0.6937$ MSE) trong khi không biểu hiện bất kỳ giả tượng dao động nào từ các hàm kích hoạt tuần hoàn. Các dự đoán quỹ đạo mượt mà xác nhận rằng việc chặn đầu ra $\tanh$ và các phép chiếu tuyến tính $\mathbf{W}_1$ học được đã điều chuẩn thành công hệ cơ sở tuần hoàn trong các chế độ ngoại suy.
+
+Trên MD17 (Ethanol và Aspirin), tất cả các mô hình hội tụ về các giá trị MAE năng lượng tương tự nhau ($\sim 3.3$\,kcal/mol cho Ethanol), khẳng định rằng các hàm kích hoạt tuần hoàn tạo ra các bề mặt thế năng mượt mà, hợp lý về mặt vật lý trên các cấu hình động lực học phân tử vượt ra ngoài chế độ cân bằng của QM9. Sự vắng mặt của lợi thế hàm kích hoạt tuần hoàn trên MD17 là hoàn toàn nhất quán với cách diễn giải cơ chế: năng lượng cấu hình là các tính chất dung lượng mở rộng bị chi phối bởi các thế năng tương tác giữa các nguyên tử gần như đơn điệu và mượt mà, nơi thiên kiến quy nạp góc của hàm kích hoạt tuần hoàn không mang lại lợi thế cấu trúc. Tính đặc thù mục tiêu này củng cố mạnh mẽ tuyên bố rằng sự cải thiện của PRISM trên các tính chất điện tử QM9 phản ánh sự tương thích năng lực biểu đạt góc thực sự chứ không phải một sự gia tăng dung lượng chung chung.
+
+\section{Phân tích Tài nguyên \& Độ phức tạp Lượng tử}
+\label{sec:resources}
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{So sánh Tài nguyên \& Độ phức tạp} trên hệ thống phân cấp mô hình 3 tầng.}
+\label{tab:resources}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Chỉ số} & \textbf{EGNN Tiêu chuẩn} & \textbf{EGNN Cùng Tham số} & \textbf{Q-PRISM} \\
+\midrule
+Số lượng Tham số & $4{,}289$ & $2{,}497$ & $2{,}527$ \\
+Tính toán Cạnh & MLP & MLP & $2 \times$ PQC 4-Qubit \\
+ & ($16 \to 16 \to 16$) & ($12 \to 12 \to 12$) & ($L=2$) \\
+Độ sâu Mạch & Không áp dụng & Không áp dụng & $8 R_{xyz}$ + $4$ CNOT \\
+ & & & mỗi lớp \\
+RAM Vector Trạng thái & Không áp dụng & Không áp dụng & $128$ Bytes \\
+Ngân sách Lần đo (Shots) & Không áp dụng & Không áp dụng & $1{,}000$--$4{,}000$ \\
+ & & & shots/cạnh \\
+\midrule
+Nguy cơ Cao nguyên Cằn cỗi & Không áp dụng & Không áp dụng & Đã tránh được \\
+(Barren Plateau) \cite{McClean:2018jps, Cerezo:2020mtn} & & & (toán tử cục bộ, $L \in O(\log n)$) \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Tình thế Lưỡng nan Giữa Khả năng Huấn luyện và Khả năng Mô phỏng.}
+Bảng~\ref{tab:resources} tóm tắt dấu ấn tài nguyên và độ phức tạp lý thuyết trên hệ phân cấp đường cơ sở.
+Phát hiện thực nghiệm của chúng tôi rằng PRISM (SIREN cổ điển) đạt kết quả ngang bằng và vượt trội PQC 4-qubit được đặt nền tảng vững chắc trong lý thuyết độ phức tạp tính toán lượng tử hiện đại.
+Cerezo, Holmes et al.~\cite{Cerezo:2023nqf} đã chứng minh rằng trong học máy lượng tử biến phân, việc vắng mặt hiện tượng cao nguyên cằn cỗi gắn liền mật thiết với khả năng mô phỏng cổ điển: bất kỳ PQC nào tránh được cao nguyên cằn cỗi thông qua độ sâu mạch nông ($L \in \mathcal{O}(\log n)$) và các toán tử quan sát cục bộ nhất thiết phải cư trú bên trong một lớp giả thuyết có thể mô phỏng cổ điển.
+Trong Q-PRISM, PQC tại cạnh sử dụng 4 qubit, $L = 2$ lớp, cùng các toán tử quan sát cục bộ đơn qubit và tương quan tử lân cận gần nhất.
+Mặc dù điều này đảm bảo gradient không bị triệt tiêu và quá trình huấn luyện diễn ra ổn định, nó đồng thời giới hạn đầu ra vào một chuỗi Fourier cắt cụt số chiều thấp~\cite{landman2023approximating, Schuld:2020enb}.
+Ngược lại, nỗ lực thoát khỏi khả năng mô phỏng cổ điển bằng cách mở rộng sang các mạch sâu, vướng víu toàn cục sẽ kích hoạt hiện tượng tập trung độ đo hàm mũ (Thanasilp et al.~\cite{Thanasilp:2022agd}), trong đó các nhân lượng tử suy biến về các hằng số tầm thường và gradient triệt tiêu theo cấp $\mathcal{O}(2^{-n/2})$.
+Vì vậy, trong chế độ có thể huấn luyện cho đồ thị hình học, các mạch lượng tử không mang lại sự phân tách tiệm cận về năng lực biểu đạt so với các mạng tuần hoàn cổ điển được khởi tạo thích hợp.
+
+\paragraph{Mở rộng cho Đại phân tử ($O(N)$).}
+Đối với các phân tử có $N > 50$ nguyên tử, việc xây dựng đồ thị cạnh kết nối toàn phần $O(N^2)$ trở thành một nút thắt cổ chai. Triển khai của chúng tôi bao gồm một bộ dựng đồ thị thưa lân cận gần nhất $k$ giúp giảm độ phức tạp cạnh xuống còn $O(kN) = O(N)$ đối với $k$ không đổi, cho phép cả Q-PRISM và PRISM mở rộng quy mô lên các hệ đại phân tử (protein, polyme) mà không làm thay đổi kiến trúc toán tử cạnh về mặt căn bản.
+Đối với PRISM, mỗi lần đánh giá cạnh là một phép nhân ma trận cổ điển nhẹ nhàng và một phép tính hàm sin, thực thi trong vài micro giây trên các GPU hiện đại mà không gặp phải nhiễu đo lường hay độ trễ phần cứng lượng tử.
+
+\section{Kết luận}
+\label{sec:conclusion}
+
+Trong công trình này, chúng tôi đã nghiên cứu cơ chế của các mạch lượng tử tham số hóa trong mạng nơ-ron đồ thị tương biến $\mathrm{E}(3)$ cho bài toán dự đoán tính chất phân tử 3D.
+Thông qua Q-PRISM, ban đầu chúng tôi ghi nhận một ưu thế hiệu năng so với các mô hình cơ sở cổ điển tiêu chuẩn ($\tanh$-MLP) trên các tính chất điện tử QM9 (HOMO, LUMO, và Gap).
+Các phân tích cắt bỏ có hệ thống 4 tầng trên 20 hạt giống ngẫu nhiên chỉ ra rằng sự vướng víu đa qubit đóng góp không đáng kể vào độ chính xác thực tế. Trên HOMO, kích thước hiệu ứng có thể phát hiện về mặt thống kê ($\Delta = 0.006$\,eV, $p = 0.002$), song nằm sâu dưới ngưỡng chính xác hóa học $0.043$\,eV. Trên LUMO và Gap, sự vướng víu không tạo ra sự thay đổi có ý nghĩa nào. Ưu thế hiệu năng bắt nguồn trực tiếp từ năng lực biểu đạt lượng giác của các phép quay đơn qubit.
+
+Bằng cách kết nối quan sát này với lý thuyết xấp xỉ hàm tuần hoàn, chúng tôi nhận diện rằng các mạng MLP cổ điển tiêu chuẩn với các hàm kích hoạt đơn điệu phải chịu \textit{sự khan hiếm dung lượng biểu diễn} ở mức ngân sách tham số thấp~\cite{rahaman2019spectral}: một mạng $\tanh$ với $d_h = 4$ đơn vị ẩn không thể biểu diễn gọn gàng sự phụ thuộc góc dao động mà các tính chất điện tử phân tử đòi hỏi, trong khi một nơ-ron $\sin$ đơn lẻ vốn dĩ tạo ra các dao động.
+Theo cách tiếp cận khử lượng tử hóa thực nghiệm lấy cảm hứng từ Tang~\cite{Tang:2018lmw}, chúng tôi đã giải quyết hạn chế cổ điển này bằng cách giới thiệu \textbf{PRISM}, mạng nơ-ron đồ thị truyền thông điệp tương biến đầu tiên kết hợp các hàm kích hoạt \textit{nội} tuần hoàn hình sin với phép khởi tạo SIREN~\cite{sitzmann2020siren}.
+Ở mức tương đương tham số chính xác ($2{,}527$ tham số), PRISM bám sát hoặc vượt trội PQC trên toàn bộ các mục tiêu điện tử (HOMO: $0.269$ so với $0.303$\,eV; LUMO: $0.479$ so với $0.628$\,eV; Gap: $0.557$ so với $0.721$\,eV), đồng thời vượt qua PaiNN trên 4 trong số 6 tính chất QM9.
+Hiệu chỉnh đa giả thuyết thống kê đầy đủ thông qua Tỷ lệ Khám phá Sai Benjamini-Hochberg ($m = 48$ giả thuyết) khẳng định rằng các hàm kích hoạt tuần hoàn mang lại lợi thế có ý nghĩa thống kê so với hàm $\tanh$ tiêu chuẩn ($q < 0.02$).
+
+Những phát hiện này hoàn toàn phù hợp với tình thế lưỡng nan giữa khả năng huấn luyện và khả năng mô phỏng~\cite{Cerezo:2023nqf} cùng các giới hạn tập trung độ đo hàm mũ~\cite{Thanasilp:2022agd}. Cụ thể, kết quả khử lượng tử hóa của chúng tôi được xác lập cho các mạch tham số hóa 4-qubit với $\le$4 lớp biến phân, tô pô vướng víu CNOT dạng vòng, và các toán tử quan sát Pauli cục bộ đơn qubit và lân cận gần nhất. Đối với các PQC nông như vậy, các ưu thế hiệu năng biểu kiến so với các mô hình cơ sở cổ điển thực chất phản ánh các thiên kiến quy nạp tuần hoàn vốn dễ dàng tái tạo trên phần cứng cổ điển. Đánh giá toàn quy mô trên toàn bộ tập dữ liệu QM9 ($N = 110{,}000$) chứng minh rằng ưu thế của hàm kích hoạt tuần hoàn duy trì bền bỉ---thu hẹp từ $\sim 30\%$ ở $N = 1{,}000$ xuống $\sim 10$--$11\%$ ở $N = 110{,}000$ nhưng không bao giờ biến mất---khẳng định một thiên kiến quy nạp cấu trúc chứ không phải hiện tượng phát sinh do ít dữ liệu.
+Chúng tôi thừa nhận rằng không có tuyên bố nghiêm túc nào về lợi thế tính toán lượng tử tồn tại cho các mạch 4-qubit, độ sâu thấp, vướng víu thấp; đóng góp của chúng tôi do đó không phải là việc bác bỏ một tuyên bố về lợi thế lượng tử đang hoạt động, mà là (i) việc nhận diện mang tính xây dựng về \textit{cơ chế} (năng lực biểu đạt lượng giác) làm nền tảng cho hiệu năng của PQC trên các tác vụ phân tử, và (ii) việc giới thiệu PRISM như một kiến trúc cổ điển hiệu quả về tham số, đưa các hàm kích hoạt nội tuần hoàn hình sin vào các mạng GNN truyền thông điệp tương biến lần đầu tiên. Việc liệu các mạch lượng tử với thanh ghi sâu hơn ($L > 4$), số lượng qubit cao hơn ($n \ge 16$), các toán tử quan sát phi cục bộ, hoặc các tô pô vướng víu biểu cảm hơn có thể phá vỡ sự cân bằng cổ điển này hay không vẫn là một câu hỏi lý thuyết và thực nghiệm còn để ngỏ.
+Qua đó, công trình này cung cấp (i) một phương pháp luận đánh giá chuẩn có thể tái sử dụng để kiểm tra các lợi thế QML giả định thông qua các mô hình đại diện cổ điển tương thích thiên kiến quy nạp, và (ii) PRISM, một kiến trúc cổ điển hiệu quả về tham số cho học sâu hình học phân tử.
+
+\paragraph{Hạn chế và Hướng Nghiên cứu Tương lai.}
+\begin{enumerate}
+    \item \textbf{Chế độ đánh giá bị giới hạn tham số:} Đánh giá chính của chúng tôi thử nghiệm các mô hình ở mức $N = 1{,}000$ phân tử với $\sim 2{,}500$ tham số. Đánh giá toàn quy mô mở rộng lên $N = 110{,}000$ (Bảng~\ref{tab:full_scale}), khẳng định ưu thế hàm kích hoạt tuần hoàn bền bỉ $10$--$11\%$. Các thí nghiệm mở rộng quy mô tham số (Bảng~\ref{tab:param_scaling}) chứng minh rằng ưu thế tuần hoàn vẫn tồn tại---và trên thực tế còn mở rộng---khi số chiều ẩn tăng từ $d_h = 4$ lên $d_h = 64$ ($29{,}599$ tham số). Mặc dù vậy, các mô hình lớn nhất của chúng tôi vẫn nằm dưới dung lượng của các kiến trúc hàng đầu hiện nay (ví dụ: PaiNN với hơn $100$k tham số, MACE với hơn $1$M tham số), và việc đánh giá trên các tập dữ liệu vượt ra ngoài QM9 (ví dụ: OC20, ANI-1x) vẫn là hướng nghiên cứu trong tương lai.
+    \item \textbf{Phép gộp góc 3 vật thể (M5):} Để duy trì độ phức tạp tuyến tính $O(E)$, kiến trúc của chúng tôi lấy trung bình các góc qua các nguyên tử thứ ba: $\bar{\theta}_{ij}$ (Phương trình~\ref{eq:angle}). Mặc dù hiệu quả về tính toán, phép lấy trung bình này loại bỏ hình học bộ ba riêng lẻ, không giống như DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020} hay GemNet~\cite{klicperaGemNetUniversalDirectional2021}. Các nghiên cứu tương lai có thể khám phá các phép chiếu tuần hoàn theo từng bộ ba.
+    \item \textbf{Biểu diễn hình học thuần vô hướng:} Cả Q-PRISM và PRISM đều chiếu hình học định hướng 3D thành các bất biến vô hướng (khoảng cách giữa các nguyên tử $d_{ij}$ và góc liên kết trung bình $\bar{\theta}_{ij}$), loại bỏ thông tin vector định hướng trên mỗi cạnh. Do đó, các mô hình không thể phân biệt các đồng phân đối quang chiral hoặc nắm bắt các tương tác đa cực bậc cao đòi hỏi các kênh tương biến vector hoặc tensor tường minh~\cite{schuttEquivariantMessagePassing2021, batatiaMACEHigherOrder2022}. Mở rộng PRISM sang cơ chế truyền thông điệp ghép nối vô hướng-vector (tương tự PaiNN) hoặc các kiến trúc tương biến tensor bậc cao (tương tự MACE) là một hướng phát triển tự nhiên.
+    \item \textbf{Kiến trúc lai PRISM-PaiNN:} Hồ sơ hiệu năng bổ trợ lẫn nhau của PRISM (vượt trội trên HOMO, Lưỡng cực, Độ phân cực) và PaiNN (vượt trội trên LUMO, Gap) gợi ý một sự tổng hợp kiến trúc tự nhiên: thay thế các hàm kích hoạt SiLU trong nhánh tương tác vô hướng của PaiNN bằng các hàm kích hoạt tuần hoàn SIREN trong khi vẫn bảo toàn các kênh cập nhật tương biến vector. Vì hàm kích hoạt tuần hoàn chỉ tác động trên đường dẫn vô hướng bất biến, điều này không đòi hỏi bất kỳ sửa đổi nào đối với các đảm bảo tương biến của PaiNN. Một cân nhắc thực tế là tính ổn định của gradient: hằng số Lipschitz của $\sin(\omega_0 x)$ tỉ lệ theo $\omega_0$, do đó cơ chế cổng từ vô hướng sang vector phải dung nạp được các gradient được khuếch đại. Chúng tôi dành việc kiểm chứng thực nghiệm cho mô hình lai này cho các nghiên cứu tương lai.
+    \item \textbf{Thực thi phần cứng \& các ràng buộc tô pô (m1, m2):} Toàn bộ các mạch lượng tử đều được mô phỏng qua các backend vector trạng thái PennyLane; hiện tại chưa có bộ xử lý vòng fluxonium 4-qubit vật lý nào tồn tại trong phần cứng thương mại. Mở rộng vượt qua 4 qubit trên các mạng siêu dẫn phẳng (chẳng hạn như mạng heavy-hex của IBM) cũng làm phát sinh chi phí định tuyến cổng SWAP, làm tăng độ sâu mạch hiệu dụng lên khoảng $1.5$--$2.0\times$.
+    \item \textbf{Chi phí thực thi NISQ \& huấn luyện lai (m3):} Việc đánh giá tuần tự các cạnh trên QPU gây ra nhiễu lần đo (shot noise) và độ trễ ($3$--$12$\,giây mỗi phân tử). Việc triển khai trong tương lai gần có thể được hưởng lợi từ huấn luyện lai: tiền huấn luyện khung xương tương biến theo cách cổ điển với PRISM, tiếp theo là tinh chỉnh lượng tử trên các tập con mục tiêu để tối thiểu hóa thời gian chạy trên QPU.
+    \item \textbf{Giả định huấn luyện không nhiễu (m4):} Nhiễu phần cứng được mô tả đặc tính hậu nghiệm thông qua ZNE và các phép chiếu nhiễu giải tích. Huấn luyện nhận biết nhiễu (noise-aware training)~\cite{cincio2021machine, Sharma:2020qjq} kết hợp ma trận mật độ được hiệu chuẩn theo thiết bị qua thiết bị \texttt{default.mixed} của PennyLane là bước đi tự nhiên tiếp theo cho triển khai thực nghiệm.
+    \item \textbf{Phạm vi PQC nông:} Kết quả khử lượng tử hóa thực nghiệm của chúng tôi được xác lập cho các PQC nông, số qubit thấp (4 qubit, $L \le 4$, tô pô CNOT dạng vòng) với các toán tử quan sát Pauli cục bộ. Chúng tôi không đưa ra một chứng minh toán học hình thức rằng lớp hàm SIREN bao hàm chặt chẽ lớp hàm PQC theo nghĩa lý thuyết độ phức tạp; bằng chứng của chúng tôi là thực nghiệm (khớp hiệu năng cùng tham số và độ tương đồng phổ). Việc liệu kết quả có mở rộng sang các mạch sâu hơn ($L > 4$) với các toán tử quan sát phi cục bộ, số lượng qubit lớn hơn ($n \ge 16$), hay các tô pô vướng víu biểu cảm hơn (ví dụ: toàn phần, cấu trúc gốc heavy-hex) hay không vẫn là một câu hỏi mở. Những mạch như vậy có thể tiếp cận các lớp hàm nằm ngoài tầm với của các mô hình tuần hoàn cổ điển, mặc dù tình thế lưỡng nan giữa khả năng huấn luyện và khả năng mô phỏng~\cite{Cerezo:2023nqf} gợi ý rằng các mạch có thể huấn luyện vẫn sẽ duy trì khả năng mô phỏng cổ điển.
+\end{enumerate}
+
+\paragraph{Tính Khả dụng của Mã nguồn và Dữ liệu.}
+Toàn bộ mã nguồn cho Q-PRISM, PRISM, và quy trình thực nghiệm đầy đủ (huấn luyện, đánh giá, phân tích thống kê, và tạo hình ảnh) sẽ được công khai khi bài báo được xuất bản. Tập dữ liệu QM9~\cite{ramakrishnan2014quantum} được cung cấp công khai qua PyTorch Geometric. Dữ liệu mô phỏng MD17~\cite{chmielaMachineLearningAccurate2016} và N-vật thể được tạo ra bằng các quy trình tiêu chuẩn được mô tả trong các tài liệu tham khảo tương ứng.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\clearpage
+\appendix
+\section{Báo cáo Hiệu chỉnh Đa giả thuyết Đầy đủ cho 48 Giả thuyết}
+\label{sec:appendix_fdr}
+
+Nhằm cung cấp tính minh bạch hoàn toàn và loại bỏ các mối quan ngại về việc báo cáo có chọn lọc hoặc đào bới dữ liệu trên nhiều tính chất vật lý, Bảng~\ref{tab:full_48_fdr} báo cáo phân tích thống kê đầy đủ trên toàn bộ $m = 48$ phép so sánh giả thuyết theo cặp ($8$ mô hình $\times$ $6$ mục tiêu, được đánh giá qua 5 hạt giống ngẫu nhiên độc lập). Đối với mỗi phép so sánh, chúng tôi báo cáo hiệu số trung bình ($\Delta = \text{MAE}_A - \text{MAE}_B$), giá trị $p$ của kiểm định $t$ theo cặp hai phía chưa hiệu chỉnh ($p_{\mathrm{raw}}$), giá trị $q$ đã hiệu chỉnh theo Tỷ lệ Khám phá Sai Benjamini-Hochberg ($q_{\mathrm{FDR}}$), và giá trị $p$ bảo thủ đã hiệu chỉnh theo Tỷ lệ Sai số Họ Bonferroni ($p_{\mathrm{Bonf}}$).
+
+\input{supplementary_fdr_table_vi.tex}
+
+\end{document}

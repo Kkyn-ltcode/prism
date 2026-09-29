@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{\textbf{Comprehensive Thermodynamic Properties Evaluation on QM9 Across All Models} ($N = 1{,}000$, Mean $\pm$ Std across 5 seeds: $42$--$46$). Evaluates the full thermodynamic suite ($U_0, U, H, G$) to directly address target selection and cherry-picking concerns. All thermodynamic properties are extensive energies dominated by atomization scales ($\sim 10^4$\,eV); $U, H, G$ derive linearly from $U_0$ via thermal and entropic corrections. Best result per row in \textbf{bold}.}
+\label{tab:supplementary_uhg}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccc}
+\toprule
+\textbf{Property} & \textbf{Unit} & \textbf{Q-PRISM} & \textbf{PRISM} & \textbf{Trig Twin} & \textbf{Classical Twin} & \textbf{SchNet} & \textbf{PaiNN} & \textbf{EGNN-PM} & \textbf{EGNN Std} \\
+ & & (Ours - PQC) & \textbf{(Ours - SIREN)} & (Fourier RFF) & ($\tanh$-MLP) & & & & \\
+ & & $2{,}527$\,p & $2{,}527$\,p & $2{,}515$\,p & $2{,}527$\,p & $2{,}473$\,p & $2{,}721$\,p & $2{,}497$\,p & $4{,}289$\,p \\
+\midrule
+Internal Energy at 0K ($U_0$) & eV & $110.0 \pm 18.2$ & $130.6 \pm 29.3$ & $686.5 \pm 40.0$ & $101.1 \pm 16.7$ & $104.3 \pm 11.0$ & $446.0 \pm 25.1$ & $87.7 \pm 22.2$ & $\mathbf{69.5 \pm 12.3}$ \\
+\midrule
+\multicolumn{2}{l}{\textbf{Trainable Parameters}} & $2{,}527$ & $2{,}527$ & $2{,}515$ & $2{,}527$ & $2{,}473$ & $2{,}721$ & $2{,}497$ & $4{,}289$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

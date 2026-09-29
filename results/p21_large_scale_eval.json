@@ -1,0 +1,805 @@
+{
+  "metadata": {
+    "description": "P2.1 Revision: Large-scale Periodic-EGNN evaluation",
+    "n_values": [
+      1000
+    ],
+    "targets": [
+      "homo"
+    ],
+    "seeds": [
+      42
+    ],
+    "models": [
+      "trig_twin_siren",
+      "classical_twin",
+      "eqgnn_v2"
+    ]
+  },
+  "homo": {
+    "N=1000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.437830472946167,
+        "params": 2527,
+        "train_time_s": 0.9,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 2
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.44360545158386233,
+        "params": 2527,
+        "train_time_s": 0.8,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 2
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.4334373741149902,
+        "params": 2527,
+        "train_time_s": 27.2,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 2
+      }
+    },
+    "N=5000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.22135681953430175,
+        "params": 2527,
+        "train_time_s": 31.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.24898588027954102,
+        "params": 2527,
+        "train_time_s": 32.1,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.25209486865997316,
+        "params": 2527,
+        "train_time_s": 1064.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      }
+    },
+    "N=10000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.20944992685317992,
+        "params": 2527,
+        "train_time_s": 64.8,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.23440068216323853,
+        "params": 2527,
+        "train_time_s": 66.1,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.2351409171104431,
+        "params": 2527,
+        "train_time_s": 2082.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.21876496028900147,
+        "params": 2527,
+        "train_time_s": 59.5,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.2109038710594177,
+        "params": 2527,
+        "train_time_s": 56.4,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.2521371760368347,
+        "params": 2527,
+        "train_time_s": 56.3,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.25377620000839235,
+        "params": 2527,
+        "train_time_s": 59.1,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=25000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.1962213129043579,
+        "params": 2527,
+        "train_time_s": 142.6,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.19650272417068482,
+        "params": 2527,
+        "train_time_s": 143.4,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.19807433376312256,
+        "params": 2527,
+        "train_time_s": 145.2,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.22436299180984498,
+        "params": 2527,
+        "train_time_s": 142.7,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.23363646183013917,
+        "params": 2527,
+        "train_time_s": 139.7,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.2353675196647644,
+        "params": 2527,
+        "train_time_s": 139.1,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=50000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.17827145557403565,
+        "params": 2527,
+        "train_time_s": 279.9,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.1826289861679077,
+        "params": 2527,
+        "train_time_s": 281.8,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.1810714479446411,
+        "params": 2527,
+        "train_time_s": 282.4,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.1936631916999817,
+        "params": 2527,
+        "train_time_s": 272.5,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.21266650838851928,
+        "params": 2527,
+        "train_time_s": 278.0,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.2063910267829895,
+        "params": 2527,
+        "train_time_s": 279.3,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=110000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.14989449863433837,
+        "params": 2527,
+        "train_time_s": 641.9,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.1636544856071472,
+        "params": 2527,
+        "train_time_s": 631.1,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.1626518979072571,
+        "params": 2527,
+        "train_time_s": 616.7,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.17112742710113527,
+        "params": 2527,
+        "train_time_s": 624.5,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.18115926189422607,
+        "params": 2527,
+        "train_time_s": 625.5,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.1798566421508789,
+        "params": 2527,
+        "train_time_s": 631.7,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    }
+  },
+  "lumo": {
+    "N=1000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.5035082473754883,
+        "params": 2527,
+        "train_time_s": 7.0,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.7318262634277344,
+        "params": 2527,
+        "train_time_s": 6.7,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.6586380271911622,
+        "params": 2527,
+        "train_time_s": 248.1,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 20
+      }
+    },
+    "N=5000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.24565397152900695,
+        "params": 2527,
+        "train_time_s": 32.7,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.48556396942138674,
+        "params": 2527,
+        "train_time_s": 32.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.4331240434169769,
+        "params": 2527,
+        "train_time_s": 1117.5,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      }
+    },
+    "N=10000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.22847143476009368,
+        "params": 2527,
+        "train_time_s": 66.2,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.3486016640663147,
+        "params": 2527,
+        "train_time_s": 79.8,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.31355472159385683,
+        "params": 2527,
+        "train_time_s": 2202.4,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.2722456295490265,
+        "params": 2527,
+        "train_time_s": 60.3,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.26964066998958586,
+        "params": 2527,
+        "train_time_s": 60.2,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.384345300245285,
+        "params": 2527,
+        "train_time_s": 58.1,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.504906613445282,
+        "params": 2527,
+        "train_time_s": 57.5,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=25000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.2146373513698578,
+        "params": 2527,
+        "train_time_s": 149.4,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.20498931996822356,
+        "params": 2527,
+        "train_time_s": 150.6,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.21141249656677247,
+        "params": 2527,
+        "train_time_s": 149.5,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.3433605725288391,
+        "params": 2527,
+        "train_time_s": 147.2,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.30206486287117007,
+        "params": 2527,
+        "train_time_s": 146.8,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.3358062847614288,
+        "params": 2527,
+        "train_time_s": 144.2,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=50000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.16961862802505492,
+        "params": 2527,
+        "train_time_s": 294.9,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.18290077981948852,
+        "params": 2527,
+        "train_time_s": 294.6,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.19319267563819886,
+        "params": 2527,
+        "train_time_s": 289.7,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.24869306547641754,
+        "params": 2527,
+        "train_time_s": 290.2,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.23934422550201417,
+        "params": 2527,
+        "train_time_s": 289.3,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.2498156467437744,
+        "params": 2527,
+        "train_time_s": 284.6,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=110000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.16003113884925843,
+        "params": 2527,
+        "train_time_s": 638.5,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.16093791375160219,
+        "params": 2527,
+        "train_time_s": 637.6,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.16386668462753295,
+        "params": 2527,
+        "train_time_s": 654.5,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.19010537502765656,
+        "params": 2527,
+        "train_time_s": 638.6,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.17063111042976378,
+        "params": 2527,
+        "train_time_s": 614.7,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.1829379499197006,
+        "params": 2527,
+        "train_time_s": 604.5,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    }
+  },
+  "gap": {
+    "N=1000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.5885537700653076,
+        "params": 2527,
+        "train_time_s": 8.3,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.8069407501220703,
+        "params": 2527,
+        "train_time_s": 8.1,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.7704681587219239,
+        "params": 2527,
+        "train_time_s": 218.9,
+        "num_train": 1000,
+        "num_test": 500,
+        "epochs": 20
+      }
+    },
+    "N=5000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.3406539102554321,
+        "params": 2527,
+        "train_time_s": 42.4,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.4901028861999512,
+        "params": 2527,
+        "train_time_s": 42.2,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.4632117204666138,
+        "params": 2527,
+        "train_time_s": 1113.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      }
+    },
+    "N=10000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.30538356313705445,
+        "params": 2527,
+        "train_time_s": 83.9,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.4156790509223938,
+        "params": 2527,
+        "train_time_s": 81.2,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.35143471784591673,
+        "params": 2527,
+        "train_time_s": 2210.3,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.339224934387207,
+        "params": 2527,
+        "train_time_s": 57.3,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.312274565410614,
+        "params": 2527,
+        "train_time_s": 57.5,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.4955194746017456,
+        "params": 2527,
+        "train_time_s": 56.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.5942238589286805,
+        "params": 2527,
+        "train_time_s": 56.1,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=25000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.26572840728759767,
+        "params": 2527,
+        "train_time_s": 142.6,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.28331048822402954,
+        "params": 2527,
+        "train_time_s": 142.3,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.2843471989631653,
+        "params": 2527,
+        "train_time_s": 143.2,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.39044367351531983,
+        "params": 2527,
+        "train_time_s": 142.0,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.41667441940307615,
+        "params": 2527,
+        "train_time_s": 141.9,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.4340164036750793,
+        "params": 2527,
+        "train_time_s": 142.5,
+        "num_train": 25000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=50000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.25818928394317625,
+        "params": 2527,
+        "train_time_s": 285.7,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.2569223114013672,
+        "params": 2527,
+        "train_time_s": 291.0,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.2634611028671265,
+        "params": 2527,
+        "train_time_s": 286.8,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.32242186851501464,
+        "params": 2527,
+        "train_time_s": 283.6,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.3071917261123657,
+        "params": 2527,
+        "train_time_s": 281.5,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.35738241872787474,
+        "params": 2527,
+        "train_time_s": 291.3,
+        "num_train": 50000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    },
+    "N=110000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.22891506586074828,
+        "params": 2527,
+        "train_time_s": 655.7,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.2359401728630066,
+        "params": 2527,
+        "train_time_s": 675.8,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.23977367124557494,
+        "params": 2527,
+        "train_time_s": 634.1,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.2609667737960815,
+        "params": 2527,
+        "train_time_s": 627.4,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.25620464057922365,
+        "params": 2527,
+        "train_time_s": 631.8,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.27005659523010256,
+        "params": 2527,
+        "train_time_s": 620.9,
+        "num_train": 110000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    }
+  }
+}

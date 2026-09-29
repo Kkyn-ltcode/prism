@@ -1,0 +1,797 @@
+{
+  "metadata": {
+    "description": "P2.1 Revision: Multi-seed large-scale evaluation",
+    "n_values": [
+      5000,
+      10000
+    ],
+    "targets": [
+      "homo",
+      "lumo",
+      "gap"
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "models": [
+      "trig_twin_siren",
+      "classical_twin"
+    ]
+  },
+  "homo": {
+    "N=5000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.22135681953430175,
+        "params": 2527,
+        "train_time_s": 31.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.24898588027954102,
+        "params": 2527,
+        "train_time_s": 32.1,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.25209486865997316,
+        "params": 2527,
+        "train_time_s": 1064.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.23467025012969972,
+        "params": 2527,
+        "train_time_s": 31.4,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.22985586490631105,
+        "params": 2527,
+        "train_time_s": 31.2,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.2581207220077515,
+        "params": 2527,
+        "train_time_s": 30.2,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.25792010097503665,
+        "params": 2527,
+        "train_time_s": 30.1,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "stats": {
+        "siren_vs_twin_mean_diff": -0.0322183281326294,
+        "siren_vs_twin_pct_diff": -12.463413976551651,
+        "siren_vs_twin_p": 0.001956645927230435,
+        "n_seeds": 5
+      },
+      "trig_twin_siren_seed45": {
+        "test_mae": 0.21721758060455323,
+        "params": 2527,
+        "train_time_s": 31.0,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed46": {
+        "test_mae": 0.22832401161193847,
+        "params": 2527,
+        "train_time_s": 32.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed45": {
+        "test_mae": 0.26626247005462644,
+        "params": 2527,
+        "train_time_s": 29.9,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed46": {
+        "test_mae": 0.2612269941329956,
+        "params": 2527,
+        "train_time_s": 30.8,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed43": {
+        "test_mae": 0.24508681888580322,
+        "params": 2527,
+        "train_time_s": 1013.7,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed44": {
+        "test_mae": 0.25063883018493655,
+        "params": 2527,
+        "train_time_s": 1028.2,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed45": {
+        "test_mae": 0.24230142765045165,
+        "params": 2527,
+        "train_time_s": 1033.1,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed46": {
+        "test_mae": 0.23963383979797362,
+        "params": 2527,
+        "train_time_s": 1004.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      }
+    },
+    "N=10000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.20944992685317992,
+        "params": 2527,
+        "train_time_s": 64.8,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.23440068216323853,
+        "params": 2527,
+        "train_time_s": 66.1,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.2351409171104431,
+        "params": 2527,
+        "train_time_s": 2082.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.21069628915786742,
+        "params": 2527,
+        "train_time_s": 61.7,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.206935710811615,
+        "params": 2527,
+        "train_time_s": 62.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.24283021907806396,
+        "params": 2527,
+        "train_time_s": 61.5,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.24234819116592407,
+        "params": 2527,
+        "train_time_s": 61.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "stats": {
+        "siren_vs_twin_mean_diff": -0.033177605190277105,
+        "siren_vs_twin_pct_diff": -13.722531116518578,
+        "siren_vs_twin_p": 0.00037793497243474223,
+        "n_seeds": 5
+      },
+      "trig_twin_siren_seed45": {
+        "test_mae": 0.2010839012145996,
+        "params": 2527,
+        "train_time_s": 60.8,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed46": {
+        "test_mae": 0.2148195276260376,
+        "params": 2527,
+        "train_time_s": 62.3,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed45": {
+        "test_mae": 0.24414121751785278,
+        "params": 2527,
+        "train_time_s": 59.9,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed46": {
+        "test_mae": 0.2451530716896057,
+        "params": 2527,
+        "train_time_s": 59.8,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed43": {
+        "test_mae": 0.2250757769584656,
+        "params": 2527,
+        "train_time_s": 2055.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed44": {
+        "test_mae": 0.22054372396469116,
+        "params": 2527,
+        "train_time_s": 1862.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed45": {
+        "test_mae": 0.21425120372772216,
+        "params": 2527,
+        "train_time_s": 1850.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed46": {
+        "test_mae": 0.22505083265304565,
+        "params": 2527,
+        "train_time_s": 1830.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    }
+  },
+  "lumo": {
+    "N=5000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.24565397152900695,
+        "params": 2527,
+        "train_time_s": 32.7,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.48556396942138674,
+        "params": 2527,
+        "train_time_s": 32.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.4331240434169769,
+        "params": 2527,
+        "train_time_s": 1117.5,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.28655611944198606,
+        "params": 2527,
+        "train_time_s": 31.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.281445592212677,
+        "params": 2527,
+        "train_time_s": 31.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.4031325591564178,
+        "params": 2527,
+        "train_time_s": 30.9,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.535596028661728,
+        "params": 2527,
+        "train_time_s": 31.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "stats": {
+        "siren_vs_twin_mean_diff": -0.210574551422596,
+        "siren_vs_twin_pct_diff": -44.01873553788993,
+        "siren_vs_twin_p": 0.0009869767450746073,
+        "n_seeds": 5
+      },
+      "trig_twin_siren_seed45": {
+        "test_mae": 0.25259325580596925,
+        "params": 2527,
+        "train_time_s": 31.8,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed46": {
+        "test_mae": 0.2727524553179741,
+        "params": 2527,
+        "train_time_s": 30.7,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed45": {
+        "test_mae": 0.4793246923446655,
+        "params": 2527,
+        "train_time_s": 29.9,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed46": {
+        "test_mae": 0.48825690183639525,
+        "params": 2527,
+        "train_time_s": 32.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed43": {
+        "test_mae": 0.4206311250209808,
+        "params": 2527,
+        "train_time_s": 924.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed44": {
+        "test_mae": 0.40748038992881774,
+        "params": 2527,
+        "train_time_s": 937.7,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed45": {
+        "test_mae": 0.36288637523651124,
+        "params": 2527,
+        "train_time_s": 936.7,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed46": {
+        "test_mae": 0.3499265335559845,
+        "params": 2527,
+        "train_time_s": 936.2,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      }
+    },
+    "N=10000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.22847143476009368,
+        "params": 2527,
+        "train_time_s": 66.2,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.3486016640663147,
+        "params": 2527,
+        "train_time_s": 79.8,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.31355472159385683,
+        "params": 2527,
+        "train_time_s": 2202.4,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.24456400880813597,
+        "params": 2527,
+        "train_time_s": 63.2,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.23959512400627136,
+        "params": 2527,
+        "train_time_s": 64.2,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.38659316148757933,
+        "params": 2527,
+        "train_time_s": 64.9,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.37916974067687986,
+        "params": 2527,
+        "train_time_s": 61.1,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "stats": {
+        "siren_vs_twin_mean_diff": -0.14358502245426177,
+        "siren_vs_twin_pct_diff": -38.63433737096171,
+        "siren_vs_twin_p": 3.9472126474972874e-05,
+        "n_seeds": 5
+      },
+      "trig_twin_siren_seed45": {
+        "test_mae": 0.2140566601753235,
+        "params": 2527,
+        "train_time_s": 62.5,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed46": {
+        "test_mae": 0.21364422945976258,
+        "params": 2527,
+        "train_time_s": 65.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed45": {
+        "test_mae": 0.37835555782318114,
+        "params": 2527,
+        "train_time_s": 654.1,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed46": {
+        "test_mae": 0.3655364454269409,
+        "params": 2527,
+        "train_time_s": 1425.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed43": {
+        "test_mae": 0.35864311747550964,
+        "params": 2527,
+        "train_time_s": 1880.2,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed44": {
+        "test_mae": 0.306964749622345,
+        "params": 2527,
+        "train_time_s": 1888.5,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed45": {
+        "test_mae": 0.2742691081047058,
+        "params": 2527,
+        "train_time_s": 1876.1,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed46": {
+        "test_mae": 0.27024459953308105,
+        "params": 2527,
+        "train_time_s": 1894.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    }
+  },
+  "gap": {
+    "N=5000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.3406539102554321,
+        "params": 2527,
+        "train_time_s": 42.4,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.4901028861999512,
+        "params": 2527,
+        "train_time_s": 42.2,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.4632117204666138,
+        "params": 2527,
+        "train_time_s": 1113.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.34662725238800046,
+        "params": 2527,
+        "train_time_s": 32.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.3393942678451538,
+        "params": 2527,
+        "train_time_s": 32.6,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.4668487085342407,
+        "params": 2527,
+        "train_time_s": 32.7,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.6187595869064331,
+        "params": 2527,
+        "train_time_s": 32.5,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "stats": {
+        "siren_vs_twin_mean_diff": -0.19150513648986817,
+        "siren_vs_twin_pct_diff": -35.545740274712884,
+        "siren_vs_twin_p": 0.0034088077161339198,
+        "n_seeds": 5
+      },
+      "trig_twin_siren_seed45": {
+        "test_mae": 0.34780830726623535,
+        "params": 2527,
+        "train_time_s": 31.4,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed46": {
+        "test_mae": 0.3617751937866211,
+        "params": 2527,
+        "train_time_s": 31.2,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed45": {
+        "test_mae": 0.5972625724792481,
+        "params": 2527,
+        "train_time_s": 30.2,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "classical_twin_seed46": {
+        "test_mae": 0.5208108598709107,
+        "params": 2527,
+        "train_time_s": 30.3,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed43": {
+        "test_mae": 0.47319806632995604,
+        "params": 2527,
+        "train_time_s": 948.8,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed44": {
+        "test_mae": 0.42013096160888674,
+        "params": 2527,
+        "train_time_s": 949.0,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed45": {
+        "test_mae": 0.4613853616714478,
+        "params": 2527,
+        "train_time_s": 945.1,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed46": {
+        "test_mae": 0.45835857276916503,
+        "params": 2527,
+        "train_time_s": 947.8,
+        "num_train": 5000,
+        "num_test": 2500,
+        "epochs": 20
+      }
+    },
+    "N=10000": {
+      "trig_twin_siren_seed42": {
+        "test_mae": 0.30538356313705445,
+        "params": 2527,
+        "train_time_s": 83.9,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed42": {
+        "test_mae": 0.4156790509223938,
+        "params": 2527,
+        "train_time_s": 81.2,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed42": {
+        "test_mae": 0.35143471784591673,
+        "params": 2527,
+        "train_time_s": 2210.3,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed43": {
+        "test_mae": 0.30264781665802004,
+        "params": 2527,
+        "train_time_s": 64.9,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed44": {
+        "test_mae": 0.29957570466995237,
+        "params": 2527,
+        "train_time_s": 65.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed43": {
+        "test_mae": 0.44421015157699584,
+        "params": 2527,
+        "train_time_s": 66.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed44": {
+        "test_mae": 0.4655922285079956,
+        "params": 2527,
+        "train_time_s": 70.0,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "stats": {
+        "siren_vs_twin_mean_diff": -0.14055046377182007,
+        "siren_vs_twin_pct_diff": -31.880282832157537,
+        "siren_vs_twin_p": 9.3253537295257e-05,
+        "n_seeds": 5
+      },
+      "trig_twin_siren_seed45": {
+        "test_mae": 0.2929562297821045,
+        "params": 2527,
+        "train_time_s": 61.8,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "trig_twin_siren_seed46": {
+        "test_mae": 0.30103218450546265,
+        "params": 2527,
+        "train_time_s": 61.9,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed45": {
+        "test_mae": 0.43362546882629394,
+        "params": 2527,
+        "train_time_s": 62.7,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "classical_twin_seed46": {
+        "test_mae": 0.4452409177780151,
+        "params": 2527,
+        "train_time_s": 60.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed43": {
+        "test_mae": 0.4296850240707397,
+        "params": 2527,
+        "train_time_s": 1896.3,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed44": {
+        "test_mae": 0.3588770527839661,
+        "params": 2527,
+        "train_time_s": 1875.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed45": {
+        "test_mae": 0.36034623460769655,
+        "params": 2527,
+        "train_time_s": 1895.6,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      },
+      "eqgnn_v2_seed46": {
+        "test_mae": 0.3960839782714844,
+        "params": 2527,
+        "train_time_s": 1889.4,
+        "num_train": 10000,
+        "num_test": 5000,
+        "epochs": 20
+      }
+    }
+  }
+}

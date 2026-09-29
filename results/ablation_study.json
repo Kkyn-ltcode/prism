@@ -1,0 +1,21 @@
+{
+  "encoding": {
+    "Multi-Axis (Ours)": 0.802093563079834,
+    "Angle Sum (Eq. 6)": 0.7937268486022949
+  },
+  "topology": {
+    "Ring CNOT (Ours)": 0.802093563079834,
+    "Linear CNOT": 0.7926959571838379,
+    "All-to-All CNOT": 0.7765749588012695,
+    "Separable (None)": 0.794609058380127
+  },
+  "coordinates": {
+    "Dynamic Equivariant (Ours)": 0.802093563079834,
+    "Static Geometry": 0.7925917778015137
+  },
+  "depth": {
+    "L = 1": 0.8275717544555664,
+    "L = 2 (Ours)": 0.802093563079834,
+    "L = 4": 0.7787932777404785
+  }
+}

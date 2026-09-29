@@ -1,0 +1,19 @@
+{
+  "rbf_encoding": {
+    "Full V2 (RBF)": 0.8043721809387206,
+    "Without RBF (Scalar)": 0.7638930568695068
+  },
+  "multi_head": {
+    "Full V2 (2 Heads)": 0.8043721809387206,
+    "Single Head": 0.7971485328674316
+  },
+  "correlators": {
+    "Full V2 (\u27e8ZZ\u27e9 Correlators)": 0.8043721809387206,
+    "Without Correlators (\u27e8Z\u27e9 only)": 0.8179492683410644
+  },
+  "v2_depth": {
+    "V2 L=1": 0.8203946990966797,
+    "V2 L=2 (Default)": 0.8043721809387206,
+    "V2 L=4": 0.8079846954345703
+  }
+}

@@ -1,0 +1,77 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Environments & package managers
+.env
+.env.*
+.venv
+env/
+venv/
+.pixi/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS & OS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+
+# Execution & run logs
+*.log
+wandb/
+lightning_logs/
+
+# Datasets (large files; generated or downloaded via scripts)
+data/*
+!data/.gitkeep
+
+# Model weights & large tensors
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.bin
+*.safetensors
+*.npz
+
+# LaTeX build residues & font caches
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+*.bcf
+*.run.xml
+missfont.log
+paper/pk/
+
+# External literature PDFs (downloaded papers; keep markdown notes)
+paper/literature/**/*.pdf
+paper/literature/*.pdf
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

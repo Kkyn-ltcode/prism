@@ -1,0 +1,46 @@
+[workspace]
+name = "eq-gnn"
+version = "0.1.0"
+description = "Equivariant Quantum Graph Neural Networks for 3D Molecular Property Prediction"
+authors = ["Kkyn <author@quantum.org>"]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[dependencies]
+python = "3.11.*"
+pytorch = ">=2.2.0"
+torchvision = "*"
+numpy = ">=2.0,<3.0"
+scipy = "*"
+networkx = "*"
+matplotlib = "*"
+seaborn = "*"
+tqdm = "*"
+rdkit = "*"
+jupyter = ">=1.1.1,<2"
+notebook = ">=7.6.2,<8"
+jupyterlab = ">=4.6.3,<5"
+marimo = ">=0.24.0,<0.25"
+ipykernel = ">=7.3.0,<8"
+kaggle = ">=2.2.3,<3"
+tectonic = ">=0.15.0"
+qiskit = ">=2.5.2,<3"
+qiskit-aer = ">=0.17.2,<0.18"
+qiskit-ibm-runtime = ">=0.49.0,<0.50"
+
+[pypi-dependencies]
+torch-geometric = "*"
+pennylane = ">=0.36.0"
+pennylane-lightning = "*"
+mitiq = "*"
+pymupdf = ">=1.28.2, <2"
+
+[tasks]
+test-eq = "python models/eq_gnn.py"
+load-qm9 = "python datasets/dataset_qm9.py"
+train-qm9 = "python training/train_qm9.py"
+marimo = "marimo edit notebooks/eq_gnn_tutorial_marimo.py"
+marimo-app = "marimo run notebooks/eq_gnn_tutorial_marimo.py"
+compile-paper = "tectonic paper/main.tex"
+compile-paper-vi = "tectonic paper/main_vi.tex"
+compile-supp = "tectonic paper/supplementary.tex"
