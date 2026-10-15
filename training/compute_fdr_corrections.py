@@ -1,16 +1,4 @@
-"""
-Statistical Multiplicity Correction Suite (C2 Reviewer Response)
-=================================================================
-Performs:
-  1. Paired Student's t-test and Wilcoxon signed-rank test.
-  2. Family-Wise Error Rate (FWER) control via Bonferroni correction.
-  3. False Discovery Rate (FDR) control via Benjamini-Hochberg (BH) procedure.
-  4. Formatted LaTeX and text tables for manuscript integration.
-
-Inputs:  results/extended_table1_v2.json
-Outputs: results/statistical_significance_corrected.json
-         Console report with publication-ready LaTeX tables
-"""
+"""Statistical multiplicity correction suite applying FDR procedures."""
 
 import os
 import json
@@ -22,10 +10,7 @@ OUTPUT_FILE = "./results/statistical_significance_corrected.json"
 
 
 def benjamini_hochberg(p_values):
-    """
-    Benjamini-Hochberg procedure for FDR control.
-    Returns adjusted p-values (q-values) maintaining original ordering.
-    """
+    """Benjamini-Hochberg procedure for FDR control."""
     p_arr = np.array(p_values, dtype=float)
     n = len(p_arr)
     sorted_indices = np.argsort(p_arr)
@@ -54,7 +39,7 @@ def run_statistical_analysis():
 
     targets = [t for t in data.keys() if "eqgnn_v2" in data[t]]
     print("=" * 90)
-    print("STATISTICAL MULTIPLICITY CORRECTION (C2 RESOLUTION)")
+    print("STATISTICAL MULTIPLICITY CORRECTION")
     print("=" * 90)
 
     records = []

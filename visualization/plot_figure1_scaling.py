@@ -1,14 +1,4 @@
-"""
-Publication-Quality Scaling Curves & Crossover Analysis
-========================================================
-Generates figures from the full-dataset scaling sweep results.
-
-Usage:
-    pixi run python visualization/plot_scaling_crossover.py
-    pixi run python visualization/plot_scaling_crossover.py --benchmark qm9
-    pixi run python visualization/plot_scaling_crossover.py --benchmark md17
-    pixi run python visualization/plot_scaling_crossover.py --benchmark nbody
-"""
+"""Plot scaling curves and empirical crossover analysis across benchmarks."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -26,9 +16,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 
-# =============================================================================
 # Styling
-# =============================================================================
 MODEL_COLORS = {
     "eqgnn_v2": "#1f77b4", "eqgnn": "#1f77b4",
     "egnn_pm": "#9467bd",
@@ -65,10 +53,7 @@ def power_law(N, beta, gamma):
 
 
 def find_crossover(n_range, params_a, params_b):
-    """
-    Find crossover point N* where model A and model B curves intersect.
-    Returns N* or None if no crossing in range.
-    """
+    """Find crossover point N* where model A and model B curves intersect."""
     n_dense = np.linspace(n_range[0], n_range[-1], 10000)
     try:
         curve_a = power_law(n_dense, *params_a)
@@ -88,9 +73,7 @@ def find_crossover(n_range, params_a, params_b):
     return None
 
 
-# =============================================================================
 # QM9 Plotting
-# =============================================================================
 def plot_qm9_scaling(results_path, output_dir):
     """Generate multi-panel QM9 scaling figure."""
     with open(results_path, "r") as f:
@@ -207,7 +190,7 @@ def plot_qm9_scaling(results_path, output_dir):
     out_path = os.path.join(output_dir, "figure1_scaling_law.png")
     plt.savefig(out_path, bbox_inches="tight")
     plt.close()
-    print(f"📊 Saved QM9 scaling figure to: {out_path}")
+    print(f"Saved QM9 scaling figure to: {out_path}")
 
     # Copy to paper/figures
     paper_fig_dir = os.path.join(str(PROJECT_ROOT), "paper", "figures")
@@ -216,16 +199,14 @@ def plot_qm9_scaling(results_path, output_dir):
 
     # Print crossover summary
     if crossover_results:
-        print("\n📐 Crossover Points (N*):")
+        print("\nCrossover Points (N*):")
         for key, n_star in crossover_results.items():
             print(f"   {key}: N* ≈ {n_star:.0f}")
 
     return crossover_results
 
 
-# =============================================================================
 # MD17 Plotting
-# =============================================================================
 def plot_md17_scaling(results_path, output_dir):
     """Generate MD17 scaling figure."""
     with open(results_path, "r") as f:
@@ -293,16 +274,14 @@ def plot_md17_scaling(results_path, output_dir):
     out_path = os.path.join(output_dir, "figure_md17_scaling.png")
     plt.savefig(out_path, bbox_inches="tight")
     plt.close()
-    print(f"📊 Saved MD17 scaling figure to: {out_path}")
+    print(f"Saved MD17 scaling figure to: {out_path}")
 
     paper_fig_dir = os.path.join(str(PROJECT_ROOT), "paper", "figures")
     os.makedirs(paper_fig_dir, exist_ok=True)
     os.system(f"cp '{out_path}' '{paper_fig_dir}/'")
 
 
-# =============================================================================
 # N-Body Plotting
-# =============================================================================
 def plot_nbody_scaling(results_path, output_dir):
     """Generate N-body scaling figure."""
     with open(results_path, "r") as f:
@@ -356,16 +335,14 @@ def plot_nbody_scaling(results_path, output_dir):
     out_path = os.path.join(output_dir, "figure_nbody_scaling.png")
     plt.savefig(out_path, bbox_inches="tight")
     plt.close()
-    print(f"📊 Saved N-body scaling figure to: {out_path}")
+    print(f"Saved N-body scaling figure to: {out_path}")
 
     paper_fig_dir = os.path.join(str(PROJECT_ROOT), "paper", "figures")
     os.makedirs(paper_fig_dir, exist_ok=True)
     os.system(f"cp '{out_path}' '{paper_fig_dir}/'")
 
 
-# =============================================================================
 # Main
-# =============================================================================
 def main():
     parser = argparse.ArgumentParser(description="Plot scaling sweep results")
     parser.add_argument("--benchmark", type=str, default="all",
@@ -382,21 +359,21 @@ def main():
             if os.path.exists(path):
                 plot_qm9_scaling(path, args.output_dir)
             else:
-                print(f"⚠️  QM9 results not found at {path}")
+                print(f"Warning: QM9 results not found at {path}")
 
         elif bench == "md17":
             path = os.path.join(args.results_dir, "md17_scaling_sweep.json")
             if os.path.exists(path):
                 plot_md17_scaling(path, args.output_dir)
             else:
-                print(f"⚠️  MD17 results not found at {path}")
+                print(f"Warning: MD17 results not found at {path}")
 
         elif bench == "nbody":
             path = os.path.join(args.results_dir, "nbody_scaling_sweep.json")
             if os.path.exists(path):
                 plot_nbody_scaling(path, args.output_dir)
             else:
-                print(f"⚠️  N-body results not found at {path}")
+                print(f"Warning: N-body results not found at {path}")
 
 
 if __name__ == "__main__":

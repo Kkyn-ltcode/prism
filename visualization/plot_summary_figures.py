@@ -1,14 +1,4 @@
-"""
-Generate Revised Publication Figures (Phase 2.2)
-=================================================
-Regenerates:
-  - Figure 1: QM9 Scaling Laws with all 6 baselines (Gap + μ)
-  - Figure 5: N-body Trajectory Forecasting with Classical Twin
-  - Figure 6: MD17 Conformational Energy with Classical Twin
-
-Usage:
-    pixi run python training/generate_revised_figures.py
-"""
+"""Generate publication figures across QM9, N-body, and MD17 benchmarks."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -70,9 +60,7 @@ def load_json(filename):
         return json.load(f)
 
 
-# =============================================================================
-# FIGURE 1: QM9 Scaling Laws (Gap + μ) — Log-Log with crossover
-# =============================================================================
+# Figure 1: QM9 Scaling Laws (Gap + μ)
 def generate_figure1_scaling():
     print("Generating Figure 1: QM9 Scaling Laws...")
     data = load_json("qm9_scaling_sweep.json")
@@ -174,9 +162,7 @@ def generate_figure1_scaling():
     print(f"   Saved: {path}")
 
 
-# =============================================================================
-# FIGURE 5: N-Body Trajectory Forecasting (with Classical Twin)
-# =============================================================================
+# Figure 5: N-Body Trajectory Forecasting
 def generate_figure5_nbody():
     print("Generating Figure 5: N-Body Trajectory...")
     data = load_json("nbody_benchmark_table2_v2.json")
@@ -245,9 +231,7 @@ def generate_figure5_nbody():
     print(f"   Saved: {path}")
 
 
-# =============================================================================
-# FIGURE 6: MD17 Conformational Energy (with Classical Twin)
-# =============================================================================
+# Figure 6: MD17 Conformational Energy
 def generate_figure6_md17():
     print("Generating Figure 6: MD17 Energy...")
     data = load_json("md17_benchmark_table3_v2.json")
@@ -313,12 +297,9 @@ def generate_figure6_md17():
     print(f"   Saved: {path}")
 
 
-# =============================================================================
-# Main
-# =============================================================================
 if __name__ == "__main__":
     print("=" * 70)
-    print("Generating Revised Publication Figures (Phase 2.2)")
+    print("Generating Publication Figures")
     print("=" * 70)
 
     generate_figure1_scaling()

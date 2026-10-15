@@ -1,8 +1,5 @@
-"""
-Training & Evaluation Engine for Q-PRISM & Classical Baselines on QM9
-=====================================================================
-Automated training sweeps, loss logging, and MAE reporting in physical units.
-"""
+"""Training and evaluation engine for Q-PRISM and classical baselines on QM9."""
+
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -100,11 +97,10 @@ def main():
     }.get(args.model, args.model.upper())
 
     print("=" * 65)
-    print(f"🚀 Starting Benchmark: Model={model_display} | Target={args.target} | N_train={args.num_train}")
+    print(f"Starting Benchmark: Model={model_display} | Target={args.target} | N_train={args.num_train}")
     print(f"   Epochs={args.epochs} | BatchSize={args.batch_size} | LR={args.lr} | HiddenDim={args.hidden_dim}")
     print("=" * 65)
 
-    # 1. Load Data
     train_set, val_set, test_set, (mean, std) = get_qm9_splits(
         root=args.data_root,
         target=args.target,
@@ -118,7 +114,6 @@ def main():
     val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False)
     test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=False)
 
-    # 2. Instantiate Model
     if args.model in ("q_prism", "eqgnn"):
         model = QPRISMModel(
             in_features=11,
@@ -145,14 +140,12 @@ def main():
         ).to(device)
 
     total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"🧠 Model Architecture: {model_display} with {total_params:,} trainable parameters.")
+    print(f"Model Architecture: {model_display} with {total_params:,} trainable parameters.")
 
-    # 3. Optimizer & Criterion
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-5)
     criterion = nn.MSELoss()
 
-    # 4. Training Loop
     history = {"train_loss": [], "val_mae": [], "epoch_times": []}
     best_val_mae = float("inf")
     start_time = time.time()
@@ -178,12 +171,11 @@ def main():
 
     unit = "eV" if args.target in ["gap", "homo", "lumo"] else ("Debye" if args.target == "mu" else "Hartree")
     print("=" * 65)
-    print(f"🏁 Benchmark Complete in {total_training_time:.1f}s!")
+    print(f"Benchmark Complete in {total_training_time:.1f}s")
     print(f"   Best Val MAE: {best_val_mae:.4f} {unit}")
     print(f"   Final Test MAE: {test_mae:.4f} {unit}")
     print("=" * 65)
 
-    # 5. Save Results
     result_record = {
         "model": args.model,
         "target": args.target,

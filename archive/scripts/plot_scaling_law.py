@@ -1,8 +1,5 @@
-"""
-Publication-Quality Plotting for Scaling Laws & Benchmark Figures
-=================================================================
-Plots Figure 1: Test MAE vs. Training Size N in log-log scale with power-law fit.
-"""
+"""Plot sample efficiency scaling law and power-law fit on QM9."""
+
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -86,7 +83,7 @@ def generate_scaling_plot(results_dir=None, target="gap", output_path=None):
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
-    print(f"📊 Saved scaling plot to: {output_path}")
+    print(f"Saved scaling plot to: {output_path}")
 
 if __name__ == "__main__":
     generate_scaling_plot()

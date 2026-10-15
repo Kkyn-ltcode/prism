@@ -1,0 +1,32 @@
+{
+  "entangled_v2": {
+    "label": "EQ-GNN V2 (Entangled)",
+    "spectral_entropy_distance": 2.18710994720459,
+    "spectral_concentration_distance": 0.9413074254989624,
+    "n_distance_points": 1024,
+    "distance_range": [
+      0.1,
+      10.0
+    ]
+  },
+  "separable_v2": {
+    "label": "Separable V2 (No CNOTs)",
+    "spectral_entropy_distance": 1.005994439125061,
+    "spectral_concentration_distance": 0.9842512607574463,
+    "n_distance_points": 1024,
+    "distance_range": [
+      0.1,
+      10.0
+    ]
+  },
+  "tanh_mlp": {
+    "label": "Classical tanh-MLP",
+    "spectral_entropy_distance": 1.2743546962738037,
+    "spectral_concentration_distance": 0.9951827526092529,
+    "n_distance_points": 1024,
+    "distance_range": [
+      0.1,
+      10.0
+    ]
+  }
+}

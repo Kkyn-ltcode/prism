@@ -1,17 +1,4 @@
-"""
-Generate Dequantization & PRISM Figures (Figure 9 & Figure 10)
-=============================================================
-Generates:
-  - figure9_dequantization_comparison.png:
-      Bar chart comparing Classical Twin (tanh), Fourier RFF, Q-PRISM (PQC),
-      and PRISM (SIREN) on electronic targets + Dipole.
-  - figure10_angular_activation_response.png:
-      Visualizes edge functional response vs. 3-body bond angle theta in [0, 180],
-      contrasting standard tanh (spectral bias) with SIREN and PQC.
-
-Usage:
-    pixi run python training/generate_dequantization_figures.py
-"""
+"""Generate publication figures for dequantization and PRISM comparisons."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"

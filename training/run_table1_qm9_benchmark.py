@@ -1,32 +1,4 @@
-"""
-Extended Multi-Target Multi-Seed QM9 Benchmark (Table 1 Revision)
-===================================================================
-Adds Classical Twin, SchNet, and PaiNN baselines to the original
-3-Tier evaluation, producing a 6-model comparison table.
-
-Models (Extended Baseline Hierarchy):
-  Tier 1 (Iso-Parameter):
-    - EQ-GNN V2 (Ours, 2,527 params)
-    - Classical Twin (tanh-MLP, 2,527 params)  [NEW — C-1 ablation]
-    - SchNet (h=12, 2,473 params)              [NEW — C-2 baseline]
-    - PaiNN (h=8, 2,721 params)                [NEW — C-2 baseline]
-    - EGNN Param-Matched (~2,497 params)
-  Tier 2 (Iso-Architecture):
-    - EGNN Standard (4,289 params)
-
-Targets: homo, lumo, gap, mu, alpha, u0
-Seeds: [42, 43, 44, 45, 46]
-Statistical Tests: Wilcoxon signed-rank + Paired t-test + 95% CI
-
-Outputs:
-    results/extended_table1_v2.json
-    Console: publication-ready table
-
-Usage:
-    pixi run python training/run_extended_baselines_sweep.py
-    pixi run python training/run_extended_baselines_sweep.py --models classical_twin schnet painn
-    pixi run python training/run_extended_baselines_sweep.py --targets gap homo --epochs 20
-"""
+"""Extended multi-target multi-seed QM9 benchmark."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -55,9 +27,8 @@ from models.classical_trig_twin import PRISMModelV2, TrigTwinModelV2
 from models.classical_baselines import SchNetModel, PaiNNModel
 
 
-# =============================================================================
 # Target Metadata
-# =============================================================================
+
 TARGET_UNITS = {
     "homo": "eV", "lumo": "eV", "gap": "eV",
     "mu": "Debye", "alpha": "Bohr³", "u0": "eV",
@@ -77,9 +48,8 @@ TARGET_TYPE = {
     "mu": "extensive", "alpha": "extensive", "u0": "extensive",
 }
 
-# =============================================================================
 # Extended Model Configurations
-# =============================================================================
+
 MODEL_CONFIGS = {
     "eqgnn_v2": {
         "label": "Q-PRISM (Ours)",
@@ -124,9 +94,7 @@ MODEL_CONFIGS = {
 }
 
 
-# =============================================================================
 # Statistical Significance Tests
-# =============================================================================
 def compute_statistical_tests(maes_a, maes_b):
     """Two-sided Wilcoxon signed-rank + paired t-test between seed MAEs."""
     a = np.array(maes_a, dtype=np.float64)
@@ -160,9 +128,8 @@ def compute_statistical_tests(maes_a, maes_b):
     return result
 
 
-# =============================================================================
 # Model Factory
-# =============================================================================
+
 def create_model(model_key, in_features=11, hidden_dim=16, num_layers=2, out_dim=1):
     """Create a model by key. Returns (model, param_count)."""
 
@@ -249,9 +216,8 @@ def create_model(model_key, in_features=11, hidden_dim=16, num_layers=2, out_dim
     return model, count_parameters(model)
 
 
-# =============================================================================
 # Kaggle & Hardware Helpers
-# =============================================================================
+
 def resolve_data_dir(data_dir=None):
     """Auto-resolve QM9 dataset directory with Kaggle environment support."""
     if data_dir is not None:
@@ -294,9 +260,8 @@ def get_model_device(model_key, requested_device="auto"):
         return torch.device(requested_device)
 
 
-# =============================================================================
 # Single Run: Train + Evaluate
-# =============================================================================
+
 def train_eval_single_run(model_key, target, seed,
                           num_train=1000, num_val=250, num_test=500,
                           epochs=15, batch_size=16, lr=1e-3, hidden_dim=16,
@@ -359,14 +324,13 @@ def train_eval_single_run(model_key, target, seed,
 
     test_mae = total_mae / total_samples
     elapsed = time.time() - start_time
-    print(f"    ↳ Seed {seed} ({device}) | Test MAE = {test_mae:.4f} {TARGET_UNITS[target]} "
+    print(f"    Seed {seed} ({device}) | Test MAE = {test_mae:.4f} {TARGET_UNITS[target]} "
           f"({elapsed:.1f}s, {total_params:,} params)")
     return test_mae, total_params
 
 
-# =============================================================================
 # Main Benchmark Loop
-# =============================================================================
+
 def run_benchmark(targets=None, seeds=None, models=None,
                   num_train=1000, num_val=250, num_test=500,
                   epochs=15, batch_size=16, lr=1e-3, hidden_dim=16,
@@ -385,7 +349,7 @@ def run_benchmark(targets=None, seeds=None, models=None,
     os.makedirs(save_dir, exist_ok=True)
 
     print("=" * 100)
-    print("🌟 Extended Multi-Target Multi-Seed QM9 Benchmark (Table 1 Revision)")
+    print("Extended Multi-Target Multi-Seed QM9 Benchmark (Table 1 Revision)")
     print(f"   Targets: {targets}")
     print(f"   Models: {[MODEL_CONFIGS[m]['label'] for m in models]}")
     print(f"   Seeds: {seeds} | N_train: {num_train} | Epochs: {epochs} | Batch size: {batch_size}")
@@ -405,7 +369,7 @@ def run_benchmark(targets=None, seeds=None, models=None,
     for target in targets:
         t_type = TARGET_TYPE.get(target, "other")
         print(f"\n{'='*100}")
-        print(f"📦 Target: {TARGET_DISPLAY[target]} [{TARGET_UNITS[target]}] ({t_type})")
+        print(f"Target: {TARGET_DISPLAY[target]} [{TARGET_UNITS[target]}] ({t_type})")
         print(f"{'='*100}")
 
         if target not in results:
@@ -419,13 +383,13 @@ def run_benchmark(targets=None, seeds=None, models=None,
             # Skip if already completed
             if model_key in results[target] and "maes" in results[target][model_key]:
                 existing = results[target][model_key]
-                print(f"\n▶ Model: {MODEL_CONFIGS[model_key]['label']} "
+                print(f"\nModel: {MODEL_CONFIGS[model_key]['label']} "
                       f"— CACHED: {existing['mean_mae']:.4f} ± {existing['std_mae']:.4f}")
                 continue
 
             config = MODEL_CONFIGS[model_key]
             model_dev = get_model_device(model_key, device)
-            print(f"\n▶ Model: {config['label']} (Tier {config['tier']}) on {model_dev}")
+            print(f"\nModel: {config['label']} (Tier {config['tier']}) on {model_dev}")
             maes = []
             param_count = 0
             for seed in seeds:
@@ -456,7 +420,7 @@ def run_benchmark(targets=None, seeds=None, models=None,
                 "mean_mae": mean_mae,
                 "std_mae": std_mae,
             }
-            print(f"  ⭐ {config['label']} ({len(seeds)} Seeds): "
+            print(f"  {config['label']} ({len(seeds)} Seeds): "
                   f"{mean_mae:.4f} ± {std_mae:.4f} {TARGET_UNITS[target]} "
                   f"(Params: {param_count:,})")
 
@@ -475,7 +439,7 @@ def run_benchmark(targets=None, seeds=None, models=None,
                     )
             results[target]["statistical_tests"] = stat_tests
 
-            print(f"\n  📊 Statistical Significance ({target}):")
+            print(f"\n  Statistical Significance ({target}):")
             for key, st in stat_tests.items():
                 sig_marker = "**" if st["significant_001"] else ("*" if st["significant_005"] else "ns")
                 print(f"     {key}: Wilcoxon p={st['wilcoxon_p']:.4f}, "
@@ -485,13 +449,11 @@ def run_benchmark(targets=None, seeds=None, models=None,
     # Save final results
     with open(json_path, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\n📁 Saved: {json_path}")
+    print(f"\nSaved: {json_path}")
 
-    # =========================================================================
     # Print Publication Table
-    # =========================================================================
     print("\n" + "=" * 140)
-    print(f"📋 EXTENDED TABLE 1: Multi-Target QM9 Results (N={num_train:,}, Mean ± Std over {len(seeds)} Seeds)")
+    print(f"EXTENDED TABLE 1: Multi-Target QM9 Results (N={num_train:,}, Mean ± Std over {len(seeds)} Seeds)")
     print("=" * 140)
 
     # Header
@@ -527,7 +489,7 @@ def run_benchmark(targets=None, seeds=None, models=None,
     print("=" * 140)
 
     # Significance summary table
-    print("\n📊 Statistical Significance: EQ-GNN V2 vs Each Baseline (negative Δ = EQ-GNN is better)")
+    print("\nStatistical Significance: EQ-GNN V2 vs Each Baseline (negative Δ = EQ-GNN is better)")
     print(f"| {'Target':<20} |", end="")
     baselines = [m for m in models if m != "eqgnn_v2"]
     for b in baselines:

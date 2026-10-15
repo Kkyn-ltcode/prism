@@ -1,20 +1,4 @@
-"""
-MD17 Molecular Dynamics Energy Prediction Benchmark (Table 3)
-=============================================================
-Benchmarks Q-PRISM vs. Classical EGNN vs. Non-Equivariant GNN
-on conformational energy prediction for Ethanol and Aspirin.
-
-Following standard MD17 protocol:
-- N_train = 1000 conformations, N_val = 250, N_test = 500
-- Target: Potential Energy E [kcal/mol] (scalar, E(3)-invariant)
-- Metric: Test MAE [kcal/mol]
-- 3 independent random seeds for error bars
-
-Outputs:
-- results/md17_benchmark_table3.json
-- results/figure6_md17_energy.png
-- paper/figures/figure6_md17_energy.png
-"""
+"""MD17 molecular dynamics energy prediction benchmark suite."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -43,7 +27,7 @@ from models.classical_twin import ClassicalTwinModelV2
 from scipy import stats
 
 def compute_pairwise_tests(values_a, values_b):
-    """Compute Wilcoxon signed-rank and paired t-test between two sets of metric values."""
+    """Compute Wilcoxon signed-rank and paired t-test between two metric distributions."""
     result = {}
     values_a = np.array(values_a)
     values_b = np.array(values_b)
@@ -66,9 +50,7 @@ def compute_pairwise_tests(values_a, values_b):
     result['ci_95'] = ci_95
     return result
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Non-Equivariant GNN Baseline for MD17
-# ─────────────────────────────────────────────────────────────────────────────
+# Non-equivariant GNN baseline for MD17
 class NonEquivMD17Model(nn.Module):
     """Standard non-equivariant GNN that concatenates raw Cartesian coordinates."""
     def __init__(self, in_features=10, hidden_features=32, num_layers=3, out_dim=1):
@@ -113,10 +95,9 @@ class NonEquivMD17Model(nn.Module):
         return self.head(out_pool)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Training & Evaluation
-# ─────────────────────────────────────────────────────────────────────────────
+# Training and evaluation
 def train_epoch(model, loader, optimizer, criterion, device, energy_mean, energy_std, model_type):
+    """Train model for one epoch and return average loss."""
     model.train()
     total_loss = 0.0
     total_samples = 0
@@ -230,16 +211,14 @@ def run_single_md17_benchmark(model_type, molecule_name, train_data, val_data, t
     return test_mae, total_params, elapsed
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 # Full MD17 Benchmark Suite
-# ─────────────────────────────────────────────────────────────────────────────
 def run_full_md17_suite(molecules=('ethanol', 'aspirin'),
                         num_train=1000, num_val=250, num_test=500,
                         seeds=(42, 43, 44, 45, 46), epochs=30,
                         save_dir="./results"):
     os.makedirs(save_dir, exist_ok=True)
     print("=" * 75)
-    print("🌟 MD17 Molecular Dynamics Energy Prediction Benchmark Suite (Table 3)")
+    print("MD17 Molecular Dynamics Energy Prediction Benchmark Suite (Table 3)")
     print(f"   Molecules: {list(molecules)} | N_train: {num_train} | Seeds: {list(seeds)} | Epochs: {epochs}")
     print("=" * 75)
 
@@ -254,14 +233,12 @@ def run_full_md17_suite(molecules=('ethanol', 'aspirin'),
     }
 
     for mol in molecules:
-        print(f"\n{'='*75}")
-        print(f"📦 Molecule: {mol.upper()}")
-        print(f"{'='*75}")
+        print(f"\nMolecule: {mol.upper()}")
 
         mol_results = {}
 
         for model_name in models_to_test:
-            print(f"\n▶ Model: {model_labels[model_name]}")
+            print(f"\nModel: {model_labels[model_name]}")
             maes = []
             param_count = 0
             total_time = 0.0
@@ -297,7 +274,7 @@ def run_full_md17_suite(molecules=('ethanol', 'aspirin'),
                 maes.append(mae)
                 param_count = params
                 total_time += el_time
-                print(f"    ↳ Seed {seed} | Test Energy MAE = {mae:.4f} kcal/mol ({el_time:.1f}s)")
+                print(f"    Seed {seed} | Test Energy MAE = {mae:.4f} kcal/mol ({el_time:.1f}s)")
 
             mean_mae = float(np.mean(maes))
             std_mae = float(np.std(maes))
@@ -308,7 +285,7 @@ def run_full_md17_suite(molecules=('ethanol', 'aspirin'),
                 "maes": maes,
                 "avg_time": total_time / len(seeds)
             }
-            print(f"  ⭐ {model_labels[model_name]}: {mean_mae:.4f} ± {std_mae:.4f} kcal/mol (Params: {param_count:,})")
+            print(f"  {model_labels[model_name]}: {mean_mae:.4f} ± {std_mae:.4f} kcal/mol (Params: {param_count:,})")
 
         all_results[mol] = mol_results
 
@@ -328,11 +305,9 @@ def run_full_md17_suite(molecules=('ethanol', 'aspirin'),
     json_path = os.path.join(save_dir, "md17_benchmark_table3_v2.json")
     with open(json_path, "w") as f:
         json.dump(all_results, f, indent=2)
-    print(f"\n📁 Saved Table 3 JSON results to: {json_path}")
+    print(f"\nSaved Table 3 JSON results to: {json_path}")
 
-    # ─────────────────────────────────────────────────────────────────────────
     # Generate Figure 6: MD17 Energy Prediction Comparison
-    # ─────────────────────────────────────────────────────────────────────────
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
 
     n_mols = len(molecules)
@@ -367,16 +342,14 @@ def run_full_md17_suite(molecules=('ethanol', 'aspirin'),
     fig_path = os.path.join(save_dir, "figure6_md17_energy.png")
     plt.savefig(fig_path, bbox_inches="tight")
     plt.close()
-    print(f"📊 Saved Figure 6 to: {fig_path}")
+    print(f"Saved Figure 6 to: {fig_path}")
 
     os.makedirs("paper/figures", exist_ok=True)
     os.system(f"cp {fig_path} paper/figures/")
 
-    # ─────────────────────────────────────────────────────────────────────────
     # Print Table 3 Summary
-    # ─────────────────────────────────────────────────────────────────────────
     print("\n" + "=" * 85)
-    print("📋 TABLE 3: MD17 Conformational Energy Prediction (Mean ± Std over 5 Seeds) [kcal/mol]")
+    print("Table 3: MD17 Conformational Energy Prediction (Mean ± Std over 5 Seeds) [kcal/mol]")
     print("=" * 85)
 
     header = f"| {'Model':<24} | {'Parameters':<12} |"

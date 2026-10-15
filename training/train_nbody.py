@@ -1,10 +1,4 @@
-"""
-3D Charged N-Body Trajectory Forecasting Benchmark (Table 2)
-============================================================
-Benchmarks EQ-GNN vs. Classical EGNN vs. Non-Equivariant GNN vs. Linear Baseline
-on 5-particle Coulomb trajectory prediction.
-Outputs publication-quality Table 2 and results/figure5_nbody_trajectory.png.
-"""
+"""3D charged N-body trajectory forecasting benchmark."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -57,14 +51,9 @@ def compute_pairwise_tests(values_a, values_b):
     return result
 
 
-# -----------------------------------------------------------------------------
-# 1. Trajectory Models
-# -----------------------------------------------------------------------------
+# Trajectory models
 class QPRISMTrajectoryModel(nn.Module):
-    """
-    Q-PRISM for 3D Coordinate Trajectory Forecasting.
-    Directly outputs equivariant updated coordinates x^(K) in R^3.
-    """
+    """Q-PRISM model for 3D coordinate trajectory forecasting."""
     def __init__(self, in_features=2, hidden_features=16, num_layers=3, n_q_layers=2):
         super().__init__()
         self.embedding = nn.Linear(in_features, hidden_features)
@@ -83,9 +72,7 @@ EQGNNTrajectoryModel = QPRISMTrajectoryModel  # Backward compatibility alias
 
 
 class EGNNTrajectoryModel(nn.Module):
-    """
-    Classical EGNN for 3D Coordinate Trajectory Forecasting.
-    """
+    """Classical EGNN model for 3D coordinate trajectory forecasting."""
     def __init__(self, in_features=2, hidden_features=16, num_layers=3):
         super().__init__()
         self.embedding = nn.Linear(in_features, hidden_features)
@@ -101,9 +88,7 @@ class EGNNTrajectoryModel(nn.Module):
 
 
 class NonEquivTrajectoryModel(nn.Module):
-    """
-    Standard Non-Equivariant GNN predicting coordinate offsets via raw Cartesian concatenation.
-    """
+    """Non-equivariant GNN predicting coordinate offsets via Cartesian concatenation."""
     def __init__(self, in_features=2, hidden_features=16, num_layers=3):
         super().__init__()
         self.embedding = nn.Linear(in_features + 3, hidden_features)
@@ -151,10 +136,9 @@ class ParamMatchedEGNNTrajectoryModel(nn.Module):
         return x
 
 
-# -----------------------------------------------------------------------------
-# 2. Training and Evaluation Engine
-# -----------------------------------------------------------------------------
+# Training and evaluation
 def train_epoch(model, loader, optimizer, criterion, device):
+    """Train model for one epoch and return average loss."""
     model.train()
     total_loss = 0.0
     total_samples = 0
@@ -175,6 +159,7 @@ def train_epoch(model, loader, optimizer, criterion, device):
 
 @torch.no_grad()
 def evaluate_mse(model, loader, device):
+    """Evaluate coordinate trajectory MSE."""
     model.eval()
     total_mse = 0.0
     total_particles = 0
@@ -191,6 +176,7 @@ def evaluate_mse(model, loader, device):
 
 
 def run_single_nbody_benchmark(model_type, train_loader, val_loader, test_loader, epochs=15, lr=1e-3, hidden_dim=16, num_layers=2):
+    """Run a single N-body trajectory benchmark."""
     device = torch.device("cpu")
     if model_type == "eqgnn":
         model = EQGNNTrajectoryModel(in_features=2, hidden_features=hidden_dim, num_layers=num_layers, n_q_layers=2).to(device)
@@ -219,9 +205,10 @@ def run_single_nbody_benchmark(model_type, train_loader, val_loader, test_loader
 
 
 def run_full_nbody_suite(num_train=1000, num_val=250, num_test=500, seeds=[42, 43, 44, 45, 46], epochs=15, save_dir="./results"):
+    """Run full N-body benchmark suite across models and seeds."""
     os.makedirs(save_dir, exist_ok=True)
     print("=" * 75)
-    print("🌟 3D Charged N-Body Particle Trajectory Benchmark Suite (Table 2)")
+    print("3D Charged N-Body Particle Trajectory Benchmark Suite (Table 2)")
     print(f"   Particles: 5 | N_train: {num_train} | Seeds: {seeds} | Epochs: {epochs}")
     print("=" * 75)
 
@@ -229,7 +216,7 @@ def run_full_nbody_suite(num_train=1000, num_val=250, num_test=500, seeds=[42, 4
     models_to_test = ["noneq", "egnn_pm", "egnn", "eqgnn", "classical_twin"]
 
     for model_name in models_to_test:
-        print(f"\n▶ Evaluating Model: {model_name.upper()}")
+        print(f"\nEvaluating Model: {model_name.upper()}")
         mses = []
         param_count = 0
         total_time = 0.0
@@ -258,7 +245,7 @@ def run_full_nbody_suite(num_train=1000, num_val=250, num_test=500, seeds=[42, 4
             mses.append(mse)
             param_count = params
             total_time += el_time
-            print(f"    ↳ Seed {seed} | Test Coordinate MSE = {mse:.4f} ({el_time:.1f}s)")
+            print(f"    Seed {seed} | Test Coordinate MSE = {mse:.4f} ({el_time:.1f}s)")
 
         mean_mse = float(np.mean(mses))
         std_mse = float(np.std(mses))
@@ -269,13 +256,13 @@ def run_full_nbody_suite(num_train=1000, num_val=250, num_test=500, seeds=[42, 4
             "mses": mses,
             "avg_time": total_time / len(seeds)
         }
-        print(f"  ⭐ {model_name.upper()} Overall: MSE = {mean_mse:.4f} ± {std_mse:.4f} (Params: {param_count:,})")
+        print(f"  {model_name.upper()} Overall: MSE = {mean_mse:.4f} ± {std_mse:.4f} (Params: {param_count:,})")
 
     # Linear baseline (Initial static position)
     _, _, test_data = get_nbody_splits(num_train=num_train, num_val=num_val, num_test=num_test, seed=42)
     static_mse = np.mean([torch.sum((d.pos - d.target_pos)**2, dim=-1).mean().item() for d in test_data])
     results["static_baseline"] = {"mean_mse": float(static_mse), "std_mse": 0.0, "params": 0}
-    print(f"\n  ⭐ Static Baseline (x^(T) = x^(0)): MSE = {static_mse:.4f}")
+    print(f"\n  Static Baseline (x^(T) = x^(0)): MSE = {static_mse:.4f}")
 
     # Statistical significance tests
     stat_tests = {}
@@ -296,7 +283,7 @@ def run_full_nbody_suite(num_train=1000, num_val=250, num_test=500, seeds=[42, 4
     json_path = os.path.join(save_dir, "nbody_benchmark_table2_v2.json")
     with open(json_path, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\n📁 Saved Table 2 JSON results to: {json_path}")
+    print(f"\nSaved Table 2 JSON results to: {json_path}")
 
     # Generate Figure 5: Trajectory MSE Comparison
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
@@ -320,7 +307,7 @@ def run_full_nbody_suite(num_train=1000, num_val=250, num_test=500, seeds=[42, 4
     fig_path = os.path.join(save_dir, "figure5_nbody_trajectory.png")
     plt.savefig(fig_path)
     plt.close()
-    print(f"📊 Saved Figure 5 to: {fig_path}")
+    print(f"Saved Figure 5 to: {fig_path}")
 
     # Copy to paper figures
     os.makedirs("paper/figures", exist_ok=True)
@@ -328,7 +315,7 @@ def run_full_nbody_suite(num_train=1000, num_val=250, num_test=500, seeds=[42, 4
 
     # Print Table 2 Summary
     print("\n" + "=" * 75)
-    print("📋 TABLE 2: 3D Charged N-Body Trajectory Forecasting (Mean ± Std over 5 Seeds)")
+    print("Table 2: 3D Charged N-Body Trajectory Forecasting (Mean ± Std over 5 Seeds)")
     print("=" * 75)
     print(f"| {'Model Architecture':<24} | {'Parameters':<12} | {'Coordinate MSE (10⁻²)':<25} |")
     print(f"|{'-'*26}|{'-'*14}|{'-'*27}|")

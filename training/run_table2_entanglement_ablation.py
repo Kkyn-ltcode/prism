@@ -1,39 +1,4 @@
-"""
-Revision Experiment: 20-Seed Entanglement Ablation
-====================================================
-Addresses: R1 W-1, R3 W-3, DA MAJOR-3
-  "5 seeds provide ~80% power to detect ≥5% MAE improvement only.
-   Scale to 20+ seeds to definitively resolve entanglement contribution."
-
-Strategy:
-  - Reuse existing 5-seed EQ-GNN V2 results (seeds 42–46) from
-    results/entanglement_ablation_v2.json
-  - Train EQ-GNN V2 fresh for seeds 47–61 (15 new seeds)
-  - Train Separable V2 + Classical tanh-MLP for ALL 20 seeds (42–61)
-  - Run full statistical analysis with 20 paired observations
-
-Models (all at 2,527 params, N=1000, 15 epochs):
-  1. Q-PRISM (entangled PQC)
-  2. Separable Q-PRISM (no CNOTs — only change)
-  3. Classical tanh-MLP
-
-Targets: HOMO, LUMO, Gap
-
-Expected runtime:
-  - Q-PRISM: ~4 min/seed × 15 new seeds × 3 targets = ~3 hours
-  - Separable Q-PRISM: ~4 min/seed × 20 seeds × 3 targets = ~4 hours
-  - Classical tanh-MLP: ~0.5 min/seed × 20 seeds × 3 targets = ~30 min
-  - Total: ~7.5 hours (can parallelize targets)
-
-Usage:
-  cd /Users/kkyn/Documents/Work/Quantum/qgnn
-  .pixi/envs/default/bin/python training/run_revision_entanglement_20seeds.py
-  .pixi/envs/default/bin/python training/run_revision_entanglement_20seeds.py --targets homo
-  .pixi/envs/default/bin/python training/run_revision_entanglement_20seeds.py --dry-run
-
-Output:
-  results/entanglement_ablation_20seeds.json
-"""
+"""Entanglement ablation benchmark across 20 random seeds."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -140,16 +105,14 @@ def save_checkpoint(results):
 
 
 def run_model_sweep(model_name, model_factory, targets, seeds, results, epochs=15):
-    """Run training for a model across all targets and seeds, with checkpoint resumption."""
+    """Run training for a model across all targets and seeds."""
     for target in targets:
         if target not in results:
             results[target] = {}
         if model_name not in results[target]:
             results[target][model_name] = {"maes": {}}
 
-        print(f"\n{'─'*60}")
-        print(f"  {model_name} × {target.upper()}")
-        print(f"{'─'*60}")
+        print(f"\n{model_name} x {target.upper()}")
 
         for seed in seeds:
             seed_key = str(seed)
@@ -174,14 +137,14 @@ def run_model_sweep(model_name, model_factory, targets, seeds, results, epochs=1
         results[target][model_name]["mean"] = float(np.mean(all_maes))
         results[target][model_name]["std"] = float(np.std(all_maes))
         results[target][model_name]["n_seeds"] = len(all_maes)
-        print(f"    >> Mean: {np.mean(all_maes):.4f} ± {np.std(all_maes):.4f} ({len(all_maes)} seeds)")
+        print(f"    Mean: {np.mean(all_maes):.4f} ± {np.std(all_maes):.4f} ({len(all_maes)} seeds)")
         save_checkpoint(results)
 
 
 def run_statistical_analysis(results, targets):
     """Run paired t-tests with 20 seeds and compute power analysis."""
     print("\n" + "=" * 70)
-    print("STATISTICAL ANALYSIS (20 SEEDS)")
+    print("Statistical Analysis (20 seeds)")
     print("=" * 70)
 
     for target in targets:
@@ -204,7 +167,7 @@ def run_statistical_analysis(results, targets):
         print(f"  Common seeds: {n_common}")
 
         if n_common < 5:
-            print(f"  ⚠️  Too few common seeds for analysis")
+            print("  Too few common seeds for analysis")
             continue
 
         eq_maes = np.array([models_data["eqgnn_v2"][s] for s in common_seeds])
@@ -305,14 +268,14 @@ def main():
         args.epochs = 2
         seeds_all = [42, 43]
         seeds_eqgnn_new = []
-        print("🏃 DRY RUN: 2 seeds, 2 epochs, HOMO only\n")
+        print("DRY RUN: 2 seeds, 2 epochs, HOMO only\n")
     else:
         seeds_all = SEEDS_20
         seeds_eqgnn_new = SEEDS_NEW_EQGNN
 
-    # ── Verify parameter counts ──
+    # Verify parameter counts
     print("=" * 70)
-    print("20-SEED ENTANGLEMENT ABLATION (Revision Experiment)")
+    print("20-Seed Entanglement Ablation")
     print("=" * 70)
 
     m_ent = EQGNNModelV2(in_features=11, hidden_features=16, num_layers=2, n_q_layers=2, out_dim=1)
@@ -327,10 +290,10 @@ def main():
     print(f"  Separable V2 (no CNOTs): {p_sep:,}")
     print(f"  Classical tanh-MLP:      {p_tanh:,}")
     assert p_ent == p_sep == p_tanh, f"Parameter mismatch! {p_ent} vs {p_sep} vs {p_tanh}"
-    print(f"  ✅ All models: {p_ent:,} parameters (exact match)")
+    print(f"  All models: {p_ent:,} parameters (exact match)")
     del m_ent, m_sep, m_tanh
 
-    # ── Load existing 5-seed results for EQ-GNN V2 ──
+    # Load existing 5-seed results for EQ-GNN V2
     results = load_checkpoint()
     existing = load_existing_results()
 
@@ -350,43 +313,37 @@ def main():
 
     save_checkpoint(results)
 
-    # ── Run EQ-GNN V2 for new seeds (47–61) ──
+    # Run EQ-GNN V2 for new seeds
     if seeds_eqgnn_new:
-        print(f"\n\n{'='*70}")
-        print(f"PHASE 1: EQ-GNN V2 (new seeds {seeds_eqgnn_new[0]}–{seeds_eqgnn_new[-1]})")
-        print(f"{'='*70}")
+        print(f"\nPhase 1: EQ-GNN V2 (new seeds {seeds_eqgnn_new[0]}-{seeds_eqgnn_new[-1]})")
         run_model_sweep(
             "eqgnn_v2",
             lambda: EQGNNModelV2(in_features=11, hidden_features=16, num_layers=2, n_q_layers=2, out_dim=1),
             args.targets, seeds_eqgnn_new, results, epochs=args.epochs,
         )
 
-    # ── Run Separable V2 for all 20 seeds ──
-    print(f"\n\n{'='*70}")
-    print(f"PHASE 2: Separable V2 (all {len(seeds_all)} seeds)")
-    print(f"{'='*70}")
+    # Run Separable V2 for all 20 seeds
+    print(f"\nPhase 2: Separable V2 (all {len(seeds_all)} seeds)")
     run_model_sweep(
         "separable_v2",
         lambda: SeparableEQGNNModelV2(in_features=11, hidden_features=16, num_layers=2, n_q_layers=2, out_dim=1),
         args.targets, seeds_all, results, epochs=args.epochs,
     )
 
-    # ── Run Classical tanh-MLP for all 20 seeds ──
-    print(f"\n\n{'='*70}")
-    print(f"PHASE 3: Classical tanh-MLP (all {len(seeds_all)} seeds)")
-    print(f"{'='*70}")
+    # Run Classical tanh-MLP for all 20 seeds
+    print(f"\nPhase 3: Classical tanh-MLP (all {len(seeds_all)} seeds)")
     run_model_sweep(
         "tanh_mlp",
         lambda: ClassicalTanhEQGNNModel(in_features=11, hidden_features=16, num_layers=2, out_dim=1),
         args.targets, seeds_all, results, epochs=args.epochs,
     )
 
-    # ── Statistical Analysis ──
+    # Statistical Analysis
     run_statistical_analysis(results, args.targets)
 
-    # ── Final Verdict ──
+    # Final Verdict
     print("\n" + "=" * 70)
-    print("20-SEED BOWLES TEST VERDICT")
+    print("Bowles Test Verdict")
     print("=" * 70)
     for target in args.targets:
         s = results[target].get("stats_20seed", {})
@@ -400,12 +357,12 @@ def main():
         print(f"    Entangled vs Separable: p={p_ent:.4f}, d={d_ent:.3f}")
         print(f"    Separable vs Tanh:     p={p_sep:.4f}")
         if p_ent < 0.05:
-            print(f"    🏆 Entanglement provides SIGNIFICANT advantage (p={p_ent:.4f})")
+            print(f"    Entanglement provides significant advantage (p={p_ent:.4f})")
         else:
-            print(f"    ⚠️  Entanglement NOT significant (p={p_ent:.4f}) — advantage is trigonometric")
+            print(f"    Entanglement not significant (p={p_ent:.4f}) - advantage is trigonometric")
 
-    print(f"\n💾 Results saved to: {SAVE_PATH}")
-    print("✅ 20-seed entanglement ablation complete!")
+    print(f"\nResults saved to: {SAVE_PATH}")
+    print("20-seed entanglement ablation complete.")
 
 
 if __name__ == "__main__":

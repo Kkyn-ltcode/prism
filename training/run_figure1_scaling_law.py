@@ -1,36 +1,4 @@
-"""
-Full-Dataset Scaling Sweep: QM9 + MD17 + N-Body
-=================================================
-Addresses Reviewer Issue M-5: "Insufficient Data Scale for Robust Claims"
-
-Runs scaling experiments across all three benchmarks using the FULL datasets,
-evaluates multiple targets, and records exact split indices for reproducibility.
-
-Usage:
-    # Run everything (all benchmarks, all targets, all N values, all seeds)
-    pixi run python training/run_full_scaling_sweep.py --benchmark all
-
-    # Run only QM9, all targets
-    pixi run python training/run_full_scaling_sweep.py --benchmark qm9
-
-    # Run only QM9 HOMO target
-    pixi run python training/run_full_scaling_sweep.py --benchmark qm9 --targets homo
-
-    # Run only QM9 HOMO at specific N values
-    pixi run python training/run_full_scaling_sweep.py --benchmark qm9 --targets homo --n-values 100 500 1000
-
-    # Run only MD17
-    pixi run python training/run_full_scaling_sweep.py --benchmark md17
-
-    # Run only N-body
-    pixi run python training/run_full_scaling_sweep.py --benchmark nbody
-
-    # Run with specific seeds
-    pixi run python training/run_full_scaling_sweep.py --benchmark qm9 --seeds 42 43
-
-    # Dry run (2 epochs, 1 seed, smallest N only) to verify pipeline
-    pixi run python training/run_full_scaling_sweep.py --benchmark qm9 --dry-run
-"""
+"""Full-dataset scaling sweep across QM9, MD17, and N-Body benchmarks."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -52,9 +20,8 @@ from scipy import stats
 from torch_geometric.loader import DataLoader
 
 
-# =============================================================================
 # Imports from project modules
-# =============================================================================
+
 from datasets.dataset_qm9 import get_qm9_splits, QM9_TARGET_INDICES
 from datasets.dataset_md17 import get_md17_splits
 from datasets.dataset_nbody import get_nbody_splits
@@ -81,9 +48,7 @@ from models.classical_twin import ClassicalTwinTrajectoryModel
 from training.train_md17 import NonEquivMD17Model
 
 
-# =============================================================================
 # Configuration Constants
-# =============================================================================
 
 # QM9 scaling configuration
 QM9_N_VALUES = [100, 250, 500, 1000, 2500, 5000, 10000]
@@ -132,13 +97,10 @@ TARGET_DISPLAY = {
 }
 
 
-# =============================================================================
-# Statistical Tests (reused from existing codebase)
-# =============================================================================
+# Statistical Tests
+
 def compute_statistical_tests(maes_a, maes_b):
-    """
-    Compute Wilcoxon signed-rank and paired t-test between two sets of MAE values.
-    """
+    """Compute Wilcoxon signed-rank and paired t-test between two sets of MAE values."""
     a = np.array(maes_a, dtype=np.float64)
     b = np.array(maes_b, dtype=np.float64)
     result = {}
@@ -173,9 +135,8 @@ def compute_statistical_tests(maes_a, maes_b):
     return result
 
 
-# =============================================================================
 # Checkpointing Utilities
-# =============================================================================
+
 def load_checkpoint(json_path):
     """Load existing results JSON, or return empty dict if not found."""
     if os.path.exists(json_path):
@@ -210,9 +171,8 @@ def mark_run_completed(results, run_key, result_value):
     results["_completed_runs"][run_key] = result_value
 
 
-# =============================================================================
 # Split Index Recording
-# =============================================================================
+
 def record_split_indices(split_record, benchmark, key, seed, train_indices, val_indices, test_indices):
     """Record the exact split indices for reproducibility."""
     if benchmark not in split_record:
@@ -233,17 +193,13 @@ def save_split_indices(split_record, save_dir):
     """Save split indices to a separate JSON file."""
     path = os.path.join(save_dir, "scaling_split_indices.json")
     save_checkpoint(split_record, path)
-    print(f"\n\U0001f4cb Saved split index summary to: {path}")
+    print(f"\nSaved split index summary to: {path}")
 
 
-# =============================================================================
 # QM9 Scaling Sweep
-# =============================================================================
+
 def get_qm9_split_indices(total_len, num_train, num_val, num_test, seed):
-    """
-    Generate QM9 split indices deterministically.
-    Returns (train_indices, val_indices, test_indices) as lists of ints.
-    """
+    """Generate QM9 split indices deterministically."""
     torch.manual_seed(seed)
     perm = torch.randperm(total_len)
     train_idx = perm[:num_train].tolist()
@@ -378,7 +334,7 @@ def run_qm9_scaling_sweep(targets=None, n_values=None, models=None, seeds=None,
     skipped = 0
 
     print("=" * 85)
-    print("\U0001f31f QM9 Full-Dataset Scaling Sweep")
+    print("QM9 Full-Dataset Scaling Sweep")
     print(f"   Targets: {targets}")
     print(f"   N values: {n_values}")
     print(f"   Models: {models}")
@@ -409,7 +365,7 @@ def run_qm9_scaling_sweep(targets=None, n_values=None, models=None, seeds=None,
                         skipped += 1
                         continue
 
-                    print(f"\n\u25b6 [{target}] {model_key} | N={n_train:,} | Seed={seed}")
+                    print(f"\n[{target}] {model_key} | N={n_train:,} | Seed={seed}")
 
                     try:
                         mae, params, elapsed = train_eval_qm9_single(
@@ -433,7 +389,7 @@ def run_qm9_scaling_sweep(targets=None, n_values=None, models=None, seeds=None,
                                              train_idx, val_idx, test_idx)
 
                         completed += 1
-                        print(f"    \u2713 MAE = {mae:.4f} {TARGET_UNITS[target]} | "
+                        print(f"    MAE = {mae:.4f} {TARGET_UNITS[target]} | "
                               f"Params = {params:,} | {elapsed:.1f}s | "
                               f"[{completed}/{total_runs - skipped} done, {skipped} skipped]")
 
@@ -441,7 +397,7 @@ def run_qm9_scaling_sweep(targets=None, n_values=None, models=None, seeds=None,
                         save_checkpoint(results, json_path)
 
                     except Exception as e:
-                        print(f"    \u2717 ERROR: {e}")
+                        print(f"    ERROR: {e}")
                         import traceback
                         traceback.print_exc()
 
@@ -479,7 +435,7 @@ def run_qm9_scaling_sweep(targets=None, n_values=None, models=None, seeds=None,
 def print_qm9_summary(results, targets, n_values, models):
     """Print a nicely formatted summary table."""
     print("\n" + "=" * 100)
-    print("\U0001f4cb QM9 SCALING SWEEP SUMMARY")
+    print("QM9 SCALING SWEEP SUMMARY")
     print("=" * 100)
 
     for target in targets:
@@ -511,9 +467,8 @@ def print_qm9_summary(results, targets, n_values, models):
     print("=" * 100)
 
 
-# =============================================================================
 # MD17 Scaling Sweep
-# =============================================================================
+
 def create_md17_model(model_type, in_features=10, hidden_dim=16, num_layers=2):
     """Instantiate an MD17 model by type. Returns (model, param_count)."""
     device = torch.device("cpu")
@@ -647,7 +602,7 @@ def run_md17_scaling_sweep(molecules=None, n_values=None, models=None, seeds=Non
     skipped = 0
 
     print("=" * 85)
-    print("\U0001f31f MD17 Full-Dataset Scaling Sweep")
+    print("MD17 Full-Dataset Scaling Sweep")
     print(f"   Molecules: {molecules}")
     print(f"   N values: {n_values}")
     print(f"   Models: {models}")
@@ -678,7 +633,7 @@ def run_md17_scaling_sweep(molecules=None, n_values=None, models=None, seeds=Non
                         skipped += 1
                         continue
 
-                    print(f"\n\u25b6 [{mol}] {model_type} | N={n_train:,} | Seed={seed}")
+                    print(f"\n[{mol}] {model_type} | N={n_train:,} | Seed={seed}")
 
                     try:
                         mae, params, elapsed = train_eval_md17_single(
@@ -695,14 +650,14 @@ def run_md17_scaling_sweep(molecules=None, n_values=None, models=None, seeds=Non
                         })
 
                         completed += 1
-                        print(f"    \u2713 MAE = {mae:.4f} kcal/mol | "
+                        print(f"    MAE = {mae:.4f} kcal/mol | "
                               f"Params = {params:,} | {elapsed:.1f}s | "
                               f"[{completed}/{total_runs - skipped} done, {skipped} skipped]")
 
                         save_checkpoint(results, json_path)
 
                     except Exception as e:
-                        print(f"    \u2717 ERROR: {e}")
+                        print(f"    ERROR: {e}")
                         import traceback
                         traceback.print_exc()
 
@@ -719,7 +674,7 @@ def run_md17_scaling_sweep(molecules=None, n_values=None, models=None, seeds=Non
 def print_md17_summary(results, molecules, n_values, models):
     """Print a formatted MD17 summary table."""
     print("\n" + "=" * 100)
-    print("\U0001f4cb MD17 SCALING SWEEP SUMMARY [kcal/mol]")
+    print("MD17 SCALING SWEEP SUMMARY [kcal/mol]")
     print("=" * 100)
 
     for mol in molecules:
@@ -750,9 +705,8 @@ def print_md17_summary(results, molecules, n_values, models):
     print("=" * 100)
 
 
-# =============================================================================
 # N-Body Scaling Sweep
-# =============================================================================
+
 def create_nbody_model(model_type, hidden_dim=16, num_layers=2):
     """Instantiate an N-body trajectory model. Returns (model, param_count)."""
     device = torch.device("cpu")
@@ -851,7 +805,7 @@ def run_nbody_scaling_sweep(n_values=None, models=None, seeds=None,
     skipped = 0
 
     print("=" * 85)
-    print("\U0001f31f N-Body Full-Dataset Scaling Sweep")
+    print("N-Body Full-Dataset Scaling Sweep")
     print(f"   N values: {n_values}")
     print(f"   Models: {models}")
     print(f"   Seeds: {seeds} | Epochs: {epochs}")
@@ -877,7 +831,7 @@ def run_nbody_scaling_sweep(n_values=None, models=None, seeds=None,
                     skipped += 1
                     continue
 
-                print(f"\n\u25b6 [nbody] {model_type} | N={n_train:,} | Seed={seed}")
+                print(f"\n[nbody] {model_type} | N={n_train:,} | Seed={seed}")
 
                 try:
                     mse, params, elapsed = train_eval_nbody_single(
@@ -894,14 +848,14 @@ def run_nbody_scaling_sweep(n_values=None, models=None, seeds=None,
                     })
 
                     completed += 1
-                    print(f"    \u2713 MSE = {mse:.6f} | "
+                    print(f"    MSE = {mse:.6f} | "
                           f"Params = {params:,} | {elapsed:.1f}s | "
                           f"[{completed}/{total_runs - skipped} done, {skipped} skipped]")
 
                     save_checkpoint(results, json_path)
 
                 except Exception as e:
-                    print(f"    \u2717 ERROR: {e}")
+                    print(f"    ERROR: {e}")
                     import traceback
                     traceback.print_exc()
 
@@ -918,7 +872,7 @@ def run_nbody_scaling_sweep(n_values=None, models=None, seeds=None,
 def print_nbody_summary(results, n_values, models):
     """Print a formatted N-body summary table."""
     print("\n" + "=" * 100)
-    print("\U0001f4cb N-BODY SCALING SWEEP SUMMARY [Coordinate MSE]")
+    print("N-BODY SCALING SWEEP SUMMARY [Coordinate MSE]")
     print("=" * 100)
 
     header = f"  {'N':>7} |"
@@ -945,30 +899,12 @@ def print_nbody_summary(results, n_values, models):
     print("=" * 100)
 
 
-# =============================================================================
 # Main CLI
-# =============================================================================
+
 def main():
     parser = argparse.ArgumentParser(
         description="Full-Dataset Scaling Sweep: QM9 + MD17 + N-Body",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Run everything
-  pixi run python training/run_full_scaling_sweep.py --benchmark all
-
-  # Run only QM9 HOMO and LUMO
-  pixi run python training/run_full_scaling_sweep.py --benchmark qm9 --targets homo lumo
-
-  # Run only QM9 at specific N values
-  pixi run python training/run_full_scaling_sweep.py --benchmark qm9 --n-values 100 500 1000
-
-  # Run only MD17 ethanol
-  pixi run python training/run_full_scaling_sweep.py --benchmark md17 --molecules ethanol
-
-  # Dry run to verify pipeline
-  pixi run python training/run_full_scaling_sweep.py --benchmark qm9 --dry-run
-        """
     )
 
     parser.add_argument("--benchmark", type=str, default="all",
@@ -998,7 +934,7 @@ Examples:
         args.seeds = [42]
         if args.epochs is None:
             args.epochs = 2
-        print("\U0001f9ea DRY RUN MODE: 1 seed, 2 epochs, minimal N values")
+        print("DRY RUN MODE: 1 seed, 2 epochs, minimal N values")
 
     benchmarks = ["qm9", "md17", "nbody"] if args.benchmark == "all" else [args.benchmark]
 
@@ -1036,8 +972,8 @@ Examples:
             )
 
     print("\n" + "=" * 85)
-    print("\u2705 All requested scaling sweeps completed!")
-    print("   Run 'python visualization/plot_scaling_crossover.py' to generate figures.")
+    print("All requested scaling sweeps completed!")
+    print("   Run 'python visualization/plot_figure1_scaling.py' to generate figures.")
     print("=" * 85)
 
 

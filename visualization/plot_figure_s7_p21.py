@@ -1,14 +1,5 @@
-"""
-Publication-Quality Figure: P2.1 Large-Scale Evaluation
-========================================================
-Addresses Reviewer Concern P2.1 (R2, R3, R5):
-Demonstrates that PRISM (SIREN) maintains its generalization
-advantage over Classical Twin (tanh) and Q-PRISM (PQC) at large training
-set sizes (up to N=10,000).
+"""Plot large-scale evaluation scaling curves across models and targets."""
 
-Outputs:
-    paper/figures/figure_p21_scaling.png
-"""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"

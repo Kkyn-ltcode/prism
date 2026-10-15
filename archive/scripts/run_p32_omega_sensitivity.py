@@ -1,26 +1,4 @@
-"""
-P3.2 Revision Experiment: SIREN ω₀ Sensitivity Analysis
-=========================================================
-Addresses Reviewer Concern P3.2 (R1, R3, R4):
-  "Three reviewers independently ask about sensitivity to ω₀ = 30.0.
-   A brief ablation over ω₀ ∈ {10, 20, 30, 50} would address this concern."
-
-For PRX Quantum: demonstrates that the dequantization result is not
-an artifact of a carefully tuned ω₀ hyperparameter.
-
-Models: Periodic-EGNN (SIREN) with ω₀ ∈ {10, 20, 30, 50}
-Targets: HOMO (primary), optionally LUMO, Gap
-Seeds: 1 seed (42) for speed; add more if time permits
-
-Usage:
-    pixi run python training/run_p32_omega_sensitivity.py
-    pixi run python training/run_p32_omega_sensitivity.py --omega-values 10 20 30 50 --seeds 42 43 44
-    pixi run python training/run_p32_omega_sensitivity.py --targets homo lumo gap
-    pixi run python training/run_p32_omega_sensitivity.py --dry-run
-
-Output:
-    results/p32_omega_sensitivity.json
-"""
+"""SIREN omega_0 sensitivity analysis across frequency scales."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -50,7 +28,7 @@ TARGET_UNITS = {"homo": "eV", "lumo": "eV", "gap": "eV",
 
 
 def create_siren_model(omega_0, in_features=11, hidden_dim=16, num_layers=2, out_dim=1):
-    """Create PRISM (SIREN) with a specific ω₀ value."""
+    """Create PRISM (SIREN) model with a specific omega_0 value."""
     model = PRISMModelV2(
         in_features=in_features,
         hidden_features=hidden_dim,
@@ -64,7 +42,7 @@ def create_siren_model(omega_0, in_features=11, hidden_dim=16, num_layers=2, out
 
 
 def create_classical_twin(in_features=11, hidden_dim=16, num_layers=2, out_dim=1):
-    """Create Classical Twin (tanh-MLP) as the baseline reference."""
+    """Create Classical Twin (tanh-MLP) baseline model."""
     model = ClassicalTwinModelV2(
         in_features=in_features,
         hidden_features=hidden_dim,
@@ -77,7 +55,7 @@ def create_classical_twin(in_features=11, hidden_dim=16, num_layers=2, out_dim=1
 
 def train_eval(model, target, seed, num_train=1000, epochs=15,
                batch_size=16, lr=1e-3, data_dir=None):
-    """Train and evaluate a model. Returns test MAE."""
+    """Train and evaluate a model, returning test MAE."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data_dir = data_dir or "./data/QM9"
 
@@ -149,26 +127,24 @@ def run_omega_sensitivity(omega_values, targets, seeds, epochs, batch_size,
         }}
 
     print("=" * 80)
-    print("🔬 P3.2 Revision: SIREN ω₀ Sensitivity Analysis")
-    print(f"   ω₀ values: {omega_values}")
-    print(f"   Targets:   {targets}")
-    print(f"   Seeds:     {seeds}")
-    print(f"   Epochs:    {epochs}")
+    print("SIREN omega_0 Sensitivity Analysis")
+    print(f"   omega_0 values: {omega_values}")
+    print(f"   Targets:        {targets}")
+    print(f"   Seeds:          {seeds}")
+    print(f"   Epochs:         {epochs}")
     print("=" * 80)
 
     for target in targets:
         if target not in results:
             results[target] = {}
 
-        print(f"\n{'─'*60}")
-        print(f"📦 Target: {target.upper()} ({TARGET_UNITS[target]})")
-        print(f"{'─'*60}")
+        print(f"\nTarget: {target.upper()} ({TARGET_UNITS[target]})")
 
         # Run Classical Twin baseline for reference
         for seed in seeds:
             baseline_key = f"classical_twin_seed{seed}"
             if baseline_key not in results[target]:
-                print(f"\n  ▶ Classical Twin (tanh) baseline | seed={seed}")
+                print(f"\n  Classical Twin (tanh) baseline | seed={seed}")
                 model, params = create_classical_twin()
                 mae, _, elapsed = train_eval(model, target, seed,
                                               epochs=epochs, batch_size=batch_size,
@@ -176,26 +152,26 @@ def run_omega_sensitivity(omega_values, targets, seeds, epochs, batch_size,
                 results[target][baseline_key] = {
                     "test_mae": mae, "params": params, "time_s": elapsed,
                 }
-                print(f"    ✅ Classical Twin | MAE = {mae:.4f} {TARGET_UNITS[target]} | {elapsed}s")
+                print(f"    Classical Twin | MAE = {mae:.4f} {TARGET_UNITS[target]} | {elapsed}s")
 
                 # Checkpoint
                 with open(json_path, "w") as f:
                     json.dump(results, f, indent=2)
             else:
                 cached = results[target][baseline_key]
-                print(f"  ⏭  Classical Twin seed={seed} — CACHED: {cached['test_mae']:.4f}")
+                print(f"  Cached: Classical Twin seed={seed} — {cached['test_mae']:.4f}")
 
-        # Run SIREN at each ω₀
+        # Run SIREN at each omega_0
         for omega in omega_values:
             for seed in seeds:
                 run_key = f"siren_omega{omega}_seed{seed}"
 
                 if run_key in results[target]:
                     cached = results[target][run_key]
-                    print(f"  ⏭  SIREN ω₀={omega} seed={seed} — CACHED: {cached['test_mae']:.4f}")
+                    print(f"  Cached: SIREN omega_0={omega} seed={seed} — {cached['test_mae']:.4f}")
                     continue
 
-                print(f"\n  ▶ Periodic-EGNN (SIREN) ω₀={omega} | seed={seed}")
+                print(f"\n  Periodic-EGNN (SIREN) omega_0={omega} | seed={seed}")
                 model, params = create_siren_model(omega_0=omega)
                 mae, _, elapsed = train_eval(model, target, seed,
                                               epochs=epochs, batch_size=batch_size,
@@ -204,22 +180,19 @@ def run_omega_sensitivity(omega_values, targets, seeds, epochs, batch_size,
                     "test_mae": mae, "params": params, "omega_0": omega,
                     "time_s": elapsed,
                 }
-                print(f"    ✅ SIREN ω₀={omega} | MAE = {mae:.4f} {TARGET_UNITS[target]} | {elapsed}s")
+                print(f"    SIREN omega_0={omega} | MAE = {mae:.4f} {TARGET_UNITS[target]} | {elapsed}s")
 
                 # Checkpoint
                 with open(json_path, "w") as f:
                     json.dump(results, f, indent=2)
 
-    # =========================================================================
-    # Summary Table
-    # =========================================================================
+    # Summary table
     print("\n" + "=" * 80)
-    print("📋 P3.2 ω₀ SENSITIVITY RESULTS")
+    print("Omega_0 Sensitivity Results")
     print("=" * 80)
 
     for target in targets:
         print(f"\n  Target: {target.upper()} ({TARGET_UNITS[target]})")
-        print(f"  {'─'*60}")
 
         # Classical Twin baseline
         baseline_maes = []
@@ -234,8 +207,8 @@ def run_omega_sensitivity(omega_values, targets, seeds, epochs, batch_size,
         else:
             baseline_mean = None
 
-        print(f"  {'ω₀':>8} | {'MAE':>20} | {'vs tanh':>10}")
-        print(f"  {'─'*8}─┼{'─'*22}┼{'─'*12}")
+        print(f"  {'omega_0':>8} | {'MAE':>20} | {'vs tanh':>10}")
+        print(f"  {'-'*8}-+{'-'*22}+{'-'*12}")
 
         for omega in omega_values:
             maes = []
@@ -246,20 +219,17 @@ def run_omega_sensitivity(omega_values, targets, seeds, epochs, batch_size,
             if maes:
                 mean_mae = np.mean(maes)
                 mae_str = f"{mean_mae:.4f}" + (f" ± {np.std(maes):.4f}" if len(maes) > 1 else "")
-                delta = f"{((mean_mae / baseline_mean - 1) * 100):+.1f}%" if baseline_mean else "—"
-                marker = " ← default" if omega == 30.0 else ""
+                delta = f"{((mean_mae / baseline_mean - 1) * 100):+.1f}%" if baseline_mean else "-"
+                marker = " <- default" if omega == 30.0 else ""
                 print(f"  {omega:>8.0f} | {mae_str:>20} | {delta:>10}{marker}")
 
-    print(f"\n📁 Results saved to: {json_path}")
-    print("\n💡 Key question: Is the dequantization result robust across ω₀ values?")
-    print("   If SIREN beats tanh across all ω₀ → result is not hyperparameter-dependent.")
-    print("   If only ω₀=30 works → the advantage is fragile (weaker claim).")
+    print(f"\nResults saved to: {json_path}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="P3.2 SIREN ω₀ Sensitivity Analysis")
+    parser = argparse.ArgumentParser(description="SIREN omega_0 Sensitivity Analysis")
     parser.add_argument("--omega-values", nargs="+", type=float, default=[10.0, 20.0, 30.0, 50.0],
-                        help="ω₀ values to test")
+                        help="omega_0 values to test")
     parser.add_argument("--targets", nargs="+", default=["homo"],
                         choices=list(QM9_TARGET_INDICES.keys()))
     parser.add_argument("--seeds", nargs="+", type=int, default=[42],
@@ -270,7 +240,7 @@ if __name__ == "__main__":
     parser.add_argument("--data-dir", type=str, default=None)
     parser.add_argument("--save-dir", type=str, default="./results")
     parser.add_argument("--dry-run", action="store_true",
-                        help="Quick validation (2 epochs, ω₀=[10,30] only)")
+                        help="Quick validation (2 epochs, omega_0=[10,30] only)")
     args = parser.parse_args()
 
     if args.dry_run:
@@ -278,7 +248,7 @@ if __name__ == "__main__":
         args.seeds = [42]
         args.epochs = 2
         args.targets = ["homo"]
-        print("🏃 DRY RUN mode: 2 epochs, ω₀=[10,30], seed=42, HOMO only")
+        print("DRY RUN mode: 2 epochs, omega_0=[10,30], seed=42, HOMO only")
 
     run_omega_sensitivity(
         omega_values=args.omega_values,

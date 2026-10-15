@@ -1,3 +1,5 @@
+"""Factorial ablation study of activation functions and initialization schemes."""
+
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
 import sys
@@ -18,23 +20,18 @@ if str(PROJECT_ROOT) not in sys.path:
 from models.eq_gnn import GaussianRBF, compute_edge_mean_angles, N_RBF
 from models.classical_trig_twin import PRISMModelV2
 from models.classical_twin import ClassicalTwinModelV2
-from models.egnn_baseline import count_parameters
 from datasets.dataset_qm9 import get_qm9_splits, QM9_TARGET_INDICES
-from training.run_extended_baselines_sweep import (
+from training.run_table1_qm9_benchmark import (
     TARGET_UNITS, TARGET_DISPLAY, TARGET_TYPE,
     compute_statistical_tests, train_eval_single_run,
     resolve_data_dir, get_model_device
 )
 
 
-# =============================================================================
-# Custom Heads for Factorial Ablation
-# =============================================================================
+# Custom heads for factorial ablation
 
 class SinXavierHead(nn.Module):
-    """
-    sin_xavier_init: Uses sin activation (like PRISM) but standard Xavier uniform init.
-    """
+    """Sin activation head with standard Xavier uniform initialization."""
     def __init__(self, in_features, n_q_layers=2, n_rbf=N_RBF, omega_0=30.0):
         super().__init__()
         self.feature_proj = nn.Linear(in_features, 2)
@@ -63,9 +60,7 @@ class SinXavierHead(nn.Module):
 
 
 class TanhSirenInitHead(nn.Module):
-    """
-    tanh_siren_init: Uses SiLU activation (like ClassicalHead) but SIREN-analogous init.
-    """
+    """SiLU activation head with SIREN-analogous initialization."""
     def __init__(self, in_features, n_q_layers=2, n_rbf=N_RBF, omega_0=30.0):
         super().__init__()
         self.feature_proj = nn.Linear(in_features, 2)
@@ -100,11 +95,10 @@ class TanhSirenInitHead(nn.Module):
         return torch.tanh(self.linear2(x))
 
 
-# =============================================================================
-# Custom Layer & Model for Swappable Heads
-# =============================================================================
+# Custom layer and model for swappable heads
 
 class AblationLayer(nn.Module):
+    """Equivariant layer with customizable head module."""
     def __init__(self, in_features, head_class, n_q_layers=2, n_rbf=N_RBF, omega_0=30.0):
         super().__init__()
         self.in_features = in_features
@@ -157,6 +151,7 @@ class AblationLayer(nn.Module):
 
 
 class AblationModel(nn.Module):
+    """Equivariant model for head ablation studies."""
     def __init__(self, head_class, in_features=11, hidden_features=16, num_layers=3, out_dim=1,
                  n_q_layers=2, n_rbf=N_RBF, omega_0=30.0):
         super().__init__()
@@ -194,6 +189,7 @@ MODEL_CONFIGS = {
 }
 
 def get_ablation_model(model_key, target_dim=1, hidden_dim=16):
+    """Instantiate ablation model by key."""
     if model_key == "prism_siren_init":
         return PRISMModelV2(in_features=11, hidden_features=hidden_dim, num_layers=2, out_dim=target_dim, head_type="siren", omega_0=30.0)
     elif model_key == "classical_twin":
@@ -206,14 +202,16 @@ def get_ablation_model(model_key, target_dim=1, hidden_dim=16):
         raise ValueError(f"Unknown model_key: {model_key}")
 
 def custom_create_model(model_key, in_features=11, hidden_dim=16, num_layers=3, out_dim=1):
+    """Create model and return parameter count."""
     model = get_ablation_model(model_key, target_dim=out_dim, hidden_dim=hidden_dim)
     return model, count_parameters(model)
 
-import training.run_extended_baselines_sweep
-training.run_extended_baselines_sweep.create_model = custom_create_model
+import training.run_table1_qm9_benchmark
+training.run_table1_qm9_benchmark.create_model = custom_create_model
 
 
 def cohens_d(x, y):
+    """Compute Cohen's d effect size between two samples."""
     nx = len(x)
     ny = len(y)
     dof = nx + ny - 2
@@ -222,6 +220,7 @@ def cohens_d(x, y):
 
 
 def run_benchmark(targets, seeds, num_train, num_val, num_test, epochs, batch_size, lr, hidden_dim, device, data_dir, save_dir):
+    """Run the factorial ablation benchmark."""
     data_dir = resolve_data_dir(data_dir)
     if save_dir is None:
         save_dir = "/kaggle/working/results" if os.path.exists("/kaggle/working") else "./results"
@@ -246,9 +245,7 @@ def run_benchmark(targets, seeds, num_train, num_val, num_test, epochs, batch_si
 
     for target in targets:
         t_type = TARGET_TYPE.get(target, "other")
-        print(f"\n{'='*100}")
-        print(f"📦 Target: {TARGET_DISPLAY[target]} [{TARGET_UNITS[target]}] ({t_type})")
-        print(f"{'='*100}")
+        print(f"\nTarget: {TARGET_DISPLAY[target]} [{TARGET_UNITS[target]}] ({t_type})")
 
         if target not in results:
             results[target] = {
@@ -260,12 +257,12 @@ def run_benchmark(targets, seeds, num_train, num_val, num_test, epochs, batch_si
         for model_key in MODEL_CONFIGS.keys():
             if model_key in results[target] and "maes" in results[target][model_key]:
                 existing = results[target][model_key]
-                print(f"\n▶ Model: {MODEL_CONFIGS[model_key]['label']} — CACHED: {existing['mean_mae']:.4f} ± {existing['std_mae']:.4f}")
+                print(f"\nModel: {MODEL_CONFIGS[model_key]['label']} - Cached: {existing['mean_mae']:.4f} ± {existing['std_mae']:.4f}")
                 continue
 
             config = MODEL_CONFIGS[model_key]
             model_dev = get_model_device(model_key, device)
-            print(f"\n▶ Model: {config['label']} on {model_dev}")
+            print(f"\nModel: {config['label']} on {model_dev}")
             maes = []
             param_count = 0
             for seed in seeds:
@@ -295,7 +292,7 @@ def run_benchmark(targets, seeds, num_train, num_val, num_test, epochs, batch_si
                 "mean_mae": mean_mae,
                 "std_mae": std_mae,
             }
-            print(f"  ⭐ {config['label']} ({len(seeds)} Seeds): {mean_mae:.4f} ± {std_mae:.4f} {TARGET_UNITS[target]} (Params: {param_count:,})")
+            print(f"  {config['label']} ({len(seeds)} Seeds): {mean_mae:.4f} ± {std_mae:.4f} {TARGET_UNITS[target]} (Params: {param_count:,})")
 
             with open(json_path, "w") as f:
                 json.dump(results, f, indent=2)
@@ -314,11 +311,11 @@ def run_benchmark(targets, seeds, num_train, num_val, num_test, epochs, batch_si
         
     with open(json_path, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\n📁 Saved: {json_path}")
+    print(f"\nSaved: {json_path}")
 
     # Print Publication Table
     print("\n" + "=" * 140)
-    print(f"📋 TABLE: 2x2 Factorial Init/Activation Ablation (N={num_train:,}, Mean ± Std over {len(seeds)} Seeds)")
+    print(f"Table: 2x2 Factorial Init/Activation Ablation (N={num_train:,}, Mean ± Std over {len(seeds)} Seeds)")
     print("=" * 140)
     
     header = f"| {'Target':<15} | {'Unit':<8} |"
@@ -345,7 +342,7 @@ def run_benchmark(targets, seeds, num_train, num_val, num_test, epochs, batch_si
     print(divider)
 
     print("\n" + "=" * 140)
-    print("📊 2x2 Factorial ANOVA-style Effects & Pairwise Comparisons")
+    print("2x2 Factorial ANOVA Effects and Pairwise Comparisons")
     print("=" * 140)
     for t in targets:
         d = results[t]
@@ -391,7 +388,7 @@ def run_benchmark(targets, seeds, num_train, num_val, num_test, epochs, batch_si
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Revision C1: Activation vs Init Ablation")
+    parser = argparse.ArgumentParser(description="Activation vs Init Ablation")
     parser.add_argument("--targets", nargs="+", default=["homo", "lumo", "gap"], choices=list(QM9_TARGET_INDICES.keys()))
     parser.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44, 45, 46, 47, 48, 49, 50, 51])
     parser.add_argument("--num-train", type=int, default=1000)

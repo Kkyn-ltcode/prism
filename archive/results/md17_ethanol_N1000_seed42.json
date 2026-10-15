@@ -1,0 +1,28 @@
+{
+    "molecule": "ethanol",
+    "N_train": 1000,
+    "seed": 42,
+    "epochs": 30,
+    "models": {
+        "noneq": {
+            "params": 7873,
+            "mae_kcal_mol": 3.40384375,
+            "time_sec": 15.782023191452026
+        },
+        "egnn_pm": {
+            "params": 1177,
+            "mae_kcal_mol": 3.40665625,
+            "time_sec": 16.41916823387146
+        },
+        "egnn": {
+            "params": 4273,
+            "mae_kcal_mol": 3.407640625,
+            "time_sec": 17.683684587478638
+        },
+        "eqgnn": {
+            "params": 2511,
+            "mae_kcal_mol": 3.404140625,
+            "time_sec": 881.7796316146851
+        }
+    }
+}

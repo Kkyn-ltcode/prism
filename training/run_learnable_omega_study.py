@@ -1,36 +1,4 @@
-"""
-Revision Experiment: Learnable ω₀ for Periodic-EGNN
-=====================================================
-Addresses: R1 Q-1, R3 W-2, EIC Q-1 (3 reviewers independently ask this)
-  "Did you attempt making ω₀ a learnable parameter?
-   Did it converge to physically meaningful frequencies?"
-
-Strategy:
-  - Modify TrigHead to make ω₀ an nn.Parameter (per-layer)
-  - Compare against fixed ω₀ = 30.0 baseline
-  - Report: final ω₀ values, convergence, MAE comparison
-
-Models (all at ~2,527 params):
-  1. Periodic-EGNN (fixed ω₀ = 30.0) — baseline
-  2. Periodic-EGNN (learnable ω₀, init=30.0) — per-head learnable
-  3. Periodic-EGNN (learnable ω₀, init=10.0) — different init
-  4. Classical Twin (tanh) — reference
-
-Targets: HOMO, LUMO, Gap
-Seeds: 42, 43, 44 (3 seeds for mean ± std)
-
-Expected runtime:
-  - 4 models × 3 targets × 3 seeds × ~8s = ~5 min total
-  - (All classical, no PQC overhead)
-
-Usage:
-  cd /Users/kkyn/Documents/Work/Quantum/qgnn
-  .pixi/envs/default/bin/python training/run_revision_learnable_omega.py
-  .pixi/envs/default/bin/python training/run_revision_learnable_omega.py --dry-run
-
-Output:
-  results/revision_learnable_omega.json
-"""
+"""Learnable omega_0 evaluation for Periodic-EGNN."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -61,27 +29,17 @@ TARGET_UNITS = {"homo": "eV", "lumo": "eV", "gap": "eV"}
 SAVE_PATH = PROJECT_ROOT / "results" / "revision_learnable_omega.json"
 
 
-# =============================================================================
-# Learnable ω₀ TrigHead
-# =============================================================================
+# Learnable omega_0 TrigHead
 
 class LearnableOmegaTrigHead(nn.Module):
-    """
-    SIREN head with learnable ω₀ (per-head scalar parameter).
-
-    Identical to TrigHead except ω₀ is an nn.Parameter that is
-    optimized via backpropagation alongside all other weights.
-
-    This addresses the reviewer concern: "Does ω₀ converge to
-    physically meaningful frequencies?"
-    """
+    """SIREN head with learnable omega_0 scalar parameter."""
     def __init__(self, in_features, n_q_layers=2, n_rbf=N_RBF, omega_0_init=30.0):
         super().__init__()
         self.feature_proj = nn.Linear(in_features, 2)
 
-        # ω₀ as a LEARNABLE parameter (1 scalar per head)
+        # omega_0 as a learnable parameter (1 scalar per head)
         self.log_omega_0 = nn.Parameter(torch.tensor(math.log(omega_0_init)))
-        # Using log-space to ensure ω₀ > 0 during optimization
+        # Using log-space to ensure omega_0 > 0 during optimization
 
         input_dim = 4 + n_rbf + 1
         n_outputs = 8
@@ -90,7 +48,7 @@ class LearnableOmegaTrigHead(nn.Module):
         self.linear1 = nn.Linear(input_dim, hidden)
         self.linear2 = nn.Linear(hidden, n_outputs, bias=False)
 
-        # SIREN init with initial ω₀
+        # SIREN init with initial omega_0
         self._siren_init(omega_0_init)
 
     def _siren_init(self, omega_0):
@@ -159,7 +117,7 @@ class LearnableOmegaLayer(nn.Module):
 
 
 class LearnableOmegaModel(nn.Module):
-    """Full Periodic-EGNN with learnable ω₀."""
+    """Periodic-EGNN model with learnable omega_0."""
     def __init__(self, in_features=11, hidden_features=16, num_layers=2, out_dim=1,
                  n_q_layers=2, n_rbf=N_RBF, omega_0_init=30.0):
         super().__init__()
@@ -190,7 +148,7 @@ class LearnableOmegaModel(nn.Module):
         return self.head(out_pool)
 
     def get_omega_values(self):
-        """Extract all learned ω₀ values from the model."""
+        """Extract all learned omega_0 values from the model."""
         omegas = {}
         for i, layer in enumerate(self.layers):
             omegas[f"layer{i}_electronic"] = layer.head_electronic.omega_0.item()
@@ -198,13 +156,11 @@ class LearnableOmegaModel(nn.Module):
         return omegas
 
 
-# =============================================================================
 # Training
-# =============================================================================
 
 def train_and_evaluate(model, target, seed, num_train=1000, num_val=250, num_test=500,
                        epochs=15, batch_size=16, lr=1e-3, track_omega=False):
-    """Train a model and return test MAE + optional omega trajectory."""
+    """Train a model and return test MAE and optional omega trajectory."""
     device = torch.device("cpu")
 
     train_set, val_set, test_set, (mean, std) = get_qm9_splits(
@@ -234,7 +190,7 @@ def train_and_evaluate(model, target, seed, num_train=1000, num_val=250, num_tes
             optimizer.step()
         scheduler.step()
 
-        # Track ω₀ values during training
+        # Track omega_0 values during training
         if track_omega and hasattr(model, 'get_omega_values'):
             omegas = model.get_omega_values()
             omega_trajectory.append({"epoch": epoch, **omegas})
@@ -259,7 +215,7 @@ def train_and_evaluate(model, target, seed, num_train=1000, num_val=250, num_tes
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Learnable ω₀ Experiment")
+    parser = argparse.ArgumentParser(description="Learnable omega_0 Experiment")
     parser.add_argument("--targets", nargs="+", default=["homo", "lumo", "gap"])
     parser.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
     parser.add_argument("--epochs", type=int, default=15)
@@ -270,26 +226,26 @@ def main():
         args.targets = ["homo"]
         args.seeds = [42]
         args.epochs = 3
-        print("🏃 DRY RUN: 1 seed, 3 epochs, HOMO only\n")
+        print("DRY RUN: 1 seed, 3 epochs, HOMO only\n")
 
-    # ── Model configurations ──
+    # Model configurations
     model_configs = {
         "periodic_fixed_30": {
-            "label": "PRISM (ω₀=30, fixed)",
+            "label": "PRISM (omega_0=30, fixed)",
             "factory": lambda: PRISMModelV2(
                 in_features=11, hidden_features=16, num_layers=2,
                 n_q_layers=2, out_dim=1, head_type="siren", omega_0=30.0),
             "track_omega": False,
         },
         "periodic_learnable_30": {
-            "label": "PRISM (ω₀=30, learnable)",
+            "label": "PRISM (omega_0=30, learnable)",
             "factory": lambda: LearnableOmegaModel(
                 in_features=11, hidden_features=16, num_layers=2,
                 n_q_layers=2, out_dim=1, omega_0_init=30.0),
             "track_omega": True,
         },
         "periodic_learnable_10": {
-            "label": "PRISM (ω₀=10, learnable)",
+            "label": "PRISM (omega_0=10, learnable)",
             "factory": lambda: LearnableOmegaModel(
                 in_features=11, hidden_features=16, num_layers=2,
                 n_q_layers=2, out_dim=1, omega_0_init=10.0),
@@ -304,19 +260,19 @@ def main():
         },
     }
 
-    # ── Verify parameter counts ──
+    # Verify parameter counts
     print("=" * 70)
-    print("LEARNABLE ω₀ EXPERIMENT")
+    print("Learnable omega_0 Experiment")
     print("=" * 70)
 
     for key, cfg in model_configs.items():
         m = cfg["factory"]()
         p = count_parameters(m)
-        # Note: learnable ω₀ adds 4 params (1 per head × 2 heads × 2 layers)
+        # Note: learnable omega_0 adds 4 params (1 per head x 2 heads x 2 layers)
         print(f"  {cfg['label']:45s}  {p:,} params")
         del m
 
-    # ── Load checkpoint ──
+    # Load checkpoint
     if SAVE_PATH.exists():
         with open(SAVE_PATH) as f:
             results = json.load(f)
@@ -326,14 +282,12 @@ def main():
             "targets": args.targets, "seeds": args.seeds, "epochs": args.epochs,
         }}
 
-    # ── Run all experiments ──
+    # Run all experiments
     for target in args.targets:
         if target not in results:
             results[target] = {}
 
-        print(f"\n{'='*60}")
-        print(f"TARGET: {target.upper()}")
-        print(f"{'='*60}")
+        print(f"\nTarget: {target.upper()}")
 
         for model_key, cfg in model_configs.items():
             if model_key not in results[target]:
@@ -366,7 +320,7 @@ def main():
                 omega_str = ""
                 if "final_omegas" in res:
                     vals = list(res["final_omegas"].values())
-                    omega_str = f" | ω₀ → [{min(vals):.1f}, {max(vals):.1f}]"
+                    omega_str = f" | omega_0 -> [{min(vals):.1f}, {max(vals):.1f}]"
 
                 print(f"    Seed {seed}: {res['test_mae']:.4f} ({elapsed:.1f}s){omega_str}")
 
@@ -377,7 +331,7 @@ def main():
             maes = list(results[target][model_key]["maes"].values())
             results[target][model_key]["mean"] = float(np.mean(maes))
             results[target][model_key]["std"] = float(np.std(maes))
-            print(f"    >> Mean: {np.mean(maes):.4f} ± {np.std(maes):.4f}")
+            print(f"    Mean: {np.mean(maes):.4f} ± {np.std(maes):.4f}")
 
             # Omega summary
             if results[target][model_key].get("omegas"):
@@ -385,22 +339,22 @@ def main():
                 for seed_key, omegas in results[target][model_key]["omegas"].items():
                     for k, v in omegas.items():
                         all_omegas.setdefault(k, []).append(v)
-                print(f"    >> Final ω₀:")
+                print(f"    Final omega_0:")
                 for k, vals in sorted(all_omegas.items()):
                     print(f"       {k}: {np.mean(vals):.2f} ± {np.std(vals):.2f}")
 
     with open(SAVE_PATH, "w") as f:
         json.dump(results, f, indent=2)
 
-    # ── Summary table ──
+    # Summary table
     print("\n" + "=" * 70)
-    print("SUMMARY")
+    print("Summary")
     print("=" * 70)
 
     for target in args.targets:
         print(f"\n  {target.upper()} (eV):")
         print(f"  {'Model':45s} | {'MAE':>20s}")
-        print(f"  {'─'*45}─┼{'─'*22}")
+        print(f"  {'-'*45}-+{'-'*22}")
         for model_key, cfg in model_configs.items():
             if model_key in results[target]:
                 m = results[target][model_key].get("mean", 0)
@@ -408,8 +362,8 @@ def main():
                 n = len(results[target][model_key].get("maes", {}))
                 print(f"  {cfg['label']:45s} | {m:.4f} ± {s:.4f} ({n}s)")
 
-    print(f"\n💾 Results saved to: {SAVE_PATH}")
-    print("✅ Learnable ω₀ experiment complete!")
+    print(f"\nResults saved to: {SAVE_PATH}")
+    print("Learnable omega_0 experiment complete.")
 
 
 if __name__ == "__main__":

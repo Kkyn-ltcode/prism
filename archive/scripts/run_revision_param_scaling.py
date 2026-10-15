@@ -1,3 +1,5 @@
+"""Parameter scaling evaluation for PRISM, Twin, and PaiNN models."""
+
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
 import sys
@@ -21,11 +23,10 @@ from models.classical_baselines import PaiNNModel
 from models.egnn_baseline import count_parameters
 from training.run_extended_baselines_sweep import TARGET_UNITS, TARGET_DISPLAY, resolve_data_dir
 
-# ---------------------------------------------------------
-# 1. Scalable Heads, Layers, and Models
-# ---------------------------------------------------------
+# Scalable heads, layers, and models
 
 class ScalablePRISMHead(nn.Module):
+    """Scalable PRISM head with SIREN initialization."""
     def __init__(self, in_features, head_hidden, n_rbf=N_RBF, omega_0=30.0):
         super().__init__()
         self.feature_proj = nn.Linear(in_features, 2)
@@ -50,6 +51,7 @@ class ScalablePRISMHead(nn.Module):
         return torch.tanh(self.linear2(h))
 
 class ScalableClassicalHead(nn.Module):
+    """Scalable classical head with SiLU activation."""
     def __init__(self, in_features, head_hidden, n_rbf=N_RBF):
         super().__init__()
         self.feature_proj = nn.Linear(in_features, 2)
@@ -70,6 +72,7 @@ class ScalableClassicalHead(nn.Module):
         return torch.tanh(self.linear2(h))
 
 class ScalableLayer(nn.Module):
+    """Scalable equivariant layer with configurable head."""
     def __init__(self, in_features, head_hidden, head_type="prism", n_rbf=N_RBF):
         super().__init__()
         self.in_features = in_features
@@ -126,6 +129,7 @@ class ScalableLayer(nn.Module):
         return h_new, x_new
 
 class ScalableModel(nn.Module):
+    """Scalable equivariant graph neural network model."""
     def __init__(self, head_type="prism", in_features=11, hidden_features=16, head_hidden=4, num_layers=2, out_dim=1, n_rbf=N_RBF):
         super().__init__()
         self.embedding = nn.Linear(in_features, hidden_features)
@@ -156,11 +160,10 @@ class ScalableModel(nn.Module):
 
         return self.head(out_pool)
 
-# ---------------------------------------------------------
-# 2. Training Loop
-# ---------------------------------------------------------
+# Training loop
 
 def create_model_for_scale(model_type, scale_dict):
+    """Instantiate scalable model based on scale configuration."""
     if model_type == "prism":
         model = ScalableModel(head_type="prism", 
                               hidden_features=scale_dict["hidden_features"],
@@ -174,6 +177,7 @@ def create_model_for_scale(model_type, scale_dict):
     return model
 
 def compute_statistical_tests(maes_a, maes_b):
+    """Compute Wilcoxon and paired Student's t-test between two sets of MAEs."""
     a = np.array(maes_a)
     b = np.array(maes_b)
     diff = a - b
@@ -197,6 +201,7 @@ def train_eval_single_run(model_type, scale_dict, target, seed,
                           num_train=1000, num_val=250, num_test=500,
                           epochs=15, batch_size=16, lr=1e-3,
                           device="cpu", data_dir=None):
+    """Train and evaluate a single model configuration on QM9."""
     resolved_data_dir = resolve_data_dir(data_dir)
     train_set, val_set, test_set, (mean, std) = get_qm9_splits(
         root=resolved_data_dir, target=target,
@@ -240,7 +245,7 @@ def train_eval_single_run(model_type, scale_dict, target, seed,
     return test_mae, total_params
 
 def main():
-    parser = argparse.ArgumentParser(description="Revision C2: Parameter Scaling")
+    parser = argparse.ArgumentParser(description="Parameter Scaling")
     parser.add_argument("--targets", nargs="+", default=["homo", "lumo", "gap"])
     parser.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
     parser.add_argument("--epochs", type=int, default=15)
@@ -265,7 +270,7 @@ def main():
 
     for scale_name, scale_cfg in SCALES.items():
         results[scale_name] = {"config": scale_cfg}
-        print(f"\n{'='*80}\nSCALE: {scale_name} (d_h={scale_cfg['d_h']})\n{'='*80}")
+        print(f"\nScale: {scale_name} (d_h={scale_cfg['d_h']})")
         
         for target in args.targets:
             if target not in results[scale_name]:
@@ -305,9 +310,9 @@ def main():
                 json.dump(results, f, indent=2)
 
     # Print Table
-    print("\n\n" + "="*120)
-    print("📈 PARAMETER SCALING RESULTS (Revision C2)")
-    print("="*120)
+    print("\n\n" + "=" * 120)
+    print("Parameter Scaling Results")
+    print("=" * 120)
     for scale_name, scale_cfg in SCALES.items():
         print(f"\nScale: {scale_name} (d_h = {scale_cfg['d_h']})")
         header = f"| Target | PRISM MAE | Twin MAE | Δ(%) | p-value | PaiNN MAE | PaiNN params |"
@@ -332,7 +337,7 @@ def main():
             print(f"| {target:<6} | {prism_str:<9} | {twin_str:<8} | {diff_pct:>3.1f}% | {pval:.4f} | {painn_str:<9} | {painn['params']:<12,} |")
 
     # Trend summary
-    print("\n🔍 Scaling Trend Summary:")
+    print("\nScaling Trend Summary:")
     for target in args.targets:
         print(f"  Target: {target}")
         gaps = []
