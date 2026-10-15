@@ -1,29 +1,4 @@
-"""
-Sample Complexity & Generalization Scaling Benchmark (Strategy 4)
-================================================================
-Tests how prediction accuracy and generalization gap scale with training
-set size N for quantum vs classical models.
-
-Theory (Caro, Huang, Cerezo et al. 2022, Nature Communications):
-  QML generalization error ≤ O(√(T/N)) where T = trainable gates.
-  Unitary evolution constrains the parameter manifold, acting as a
-  geometric regularizer that classical tanh/SiLU activations lack.
-
-Experiment:
-  - N ∈ {100, 250, 500, 1000, 2000, 5000}
-  - Models: Q-PRISM (entangled), Separable Q-PRISM, Classical tanh-MLP, EGNN PM
-  - Seeds: 3 per (model, N) configuration
-  - Target: HOMO (representative electronic property)
-  - Measure: Test MAE (eV) + Train MAE (eV) → generalization gap
-
-Outputs:
-  - paper/figures/figure_scaling_sample_complexity.png
-  - results/sample_complexity_scaling.json
-
-Usage:
-  cd /Users/kkyn/Documents/Work/Quantum/qgnn
-  .pixi/envs/default/bin/python benchmarks/benchmark_sample_complexity.py
-"""
+"""Sample complexity and generalization scaling benchmark across training set sizes."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -54,18 +29,9 @@ from benchmarks.benchmark_entanglement_ablation_v2 import (
 )
 
 
-# =============================================================================
-# 1. TRAINING WITH TRAIN + TEST MAE MEASUREMENT
-# =============================================================================
-
 def train_and_evaluate_full(model, target, seed, num_train, num_val=250,
                             num_test=500, epochs=15, batch_size=16, lr=1e-3):
-    """
-    Train model and return BOTH train MAE and test MAE for generalization gap.
-
-    Returns:
-        (train_mae, test_mae) in eV
-    """
+    """Train model and return train and test MAE."""
     device = torch.device("cpu")
 
     train_set, val_set, test_set, (mean, std) = get_qm9_splits(
@@ -119,10 +85,6 @@ def train_and_evaluate_full(model, target, seed, num_train, num_val=250,
     return train_mae_total / train_count, test_mae_total / test_count
 
 
-# =============================================================================
-# 2. MODEL FACTORIES
-# =============================================================================
-
 MODEL_CONFIGS = {
     "eqgnn_v2": {
         "label": "Q-PRISM (Entangled PQC)",
@@ -160,10 +122,6 @@ MODEL_CONFIGS = {
     },
 }
 
-
-# =============================================================================
-# 3. PLOTTING
-# =============================================================================
 
 def plot_scaling_curves(results, save_path):
     """Create publication-quality 1×3 figure: test MAE, train MAE, gen gap."""
@@ -228,7 +186,7 @@ def plot_scaling_curves(results, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"📊 Figure saved: {save_path}")
+    print(f"Figure saved: {save_path}")
 
 
 def plot_scaling_exponents(results, save_path):
@@ -279,19 +237,15 @@ def plot_scaling_exponents(results, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"📊 Figure saved: {save_path}")
+    print(f"Figure saved: {save_path}")
 
     return exponents
 
 
-# =============================================================================
-# 4. MAIN
-# =============================================================================
-
 def main():
     print("=" * 70)
     print("SAMPLE COMPLEXITY & GENERALIZATION SCALING BENCHMARK")
-    print("(Caro et al. 2022 — Strategy 4)")
+    print("(Caro et al. 2022)")
     print("=" * 70)
 
     TARGET = "homo"
@@ -373,10 +327,8 @@ def main():
 
         results["models"][model_key] = model_results
 
-    # ==========================================================================
-    # 5. GENERATE FIGURES
-    # ==========================================================================
-    print("\n🎨 Generating publication figures...")
+    # Generate figures
+    print("\nGenerating publication figures...")
     os.makedirs(PROJECT_ROOT / "paper" / "figures", exist_ok=True)
 
     plot_scaling_curves(
@@ -389,19 +341,15 @@ def main():
         PROJECT_ROOT / "paper" / "figures" / "figure_scaling_exponents.png"
     )
 
-    # ==========================================================================
-    # 6. SAVE RESULTS
-    # ==========================================================================
+    # Save results
     results["scaling_exponents"] = exponents
 
     save_path = PROJECT_ROOT / "results" / "sample_complexity_scaling.json"
     with open(save_path, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\n💾 Results saved: {save_path}")
+    print(f"\nResults saved: {save_path}")
 
-    # ==========================================================================
-    # 7. SUMMARY
-    # ==========================================================================
+    # Summary
     print("\n" + "=" * 70)
     print("SCALING EXPONENTS SUMMARY (MAE ~ N^{-α})")
     print("=" * 70)
@@ -413,7 +361,7 @@ def main():
             interp = "better" if e["alpha"] > 0.2 else "moderate" if e["alpha"] > 0.1 else "weak"
             print(f"{MODEL_CONFIGS[model_key]['label']:<35s} {e['alpha']:<10.4f} {e['r_squared']:<10.3f} {interp} sample efficiency")
 
-    print("\n📊 Generalization gap at N=100 vs N=5000:")
+    print("\nGeneralization gap at N=100 vs N=5000:")
     for model_key in MODEL_CONFIGS:
         if model_key in results["models"]:
             md = results["models"][model_key]
@@ -422,12 +370,12 @@ def main():
             print(f"  {MODEL_CONFIGS[model_key]['label']:<35s} "
                   f"N=100: {gap_100:+.4f}, N=5000: {gap_5000:+.4f}")
 
-    print("\n📖 Interpretation (Caro et al. 2022):")
+    print("\nInterpretation (Caro et al. 2022):")
     print("   • Steeper α = better sample efficiency (learns faster from fewer data)")
     print("   • Smaller gen gap = better generalization (less overfitting)")
     print("   • Quantum unitary constraint acts as geometric regularizer →")
     print("     expect PQC to show steeper α and/or smaller gen gap at low N")
-    print("\n✅ Sample complexity analysis complete!")
+    print("\nSample complexity analysis complete.")
 
 
 if __name__ == "__main__":

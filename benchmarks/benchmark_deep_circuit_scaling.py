@@ -1,3 +1,5 @@
+"""Deep circuit scaling benchmark."""
+
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
 import sys
@@ -35,9 +37,7 @@ def compute_noise_mae(ideal_mae, L, sensitivity, lam, zeta_hz):
     return noise_mae
 
 def main():
-    print("========================================")
-    print("🚀 Running Deep Circuit Scaling Benchmark")
-    print("========================================")
+    print("Running deep circuit scaling benchmark")
     
     os.makedirs("./results", exist_ok=True)
     
@@ -127,7 +127,7 @@ def main():
     with open("./results/deep_circuit_scaling.json", "w") as f:
         json.dump(results, f, indent=2)
         
-    print("\n✅ Saved results to ./results/deep_circuit_scaling.json")
+    print("\nSaved results to ./results/deep_circuit_scaling.json")
 
 def plot_deep_circuit_scaling(results, fig_path="./results/figure7_deep_circuit_scaling.png"):
     L_values = results["L_values"]
@@ -196,7 +196,7 @@ def plot_deep_circuit_scaling(results, fig_path="./results/figure7_deep_circuit_
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.savefig(fig_path)
     plt.close()
-    print(f"📊 Saved Figure 7 to: {fig_path}")
+    print(f"Saved Figure 7 to: {fig_path}")
 
 if __name__ == "__main__":
     import argparse
@@ -208,6 +208,6 @@ if __name__ == "__main__":
         with open("./results/deep_circuit_scaling.json", "r") as f:
             data = json.load(f)
         plot_deep_circuit_scaling(data)
-        print("✅ Plot re-generated successfully!")
+        print("Plot re-generated successfully.")
     else:
         main()

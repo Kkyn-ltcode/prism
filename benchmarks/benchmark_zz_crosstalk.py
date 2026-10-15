@@ -1,11 +1,4 @@
-"""
-Experiment: Parasitic ZZ Crosstalk Noise Channel
-================================================
-Simulates realistic NISQ hardware depolarizing noise alongside parasitic
-ZZ crosstalk on the 4-qubit Q-PRISM PQC.
-
-Outputs publication-quality Figure 4c and results/noise_zz_crosstalk_results.json.
-"""
+"""Parasitic ZZ crosstalk and depolarizing noise benchmark for Q-PRISM PQC."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -94,7 +87,7 @@ def get_noisy_qnode(noise_rate=0.01, zeta_hz=0.0, dt=200e-9):
 def run_crosstalk_benchmark(save_dir="./results", num_samples=30):
     os.makedirs(save_dir, exist_ok=True)
     print("=" * 70)
-    print("🔬 Executing Parasitic ZZ Crosstalk Benchmark")
+    print("Executing Parasitic ZZ Crosstalk Benchmark")
     print("=" * 70)
 
     # Setup inputs
@@ -177,8 +170,8 @@ def run_crosstalk_benchmark(save_dir="./results", num_samples=30):
     plt.savefig(fig_path)
     plt.close()
     
-    print(f"\n📊 Saved Figure 4c to: {fig_path}")
-    print("✅ Benchmark Completed Successfully!")
+    print(f"\nSaved Figure 4c to: {fig_path}")
+    print("Benchmark completed successfully.")
 
 
 if __name__ == "__main__":

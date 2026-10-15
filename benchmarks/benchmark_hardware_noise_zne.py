@@ -1,12 +1,4 @@
-"""
-Experiment 5: NISQ Hardware Noise & Zero-Noise Extrapolation (ZNE) Mitigation
-=============================================================================
-Simulates realistic NISQ hardware depolarizing noise on the 4-qubit Q-PRISM PQC
-and applies Zero-Noise Extrapolation (ZNE) using Richardson and Polynomial extrapolation
-via Mitiq + PennyLane to demonstrate error recovery on near-term QPUs.
-
-Outputs publication-quality Figure 4 and results/noise_zne_results.json.
-"""
+"""NISQ hardware depolarizing noise and Zero-Noise Extrapolation (ZNE) mitigation benchmark."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -91,10 +83,10 @@ def get_noisy_qnode(noise_rate=0.01):
 def run_zne_mitigation_sweep(save_dir="./results", num_samples=30):
     os.makedirs(save_dir, exist_ok=True)
     print("=" * 70)
-    print("🔬 Executing Experiment 5: NISQ Hardware Noise & ZNE Mitigation")
+    print("Executing Experiment 5: NISQ Hardware Noise & ZNE Mitigation")
     print("=" * 70)
 
-    # 1. Fixed test edge inputs & weights
+    # Fixed test edge inputs and weights
     np.random.seed(42)
     inputs_list = [np.random.uniform(-np.pi, np.pi, size=5) for _ in range(num_samples)]
     weights = np.random.uniform(-np.pi, np.pi, size=(2, n_qubits, 3))
@@ -163,7 +155,7 @@ def run_zne_mitigation_sweep(save_dir="./results", num_samples=30):
         error_reduction_pct = ((err_unmit - err_mit) / max(err_unmit, 1e-8)) * 100.0
         print(f"  • Noise = {noise:.3f} | Unmitigated Err = {err_unmit:.4f} | ZNE Err = {err_mit:.4f} (Reduction: {error_reduction_pct:.1f}%)")
 
-    # 2. Save JSON results
+    # Save JSON results
     zne_record = {
         "noise_levels": noise_levels,
         "scale_factors": scale_factors,
@@ -174,7 +166,7 @@ def run_zne_mitigation_sweep(save_dir="./results", num_samples=30):
     with open(os.path.join(save_dir, "noise_zne_results.json"), "w") as f:
         json.dump(zne_record, f, indent=2)
 
-    # 3. Generate Publication Figure 4
+    # Generate publication figure
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5), dpi=300)
 
@@ -209,8 +201,8 @@ def run_zne_mitigation_sweep(save_dir="./results", num_samples=30):
     fig_path = os.path.join(save_dir, "figure4_zne_mitigation.png")
     plt.savefig(fig_path)
     plt.close()
-    print(f"\n📊 Saved Figure 4 to: {fig_path}")
-    print("✅ Experiment 5 Completed Successfully!")
+    print(f"\nSaved Figure 4 to: {fig_path}")
+    print("Experiment 5 completed successfully.")
 
 
 if __name__ == "__main__":

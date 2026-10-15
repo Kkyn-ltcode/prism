@@ -1,3 +1,5 @@
+"""Multi-qubit scaling benchmark measuring expressivity and parameter efficiency across qubit counts."""
+
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
 import sys
@@ -226,7 +228,7 @@ def train_eval_model(model, train_loader, test_loader, mean, std, epochs=15, lr=
 
 def run_multiqubit_scaling(save_dir="./results"):
     os.makedirs(save_dir, exist_ok=True)
-    print("🚀 Starting Multi-Qubit Scaling Projection...")
+    print("Starting Multi-Qubit Scaling Projection...")
 
     train_set, val_set, test_set, (mean, std) = get_qm9_splits(
         root="./data/QM9", target="gap", num_train=250, num_val=100, num_test=250, seed=42
@@ -252,7 +254,7 @@ def run_multiqubit_scaling(save_dir="./results"):
     heads = 2
     
     for nq in qubit_counts:
-        print(f"\\n▶ Evaluating {nq}-qubit architecture...")
+        print(f"\nEvaluating {nq}-qubit architecture...")
         model = EQGNNModelNQ(nq=nq, n_q_layers=L, num_layers=2)
         params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         
@@ -300,7 +302,7 @@ def run_multiqubit_scaling(save_dir="./results"):
     with open(json_path, "w") as f:
         json.dump(results_data, f, indent=2)
         
-    print(f"\\n📊 Saved JSON to {json_path}")
+    print(f"\nSaved JSON to {json_path}")
     
     plot_multiqubit_scaling(results_data, save_dir=save_dir)
 
@@ -374,7 +376,7 @@ def plot_multiqubit_scaling(results_data, save_dir="./results"):
     plt.savefig(fig_path)
     plt.close()
     
-    print(f"📊 Saved Figure to {fig_path}")
+    print(f"Saved Figure to {fig_path}")
 
 if __name__ == "__main__":
     import argparse
@@ -386,6 +388,6 @@ if __name__ == "__main__":
         with open("./results/multiqubit_scaling.json", "r") as f:
             data = json.load(f)
         plot_multiqubit_scaling(data)
-        print("✅ Plot re-generated successfully!")
+        print("Plot re-generated successfully.")
     else:
         run_multiqubit_scaling()

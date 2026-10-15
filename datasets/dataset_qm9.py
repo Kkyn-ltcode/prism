@@ -1,8 +1,4 @@
-"""
-QM9 Molecular Dataset Pipeline for Q-PRISM & Baselines
-======================================================
-Automated downloading, spatial graph processing, and low-data split management.
-"""
+"""QM9 molecular dataset pipeline for spatial graph processing."""
 
 import os
 import argparse
@@ -29,35 +25,16 @@ QM9_TARGET_INDICES = {
 # Conversion factor from Hartree to eV for gap, homo, lumo
 HARTREE_TO_EV = 27.211386245988
 
-# Electronic Orbital Triad targets for the v2.0 upgrade evaluation
-# These intensive electronic transition properties are where quantum inductive bias
-# is expected to provide the strongest advantage (bounded Pauli observables ⟨Z⟩ ∈ [-1,1]).
 QM9_ELECTRONIC_TARGETS = ["homo", "lumo", "gap"]
 
 def build_fully_connected_edges(num_nodes):
-    """
-    Creates bidirectional edges for a fully connected molecular clique (excluding self-loops).
-    """
+    """Create bidirectional edges for a fully connected molecular clique."""
     adj = torch.ones(num_nodes, num_nodes, dtype=torch.long) - torch.eye(num_nodes, dtype=torch.long)
     edge_index = adj.nonzero(as_tuple=False).t().contiguous()
     return edge_index
 
 def build_knn_edges(pos, k=8):
-    """
-    Build sparse k-nearest-neighbor edges for larger molecular systems.
-
-    For macromolecular scalability (Upgrade 3.3): replaces fully-connected
-    cliques O(N²) with sparse k-NN graphs O(kN) = O(N) for k constant.
-
-    Uses pure-torch pairwise distance computation (no pyg-lib dependency).
-
-    Args:
-        pos: [N, 3] Atom coordinates.
-        k: Number of nearest neighbors per atom.
-
-    Returns:
-        edge_index: [2, E] Bidirectional k-NN edge index (E ≤ 2·k·N).
-    """
+    """Build sparse k-nearest-neighbor edges for molecular systems."""
     N = pos.size(0)
     k_actual = min(k, N - 1)  # Cannot have more neighbors than other nodes
 
@@ -82,9 +59,7 @@ def build_knn_edges(pos, k=8):
     return edge_index
 
 class ProcessedQM9Subset:
-    """
-    In-memory dataset wrapper for QM9 with fully-connected spatial edges and target selection.
-    """
+    """In-memory dataset wrapper for QM9."""
     def __init__(self, raw_data_list, target_name="gap"):
         self.data_list = []
         target_idx = QM9_TARGET_INDICES[target_name]
@@ -92,11 +67,6 @@ class ProcessedQM9Subset:
         for item in raw_data_list:
             n_nodes = item.x.size(0)
             edge_index = build_fully_connected_edges(n_nodes)
-            
-            # PyG QM9 dataset internally converts from Hartree to eV for electronic
-            # targets (homo, lumo, gap) and energy targets (u0, u, h, g, zpve).
-            # Dipole moment (mu) is in Debye, polarizability (alpha) in Bohr³,
-            # heat capacity (cv) in cal/(mol·K). No manual conversion needed.
             y_val = item.y[:, target_idx:target_idx+1]
 
             mol_data = Data(
@@ -115,20 +85,7 @@ class ProcessedQM9Subset:
 
 
 def get_qm9_splits(root="./data/QM9", target="gap", num_train=1000, num_val=500, num_test=1000, seed=42):
-    """
-    Loads QM9 dataset and creates standardized train/val/test splits.
-    
-    Args:
-        root: Data directory.
-        target: Target property name (e.g., 'gap', 'mu', 'u0').
-        num_train: Number of training molecules (e.g., 100, 250, 500, 1000).
-        num_val: Number of validation molecules.
-        num_test: Number of test molecules.
-        seed: Random seed for split reproducibility.
-        
-    Returns:
-        train_dataset, val_dataset, test_dataset, (mean, std)
-    """
+    """Load QM9 dataset and create standardized train/val/test splits."""
     print(f"Loading QM9 dataset from '{root}'...")
     raw_dataset = QM9(root=root)
     total_len = len(raw_dataset)
@@ -180,4 +137,4 @@ if __name__ == "__main__":
     loader = DataLoader(train_data, batch_size=8, shuffle=True)
     batch = next(iter(loader))
     print(f"Sample Batch: x={batch.x.shape}, pos={batch.pos.shape}, edge_index={batch.edge_index.shape}, y={batch.y.shape}, batch={batch.batch.shape}")
-    print("✅ QM9 Data Pipeline is functional and verified!")
+    print("QM9 data pipeline functional and verified.")

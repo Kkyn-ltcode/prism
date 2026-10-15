@@ -1,10 +1,4 @@
-"""
-Experiment 3: Continuous Symmetry & Equivariance Stress Test
-============================================================
-Evaluates invariance under continuous SO(3) rotations and translations
-on QM9 test molecules for Q-PRISM, Classical EGNN, and Non-Equivariant GNN.
-Outputs publication-quality Figure 2.
-"""
+"""Continuous symmetry and equivariance stress test evaluating SO(3) rotation and translation invariance."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -29,11 +23,7 @@ from models.egnn_baseline import EGNNModel
 
 
 class NonEquivariantGNN(nn.Module):
-    """
-    Standard Non-Equivariant GNN baseline:
-    Directly feeds Cartesian (x, y, z) into node embeddings,
-    breaking SO(3) rotational symmetry.
-    """
+    """Non-equivariant GNN baseline feeding Cartesian coordinates into embeddings."""
     def __init__(self, in_features=11, hidden_features=16, num_layers=3, out_dim=1):
         super().__init__()
         self.embedding = nn.Linear(in_features + 3, hidden_features)
@@ -91,15 +81,15 @@ def rotation_matrix_z(theta):
 def run_symmetry_stress_test(num_test_mols=100, save_dir="./results"):
     os.makedirs(save_dir, exist_ok=True)
     print("=" * 70)
-    print(f"🌟 Starting Continuous Symmetry & Invariance Stress Test on {num_test_mols} QM9 Molecules")
+    print(f"Starting Continuous Symmetry & Invariance Stress Test on {num_test_mols} QM9 Molecules")
     print("=" * 70)
 
-    # 1. Load QM9 molecules
+    # Load QM9 molecules
     _, _, test_set, _ = get_qm9_splits(root="./data/QM9", target="gap", num_train=10, num_val=10, num_test=num_test_mols, seed=42)
     loader = DataLoader(test_set, batch_size=num_test_mols, shuffle=False)
     batch = next(iter(loader))
 
-    # 2. Instantiate models
+    # Instantiate models
     torch.manual_seed(42)
     eq_gnn = QPRISMModel(in_features=11, hidden_features=16, num_layers=2)
     egnn = EGNNModel(in_features=11, hidden_features=16, num_layers=2)
@@ -108,7 +98,7 @@ def run_symmetry_stress_test(num_test_mols=100, save_dir="./results"):
     for m in [eq_gnn, egnn, non_eq]:
         m.eval()
 
-    # 3. Continuous 360-degree rotation sweep around Z-axis
+    # Continuous 360-degree rotation sweep around Z-axis
     angles_deg = np.linspace(0, 360, 37)
     angles_rad = np.radians(angles_deg)
 
@@ -135,12 +125,12 @@ def run_symmetry_stress_test(num_test_mols=100, save_dir="./results"):
             errors["egnn"].append(err_egnn)
             errors["non_eq"].append(err_noneq)
 
-    # 4. Random 3D SO(3) + Translation stress test (1,000 trials)
+    # Random 3D SO(3) + Translation stress test (1,000 trials)
     print("Executing 1,000 random SO(3) + Translation transformations...")
     so3_errors = {"eqgnn": [], "egnn": [], "non_eq": []}
     
     with torch.no_grad():
-        for _ in range(100):
+        for _ in range(1000):
             q, _ = torch.linalg.qr(torch.randn(3, 3))
             if torch.linalg.det(q) < 0:
                 q[:, 0] = -q[:, 0]
@@ -159,13 +149,13 @@ def run_symmetry_stress_test(num_test_mols=100, save_dir="./results"):
     max_so3 = {k: float(np.max(v)) for k, v in so3_errors.items()}
 
     print("\n" + "=" * 70)
-    print("📊 Symmetry Stress Test Summary (100 Random SO(3) + Translation Transformations):")
+    print("Symmetry Stress Test Summary (1,000 Random SO(3) + Translation Transformations):")
     print(f"  • Q-PRISM (Ours):         Mean Error = {mean_so3['eqgnn']:.2e} | Max Error = {max_so3['eqgnn']:.2e}")
     print(f"  • EGNN (Classical SOTA):  Mean Error = {mean_so3['egnn']:.2e} | Max Error = {max_so3['egnn']:.2e}")
     print(f"  • Non-Equivariant GNN:    Mean Error = {mean_so3['non_eq']:.2e} | Max Error = {max_so3['non_eq']:.2e}")
     print("=" * 70)
 
-    # 5. Plot Figure 2
+    # Plot Figure 2
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.5), dpi=300)
 
@@ -198,7 +188,7 @@ def run_symmetry_stress_test(num_test_mols=100, save_dir="./results"):
     fig_path = os.path.join(save_dir, "figure2_invariance_stress_test.png")
     plt.savefig(fig_path)
     plt.close()
-    print(f"📊 Saved Figure 2 to: {fig_path}")
+    print(f"Saved Figure 2 to: {fig_path}")
 
     # Save JSON summary
     results_json = {

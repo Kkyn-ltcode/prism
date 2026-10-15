@@ -1,8 +1,4 @@
-"""
-Measurement Readout Noise Ablation
-==================================
-Simulates classical measurement bit-flip noise on Pauli-Z expectations.
-"""
+"""Measurement readout noise ablation simulating classical measurement bit-flip noise."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -82,7 +78,7 @@ def get_noisy_qnode(noise_rate=0.01):
 def run_readout_noise_ablation(save_dir="./results", num_samples=30):
     os.makedirs(save_dir, exist_ok=True)
     print("=" * 70)
-    print("🔬 Executing Readout Noise Ablation")
+    print("Executing Readout Noise Ablation")
     print("=" * 70)
 
     np.random.seed(42)
@@ -182,8 +178,8 @@ def run_readout_noise_ablation(save_dir="./results", num_samples=30):
     plt.savefig(fig_path)
     plt.close()
     
-    print(f"\n📊 Saved Figure to: {fig_path}")
-    print("✅ Experiment Completed Successfully!")
+    print(f"\nSaved Figure to: {fig_path}")
+    print("Experiment completed successfully.")
 
 if __name__ == "__main__":
     run_readout_noise_ablation()

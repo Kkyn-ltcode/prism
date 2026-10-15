@@ -1,14 +1,4 @@
-"""
-Experiment 4: Quantum Architecture Ablation Suite
-=================================================
-Systematic ablation of:
-1. Feature Encoding (Multi-Axis Re-Uploading vs. Base Paper Eq. 6 Angle Summation)
-2. Entanglement Topology (Ring CNOT vs. Linear vs. All-to-All vs. Separable)
-3. Coordinate Dynamics (Dynamic Equivariant Update vs. Static Geometry)
-4. Variational Circuit Depth (L = 1, 2, 4)
-
-Outputs publication-quality Figure 3 and results/ablation_study.json.
-"""
+"""Quantum architecture ablation suite."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -34,10 +24,7 @@ from models.eq_gnn import (
     GaussianRBF, QuantumHead, compute_edge_mean_angles, _create_v2_qnode, N_RBF, n_qubits
 )
 
-
-# -----------------------------------------------------------------------------
-# Configurable Ablation Quantum Edge Circuit
-# -----------------------------------------------------------------------------
+# Configurable ablation quantum edge circuit
 n_qubits = 4
 dev = qml.device("default.qubit", wires=n_qubits)
 
@@ -52,7 +39,7 @@ def create_ablation_qnode(encoding_type="multi_axis", topology="ring"):
         n_layers = weights.shape[0]
 
         for l in range(n_layers):
-            # 1. Feature Encoding
+            # Feature encoding
             if encoding_type == "multi_axis":
                 qml.RY(h_i0, wires=0)
                 qml.RY(h_i1, wires=1)
@@ -62,18 +49,17 @@ def create_ablation_qnode(encoding_type="multi_axis", topology="ring"):
                 for q in range(n_qubits):
                     qml.RZ(scaled_d, wires=q)
             elif encoding_type == "angle_sum":
-                # Base paper (Aktar et al. 2025 Eq. 6) destructive sum
                 sum_feat = h_i0 + h_i1 + h_j0 + h_j1 + d_ij
                 for q in range(n_qubits):
                     qml.RY(sum_feat, wires=q)
 
-            # 2. Single Qubit Rotations
+            # Single qubit rotations
             for q in range(n_qubits):
                 qml.RX(weights[l, q, 0], wires=q)
                 qml.RY(weights[l, q, 1], wires=q)
                 qml.RZ(weights[l, q, 2], wires=q)
 
-            # 3. Entanglement Topology
+            # Entanglement topology
             if topology == "ring":
                 for q in range(n_qubits):
                     qml.CNOT(wires=[q, (q + 1) % n_qubits])
@@ -214,9 +200,7 @@ def train_eval_model(model, train_loader, val_loader, test_loader, mean, std, ep
 
 def run_ablation_suite(save_dir="./results"):
     os.makedirs(save_dir, exist_ok=True)
-    print("=" * 70)
-    print("🔬 Executing Experiment 4: Quantum Architecture Ablation Suite")
-    print("=" * 70)
+    print("Executing quantum architecture ablation suite (V1)")
 
     train_set, val_set, test_set, (mean, std) = get_qm9_splits(
         root="./data/QM9", target="gap", num_train=250, num_val=100, num_test=250, seed=42
@@ -227,30 +211,30 @@ def run_ablation_suite(save_dir="./results"):
 
     ablation_results = {}
 
-    # 1. Feature Encoding Ablations
-    print("\n▶ [1/4] Feature Encoding Ablation...")
+    # Feature encoding ablations
+    print("\n[1/4] Feature Encoding Ablation...")
     model_ours = AblationEQGNNModel(encoding_type="multi_axis", topology="ring", dynamic_coords=True)
     mae_ours = train_eval_model(model_ours, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Multi-Axis Re-Uploading (Ours): Test MAE = {mae_ours:.4f} eV")
+    print(f"  Multi-Axis Re-Uploading (Ours): Test MAE = {mae_ours:.4f} eV")
 
     model_sum = AblationEQGNNModel(encoding_type="angle_sum", topology="ring", dynamic_coords=True)
     mae_sum = train_eval_model(model_sum, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Destructive Summation (Base Eq. 6): Test MAE = {mae_sum:.4f} eV")
+    print(f"  Destructive Summation (Base Eq. 6): Test MAE = {mae_sum:.4f} eV")
     ablation_results["encoding"] = {"Multi-Axis (Ours)": mae_ours, "Angle Sum (Eq. 6)": mae_sum}
 
-    # 2. Entanglement Topology Ablations
-    print("\n▶ [2/4] Entanglement Topology Ablation...")
+    # Entanglement topology ablations
+    print("\n[2/4] Entanglement Topology Ablation...")
     model_linear = AblationEQGNNModel(encoding_type="multi_axis", topology="linear", dynamic_coords=True)
     mae_linear = train_eval_model(model_linear, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Linear CNOT: Test MAE = {mae_linear:.4f} eV")
+    print(f"  Linear CNOT: Test MAE = {mae_linear:.4f} eV")
 
     model_all = AblationEQGNNModel(encoding_type="multi_axis", topology="all_to_all", dynamic_coords=True)
     mae_all = train_eval_model(model_all, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • All-to-All CNOT: Test MAE = {mae_all:.4f} eV")
+    print(f"  All-to-All CNOT: Test MAE = {mae_all:.4f} eV")
 
     model_sep = AblationEQGNNModel(encoding_type="multi_axis", topology="separable", dynamic_coords=True)
     mae_sep = train_eval_model(model_sep, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Separable (No CNOT): Test MAE = {mae_sep:.4f} eV")
+    print(f"  Separable (No CNOT): Test MAE = {mae_sep:.4f} eV")
     ablation_results["topology"] = {
         "Ring CNOT (Ours)": mae_ours,
         "Linear CNOT": mae_linear,
@@ -258,29 +242,29 @@ def run_ablation_suite(save_dir="./results"):
         "Separable (None)": mae_sep
     }
 
-    # 3. Coordinate Dynamics Ablation
-    print("\n▶ [3/4] Coordinate Dynamics Ablation...")
+    # Coordinate dynamics ablation
+    print("\n[3/4] Coordinate Dynamics Ablation...")
     model_static = AblationEQGNNModel(encoding_type="multi_axis", topology="ring", dynamic_coords=False)
     mae_static = train_eval_model(model_static, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Static Coordinates (No update): Test MAE = {mae_static:.4f} eV")
+    print(f"  Static Coordinates (No update): Test MAE = {mae_static:.4f} eV")
     ablation_results["coordinates"] = {"Dynamic Equivariant (Ours)": mae_ours, "Static Geometry": mae_static}
 
-    # 4. Quantum Circuit Depth Ablation
-    print("\n▶ [4/4] Quantum Circuit Depth (Layers L) Ablation...")
+    # Quantum circuit depth ablation
+    print("\n[4/4] Quantum Circuit Depth (Layers L) Ablation...")
     model_l1 = AblationEQGNNModel(n_q_layers=1)
     mae_l1 = train_eval_model(model_l1, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • L = 1 Quantum Layer: Test MAE = {mae_l1:.4f} eV")
+    print(f"  L = 1 Quantum Layer: Test MAE = {mae_l1:.4f} eV")
 
     model_l4 = AblationEQGNNModel(n_q_layers=4)
     mae_l4 = train_eval_model(model_l4, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • L = 4 Quantum Layers: Test MAE = {mae_l4:.4f} eV")
+    print(f"  L = 4 Quantum Layers: Test MAE = {mae_l4:.4f} eV")
     ablation_results["depth"] = {"L = 1": mae_l1, "L = 2 (Ours)": mae_ours, "L = 4": mae_l4}
 
     # Save JSON summary
     with open(os.path.join(save_dir, "ablation_study.json"), "w") as f:
         json.dump(ablation_results, f, indent=2)
 
-    # 5. Generate Publication Figure 3
+    # Generate Figure 3
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
     fig, axes = plt.subplots(2, 2, figsize=(11, 8.5), dpi=300)
 
@@ -329,23 +313,12 @@ def run_ablation_suite(save_dir="./results"):
     fig_path = os.path.join(save_dir, "figure3_ablations.png")
     plt.savefig(fig_path)
     plt.close()
-    print(f"\n📊 Saved Figure 3 to: {fig_path}")
-    print("✅ Experiment 4 Completed Successfully!")
+    print(f"\nSaved Figure 3 to: {fig_path}")
+    print("Experiment 4 completed successfully.")
 
-
-# =============================================================================
-# V2 ABLATION COMPONENTS (Blueprint Upgrades 2.1-2.5)
-# =============================================================================
 
 class AblationEQGNNLayerV2(nn.Module):
-    """
-    V2 Ablation Layer with toggleable upgrades:
-    - use_rbf: Use RBF multi-frequency distance encoding (Upgrade 2.1)
-    - n_heads: Number of quantum heads, 1 or 2 (Upgrade 2.2)
-    - use_correlators: Use ⟨Z_i Z_j⟩ correlator readout (Upgrade 2.3)
-    - use_angles: Use 3-body angular encoding (Upgrade 2.4)
-    - use_tanh_gate: Use tanh-gated coord updates (Upgrade 2.5)
-    """
+    """Ablation layer with toggleable architectural components."""
     def __init__(self, in_features, n_q_layers=2, n_rbf=N_RBF,
                  use_rbf=True, n_heads=2, use_correlators=True,
                  use_angles=True, use_tanh_gate=True):
@@ -478,12 +451,9 @@ class AblationEQGNNModelV2(nn.Module):
 
 
 def run_v2_ablation_suite(save_dir="./results"):
-    """Run V2-specific ablation study benchmarking individual upgrade contributions."""
+    """Run V2 ablation study benchmarking individual component contributions."""
     os.makedirs(save_dir, exist_ok=True)
-    print("=" * 70)
-    print("🔬 Executing V2 Architecture Ablation Suite")
-    print("    Ablating: (1) RBF Encoding, (2) Multi-Head, (3) Correlators, (4) Depth")
-    print("=" * 70)
+    print("Executing V2 architecture ablation suite")
 
     train_set, val_set, test_set, (mean, std) = get_qm9_splits(
         root="./data/QM9", target="gap", num_train=250, num_val=100, num_test=250, seed=42
@@ -495,59 +465,59 @@ def run_v2_ablation_suite(save_dir="./results"):
     v2_ablation_results = {}
 
     # Full V2 baseline
-    print("\n▶ [0/4] Full V2 (All Upgrades)...")
+    print("\n[0/4] Full V2 (All Components)...")
     model_full = AblationEQGNNModelV2(
         use_rbf=True, n_heads=2, use_correlators=True, use_angles=True, use_tanh_gate=True
     )
     params_full = sum(p.numel() for p in model_full.parameters() if p.requires_grad)
     mae_full = train_eval_model(model_full, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Full V2: Test MAE = {mae_full:.4f} eV ({params_full:,} params)")
+    print(f"  Full V2: Test MAE = {mae_full:.4f} eV ({params_full:,} params)")
 
-    # 1. RBF Ablation
-    print("\n▶ [1/4] RBF Distance Encoding Ablation...")
+    # RBF ablation
+    print("\n[1/4] RBF Distance Encoding Ablation...")
     model_no_rbf = AblationEQGNNModelV2(
         use_rbf=False, n_heads=2, use_correlators=True, use_angles=True, use_tanh_gate=True
     )
     mae_no_rbf = train_eval_model(model_no_rbf, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Without RBF (scalar dist): Test MAE = {mae_no_rbf:.4f} eV")
+    print(f"  Without RBF (scalar dist): Test MAE = {mae_no_rbf:.4f} eV")
     v2_ablation_results["rbf_encoding"] = {
         "Full V2 (RBF)": mae_full,
         "Without RBF (Scalar)": mae_no_rbf
     }
 
-    # 2. Multi-Head Ablation
-    print("\n▶ [2/4] Multi-Head Ablation...")
+    # Multi-head ablation
+    print("\n[2/4] Multi-Head Ablation...")
     model_1head = AblationEQGNNModelV2(
         use_rbf=True, n_heads=1, use_correlators=True, use_angles=True, use_tanh_gate=True
     )
     mae_1head = train_eval_model(model_1head, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Single Head: Test MAE = {mae_1head:.4f} eV")
+    print(f"  Single Head: Test MAE = {mae_1head:.4f} eV")
     v2_ablation_results["multi_head"] = {
         "Full V2 (2 Heads)": mae_full,
         "Single Head": mae_1head
     }
 
-    # 3. Correlator Ablation
-    print("\n▶ [3/4] Entanglement Correlator Ablation...")
+    # Correlator ablation
+    print("\n[3/4] Entanglement Correlator Ablation...")
     model_no_corr = AblationEQGNNModelV2(
         use_rbf=True, n_heads=2, use_correlators=False, use_angles=True, use_tanh_gate=True
     )
     mae_no_corr = train_eval_model(model_no_corr, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • Without Correlators (⟨Z⟩ only): Test MAE = {mae_no_corr:.4f} eV")
+    print(f"  Without Correlators (⟨Z⟩ only): Test MAE = {mae_no_corr:.4f} eV")
     v2_ablation_results["correlators"] = {
         "Full V2 (⟨ZZ⟩ Correlators)": mae_full,
         "Without Correlators (⟨Z⟩ only)": mae_no_corr
     }
 
-    # 4. Depth Ablation (V2)
-    print("\n▶ [4/4] V2 Circuit Depth Ablation...")
+    # Depth ablation
+    print("\n[4/4] V2 Circuit Depth Ablation...")
     model_v2_l1 = AblationEQGNNModelV2(n_q_layers=1)
     mae_v2_l1 = train_eval_model(model_v2_l1, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • V2 L=1: Test MAE = {mae_v2_l1:.4f} eV")
+    print(f"  V2 L=1: Test MAE = {mae_v2_l1:.4f} eV")
 
     model_v2_l4 = AblationEQGNNModelV2(n_q_layers=4)
     mae_v2_l4 = train_eval_model(model_v2_l4, train_loader, val_loader, test_loader, mean, std)
-    print(f"  • V2 L=4: Test MAE = {mae_v2_l4:.4f} eV")
+    print(f"  V2 L=4: Test MAE = {mae_v2_l4:.4f} eV")
     v2_ablation_results["v2_depth"] = {
         "V2 L=1": mae_v2_l1,
         "V2 L=2 (Default)": mae_full,
@@ -561,7 +531,6 @@ def run_v2_ablation_suite(save_dir="./results"):
     plot_v2_ablations(v2_ablation_results, fig_path=os.path.join(save_dir, "figure3b_ablations_v2.png"))
 
 def plot_v2_ablations(v2_ablation_results, fig_path="./results/figure3b_ablations_v2.png"):
-    # Generate Figure 3b
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
     fig, axes = plt.subplots(2, 2, figsize=(11, 8.5), dpi=300)
 
@@ -607,8 +576,8 @@ def plot_v2_ablations(v2_ablation_results, fig_path="./results/figure3b_ablation
     os.makedirs(os.path.dirname(fig_path), exist_ok=True)
     plt.savefig(fig_path)
     plt.close()
-    print(f"\n📊 Saved Figure 3b to: {fig_path}")
-    print("✅ V2 Ablation Plot Completed Successfully!")
+    print(f"\nSaved Figure 3b to: {fig_path}")
+    print("V2 ablation plot completed successfully.")
 
 
 if __name__ == "__main__":

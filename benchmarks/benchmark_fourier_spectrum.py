@@ -1,31 +1,4 @@
-"""
-Fourier Spectrum Analysis: PQC vs Classical tanh-MLP (Strategy 1)
-=================================================================
-Empirically extracts and compares the frequency content of:
-  1. Entangled V2 PQC (full EQ-GNN)
-  2. Separable V2 PQC (no CNOTs)
-  3. Classical tanh-MLP
-
-All three models are trained on QM9 HOMO (N=1000, seed=42), then the
-edge-level head outputs are recorded as functions of continuous distance
-d_ij ∈ [0, 10] Å² (fixing node features and angle to training medians).
-The discrete Fourier transform reveals the spectral structure.
-
-Theory (Schuld, Sweke & Meyer, 2021, Phys. Rev. A):
-  PQC with L layers of data re-uploading via R_y(x), R_z(x) computes:
-    f(x) = Σ_{ω ∈ Ω} c_ω cos(ωx) + s_ω sin(ωx)
-  where Ω = {sums/differences of eigenvalue gaps of encoding generators}.
-  Classical tanh-MLP computes sigmoid-family functions — fundamentally
-  different spectral structure.
-
-Outputs:
-  - paper/figures/figure_fourier_spectrum.png  (publication-quality)
-  - results/fourier_spectrum_analysis.json
-
-Usage:
-  cd /Users/kkyn/Documents/Work/Quantum/qgnn
-  .pixi/envs/default/bin/python benchmarks/benchmark_fourier_spectrum.py
-"""
+"""Fourier spectrum analysis for PQC and classical baselines."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -53,15 +26,12 @@ from models.eq_gnn import (
 )
 from models.egnn_baseline import count_parameters
 
-# Import separable + tanh models from the ablation benchmark
+# Import separable and tanh models from the ablation benchmark
 from benchmarks.benchmark_entanglement_ablation_v2 import (
     SeparableEQGNNModelV2, ClassicalTanhEQGNNModel
 )
 
-
-# =============================================================================
-# 1. TRAIN ALL THREE MODELS
-# =============================================================================
+# Train models
 
 def train_model(model, target="homo", seed=42, num_train=1000, epochs=15):
     """Train a model and return it (trained, in eval mode)."""
@@ -102,29 +72,12 @@ def train_model(model, target="homo", seed=42, num_train=1000, epochs=15):
     return model, mean, std, test_mae
 
 
-# =============================================================================
-# 2. EXTRACT EDGE-LEVEL RESPONSE FUNCTIONS
-# =============================================================================
+# Extract edge-level response functions
 
 @torch.no_grad()
 def extract_head_response_vs_distance(head, rbf_module, h_row_fixed, h_col_fixed,
                                       angle_fixed, d_range, n_points=1024):
-    """
-    Sweep d_ij over a continuous range and record the head's 8-dim output.
-
-    Args:
-        head: QuantumHead, SeparableQuantumHead, or ClassicalTanhHead (trained)
-        rbf_module: trained GaussianRBF to convert d_ij → RBF features
-        h_row_fixed: [1, hidden] fixed source node embedding
-        h_col_fixed: [1, hidden] fixed target node embedding
-        angle_fixed: scalar, fixed 3-body angle
-        d_range: (d_min, d_max)
-        n_points: number of distance samples
-
-    Returns:
-        distances: [n_points] array
-        outputs: [n_points, 8] array of head outputs
-    """
+    """Sweep d_ij over a continuous range and record head outputs."""
     d_min, d_max = d_range
     distances = torch.linspace(d_min, d_max, n_points).unsqueeze(1)  # [N, 1]
     rbf_features = rbf_module(distances)  # [N, K]
@@ -155,18 +108,10 @@ def extract_head_response_vs_angle(head, rbf_module, h_row_fixed, h_col_fixed,
     return angles_arr.squeeze().numpy(), outputs.numpy()
 
 
-# =============================================================================
-# 3. FOURIER ANALYSIS
-# =============================================================================
+# Fourier analysis
 
 def compute_power_spectrum(signal, sampling_rate):
-    """
-    Compute one-sided power spectrum via FFT.
-
-    Returns:
-        freqs: frequency axis
-        power: |FFT|² normalized
-    """
+    """Compute one-sided power spectrum via FFT."""
     n = len(signal)
     fft_vals = np.fft.rfft(signal - np.mean(signal))  # remove DC
     power = np.abs(fft_vals) ** 2
@@ -188,9 +133,7 @@ def compute_spectral_concentration(power, top_k=5):
     return np.sum(sorted_p[:top_k]) / (np.sum(power) + 1e-12)
 
 
-# =============================================================================
-# 4. PLOTTING
-# =============================================================================
+# Plotting
 
 def plot_fourier_analysis(results, save_path):
     """Create publication-quality 2×3 figure."""
@@ -265,7 +208,7 @@ def plot_fourier_analysis(results, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"📊 Figure saved: {save_path}")
+    print(f"Figure saved: {save_path}")
 
 
 def plot_angular_response(results, save_path):
@@ -303,7 +246,7 @@ def plot_angular_response(results, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"📊 Figure saved: {save_path}")
+    print(f"Figure saved: {save_path}")
 
 
 def plot_spectral_summary(results, save_path):
@@ -339,12 +282,7 @@ def plot_spectral_summary(results, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"📊 Figure saved: {save_path}")
-
-
-# =============================================================================
-# 5. MAIN
-# =============================================================================
+    print(f"Figure saved: {save_path}")
 
 def main():
     print("=" * 70)
@@ -359,7 +297,7 @@ def main():
 
     results = {}
 
-    # --- Step 1: Train all three models ---
+    # Train models
     model_configs = [
         ("entangled_v2", "Q-PRISM (Entangled)",
          lambda: EQGNNModelV2(in_features=11, hidden_features=16, num_layers=2,
@@ -374,7 +312,7 @@ def main():
 
     trained_models = {}
     for key, label, factory in model_configs:
-        print(f"\n🔧 Training: {label}...")
+        print(f"\nTraining: {label}...")
         t0 = time.time()
         model = factory()
         model, mean, std, test_mae = train_model(model, target=TARGET, seed=SEED)
@@ -382,9 +320,9 @@ def main():
         trained_models[key] = model
         print(f"   Done ({elapsed:.1f}s) | Test MAE = {test_mae:.4f} eV | Params = {count_parameters(model):,}")
 
-    # --- Step 2: Extract representative fixed inputs ---
+    # Extract representative fixed inputs
     # Use training data median node embedding after the embedding layer
-    print("\n📐 Extracting representative node embeddings from training data...")
+    print("\nExtracting representative node embeddings from training data...")
     train_set, _, _, _ = get_qm9_splits(
         root="./data/QM9", target=TARGET, num_train=100, num_val=50, num_test=50, seed=SEED
     )
@@ -406,9 +344,9 @@ def main():
     angle_median = float(angles_train.median())
     print(f"   Median bond angle: {np.degrees(angle_median):.1f}°")
 
-    # --- Step 3: Sweep distance and angle for each model ---
+    # Sweep distance and angle for each model
     for key, label, _ in model_configs:
-        print(f"\n📈 Extracting response functions: {label}...")
+        print(f"\nExtracting response functions: {label}...")
         model = trained_models[key]
         layer0 = model.layers[0]  # First GNN layer
 
@@ -456,8 +394,8 @@ def main():
         print(f"   Spectral entropy: {entropy:.2f} bits")
         print(f"   Top-5 concentration: {concentration:.1%}")
 
-    # --- Step 4: Generate plots ---
-    print("\n🎨 Generating publication figures...")
+    # Generate plots
+    print("\nGenerating publication figures...")
     os.makedirs(PROJECT_ROOT / "paper" / "figures", exist_ok=True)
     os.makedirs(PROJECT_ROOT / "results", exist_ok=True)
 
@@ -476,7 +414,7 @@ def main():
         PROJECT_ROOT / "paper" / "figures" / "figure_spectral_summary.png"
     )
 
-    # --- Step 5: Save JSON results (strip large arrays for readability) ---
+    # Save JSON results
     results_compact = {}
     for key in results:
         results_compact[key] = {
@@ -490,9 +428,9 @@ def main():
     save_path = PROJECT_ROOT / "results" / "fourier_spectrum_analysis.json"
     with open(save_path, "w") as f:
         json.dump(results_compact, f, indent=2)
-    print(f"\n💾 Results saved: {save_path}")
+    print(f"\nResults saved: {save_path}")
 
-    # --- Step 6: Print summary ---
+    # Print summary
     print("\n" + "=" * 70)
     print("SPECTRAL STRUCTURE SUMMARY")
     print("=" * 70)
@@ -502,14 +440,14 @@ def main():
         r = results[key]
         print(f"{label:<30s} {r['spectral_entropy_distance']:<18.2f} {r['spectral_concentration_distance']:<15.1%}")
 
-    print("\n📖 Interpretation (Schuld et al. 2021):")
+    print("\nInterpretation (Schuld et al. 2021):")
     print("   • Lower entropy = more structured frequency content (sharper peaks)")
     print("   • Higher concentration = fewer dominant frequencies (cleaner signal)")
     print("   • PQCs should show LOWER entropy & HIGHER concentration than tanh-MLP")
     print("     because trigonometric gates produce discrete frequency spectra,")
     print("     while sigmoid/tanh produces diffuse, broadband spectra.")
 
-    print("\n✅ Fourier spectrum analysis complete!")
+    print("\nFourier spectrum analysis complete.")
 
 
 if __name__ == "__main__":

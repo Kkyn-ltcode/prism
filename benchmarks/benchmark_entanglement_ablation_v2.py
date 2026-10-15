@@ -1,27 +1,4 @@
-"""
-Entanglement Ablation Benchmark (Strategy 3 — Bowles Test)
-==========================================================
-Tests whether quantum entanglement is the source of Q-PRISM's advantage
-over classical tanh-MLP baselines.
-
-Logic:
-  Full V2 (entangled)  >  Classical tanh-MLP  ≈  Separable V2 (no CNOTs)
-  → Entanglement is the active ingredient, not boundedness.
-
-References:
-  - Bowles, Ahmed & Schuld (2024). "Better than classical?"
-  - Schuld, Sweke & Meyer (2021). Fourier analysis of data re-uploading.
-
-Models compared (all on QM9, N=1000, 5 seeds):
-  1. Q-PRISM (entangled)            — full architecture (from saved results)
-  2. Separable Q-PRISM (no CNOTs)   — identical PQC but CNOT gates removed
-  3. Classical tanh-MLP             — classical MLP with tanh, same inputs/params
-  4. EGNN Param-Matched             — iso-parameter classical baseline (from saved results)
-
-Usage:
-  cd /Users/kkyn/Documents/Work/Quantum/qgnn
-  .pixi/envs/default/bin/python benchmarks/benchmark_entanglement_ablation_v2.py
-"""
+"""Entanglement ablation benchmark comparing entangled and separable PQCs."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -48,10 +25,7 @@ from models.eq_gnn import (
 )
 from models.egnn_baseline import count_parameters
 
-
-# =============================================================================
-# 1. SEPARABLE V2 PQC (No CNOT gates — removes all entanglement)
-# =============================================================================
+# Separable V2 PQC (independent single-qubit evolutions)
 
 def _create_separable_v2_qnode():
     """V2 QNode with CNOT gates removed — each qubit evolves independently."""
@@ -74,13 +48,13 @@ def _create_separable_v2_qnode():
             angle = inputs[:, 4 + K]
 
         for l in range(n_layers):
-            # Step 1: Multi-Axis Feature Encoding (identical to V2)
+            # Multi-axis feature encoding
             qml.RY(h_i0, wires=0)
             qml.RY(h_i1, wires=1)
             qml.RY(h_j0, wires=2)
             qml.RY(h_j1, wires=3)
 
-            # Step 2: RBF Distance Re-Uploading (identical to V2)
+            # RBF distance re-uploading
             for q in range(n_qubits):
                 if inputs.ndim == 1:
                     phase = sum(dist_weights[l, q, k] * rbf[k] for k in range(K))
@@ -88,22 +62,19 @@ def _create_separable_v2_qnode():
                     phase = sum(dist_weights[l, q, k] * rbf[:, k] for k in range(K))
                 qml.RZ(phase, wires=q)
 
-            # Step 3: Angular Re-Uploading (identical to V2)
+            # Angular re-uploading
             for q in range(n_qubits):
                 qml.RY(angle, wires=q)
 
-            # Step 4: Variational Rotations (identical to V2)
+            # Variational rotations
             for q in range(n_qubits):
                 qml.RX(weights[l, q, 0], wires=q)
                 qml.RY(weights[l, q, 1], wires=q)
                 qml.RZ(weights[l, q, 2], wires=q)
 
-            # Step 5: *** NO CNOT ENTANGLEMENT — THIS IS THE ONLY CHANGE ***
-            # (Ring CNOT block removed entirely)
+            # Separable: no CNOT entanglement
 
-        # Step 6: Same 8-observable readout (identical to V2)
-        # Note: Without entanglement, ⟨Z_i Z_j⟩ = ⟨Z_i⟩⟨Z_j⟩ (factorized)
-        # The correlators become redundant but we keep them for architecture parity
+        # 8-observable readout
         return [
             qml.expval(qml.PauliZ(0)),
             qml.expval(qml.PauliZ(1)),
@@ -218,9 +189,7 @@ SeparableQPRISMModel = SeparableQPRISMModelV2
 SeparableEQGNNModel = SeparableQPRISMModelV2
 
 
-# =============================================================================
-# 2. CLASSICAL TANH-MLP BASELINE (identical inputs, tanh output, same params)
-# =============================================================================
+# Classical tanh-MLP baseline (identical inputs, tanh output, matching parameters)
 
 class ClassicalTanhHead(nn.Module):
     """Classical MLP replacement for PQC: same inputs, same output dim, tanh bounds."""
@@ -320,9 +289,7 @@ ClassicalTanhQPRISMLayer = ClassicalTanhQPRISMLayer
 ClassicalTanhQPRISMModel = ClassicalTanhQPRISMModel
 
 
-# =============================================================================
-# 3. TRAINING & EVALUATION
-# =============================================================================
+# Training and evaluation
 
 def train_and_evaluate(model, target, seed, num_train=1000, num_val=250, num_test=500,
                        epochs=15, batch_size=16, lr=1e-3):
@@ -368,18 +335,16 @@ def train_and_evaluate(model, target, seed, num_train=1000, num_val=250, num_tes
     return total_mae / total_samples
 
 
-# =============================================================================
-# 4. MAIN BENCHMARK
-# =============================================================================
+# Main benchmark
 
 def main():
     targets = ["homo", "lumo", "gap"]
     seeds = [42, 43, 44, 45, 46]
     results = {}
 
-    # --- Verify parameter counts ---
+    # Verify parameter counts
     print("=" * 70)
-    print("ENTANGLEMENT ABLATION BENCHMARK (Bowles Test)")
+    print("Entanglement ablation benchmark (Bowles test)")
     print("=" * 70)
 
     m_entangled = EQGNNModelV2(in_features=11, hidden_features=16, num_layers=2, n_q_layers=2, out_dim=1)
@@ -396,17 +361,17 @@ def main():
     print(f"  Classical tanh-MLP:       {p_tanh:,}")
     assert p_ent == p_sep, f"Parameter mismatch! entangled={p_ent} vs separable={p_sep}"
     assert p_ent == p_tanh, f"Parameter mismatch! entangled={p_ent} vs tanh={p_tanh}"
-    print(f"  ✅ All models: {p_ent:,} parameters (exact match)\n")
+    print(f"  All models: {p_ent:,} parameters (exact match)\n")
 
     del m_entangled, m_separable, m_tanh
 
-    # --- Load existing Q-PRISM results ---
+    # Load existing Q-PRISM results
     existing_results_path = PROJECT_ROOT / "results" / "multitarget_table1_v2.json"
     existing_data = {}
     if existing_results_path.exists():
         with open(existing_results_path) as f:
             existing_data = json.load(f)
-        print("📂 Loaded existing Q-PRISM and EGNN results from multitarget_table1_v2.json\n")
+        print("Loaded existing Q-PRISM and EGNN results from multitarget_table1_v2.json\n")
 
     # --- Run new models: Separable V2 + Classical tanh-MLP ---
     for target in targets:
@@ -453,9 +418,7 @@ def main():
         results[target]["tanh_mlp"] = tanh_maes
         print(f"  >> Classical tanh Mean: {np.mean(tanh_maes):.4f} ± {np.std(tanh_maes):.4f}")
 
-    # ==========================================================================
-    # 5. STATISTICAL ANALYSIS
-    # ==========================================================================
+    # Statistical analysis
     print("\n" + "=" * 70)
     print("STATISTICAL ANALYSIS")
     print("=" * 70)
@@ -511,17 +474,13 @@ def main():
 
         all_results[target] = target_stats
 
-    # ==========================================================================
-    # 6. SAVE RESULTS
-    # ==========================================================================
+    # Save results
     save_path = PROJECT_ROOT / "results" / "entanglement_ablation_v2.json"
     with open(save_path, "w") as f:
         json.dump(all_results, f, indent=2)
-    print(f"\n💾 Results saved to {save_path}")
+    print(f"\nResults saved to {save_path}")
 
-    # ==========================================================================
-    # 7. BOWLES TEST VERDICT
-    # ==========================================================================
+    # Bowles test verdict
     print("\n" + "=" * 70)
     print("BOWLES TEST VERDICT")
     print("=" * 70)
@@ -536,17 +495,17 @@ def main():
         separable_eq_tanh = sep_tanh_p > 0.05  # not significantly different
 
         print(f"\n  {target.upper()}:")
-        print(f"    Entangled ({eq_m:.4f}) < Separable ({sep_m:.4f})?  {'✅ YES (p={:.4f})'.format(ent_p) if entanglement_helps else '❌ NO (p={:.4f})'.format(ent_p)}")
-        print(f"    Separable ({sep_m:.4f}) ≈ Tanh ({tanh_m:.4f})?     {'✅ YES (p={:.4f})'.format(sep_tanh_p) if separable_eq_tanh else '❌ NO (p={:.4f})'.format(sep_tanh_p)}")
+        print(f"    Entangled ({eq_m:.4f}) < Separable ({sep_m:.4f})?  {'YES (p={:.4f})'.format(ent_p) if entanglement_helps else 'NO (p={:.4f})'.format(ent_p)}")
+        print(f"    Separable ({sep_m:.4f}) ≈ Tanh ({tanh_m:.4f})?     {'YES (p={:.4f})'.format(sep_tanh_p) if separable_eq_tanh else 'NO (p={:.4f})'.format(sep_tanh_p)}")
 
         if entanglement_helps and separable_eq_tanh:
-            print(f"    🏆 VERDICT: Entanglement is the source of quantum advantage!")
+            print("    VERDICT: Entanglement is the source of quantum advantage.")
         elif entanglement_helps:
-            print(f"    📊 VERDICT: Entanglement helps, but separable PQC ≠ tanh (partial quantum advantage)")
+            print("    VERDICT: Entanglement helps, but separable PQC != tanh (partial quantum advantage).")
         else:
-            print(f"    ⚠️  VERDICT: Entanglement effect not significant for this target")
+            print("    VERDICT: Entanglement effect not significant for this target.")
 
-    print("\n✅ Benchmark complete!")
+    print("\nBenchmark complete.")
 
 
 if __name__ == "__main__":

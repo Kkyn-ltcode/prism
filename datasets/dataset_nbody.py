@@ -1,15 +1,4 @@
-"""
-3D Charged N-Body Particle System Generator & Dataset Pipeline
-==============================================================
-Simulates 5-particle Coulomb electrostatic dynamical trajectories in 3D.
-Directly replicates the experimental benchmark setup of EGNN (Satorras et al., ICML 2021, Table 2).
-
-Physics:
-- N = 5 charged particles (charges q_i in {-1, +1})
-- Coulomb Force: F_ij = q_i * q_j * (x_i - x_j) / ||x_i - x_j||^3
-- Numerical integration (Verlet / RK4) over T steps.
-- Task: Given initial positions x^(0) and velocities v^(0), predict future position x^(T).
-"""
+"""3D charged N-body particle system generator and dataset pipeline."""
 
 import os
 import numpy as np
@@ -19,10 +8,7 @@ from torch_geometric.loader import DataLoader
 
 
 def simulate_charged_trajectory(n_particles=5, timesteps=1000, dt=0.001, loc_std=1.0, vel_std=0.5):
-    """
-    Simulates a single 5-particle trajectory under 3D Coulomb force laws.
-    """
-    # 1. Initialize random positions, velocities, and charges
+    """Simulate a single 5-particle trajectory under 3D Coulomb force laws."""
     pos = np.random.normal(0, loc_std, size=(n_particles, 3))
     vel = np.random.normal(0, vel_std, size=(n_particles, 3))
     
@@ -32,7 +18,7 @@ def simulate_charged_trajectory(n_particles=5, timesteps=1000, dt=0.001, loc_std
     # Random discrete charges in {-1, +1}
     charges = np.random.choice([-1.0, 1.0], size=(n_particles, 1))
 
-    # 2. Velocity Verlet Numerical Integration
+    # Velocity Verlet numerical integration
     def compute_forces(x):
         forces = np.zeros_like(x)
         for i in range(n_particles):
@@ -152,4 +138,4 @@ if __name__ == "__main__":
     train_data, val_data, test_data = get_nbody_splits(num_train=100, num_val=50, num_test=50)
     sample = train_data[0]
     print(f"Sample: x={sample.x.shape}, pos={sample.pos.shape}, target_pos={sample.target_pos.shape}, edge_index={sample.edge_index.shape}")
-    print("✅ 3D Charged N-Body dataset generator verified!")
+    print("3D charged N-body dataset generator verified.")

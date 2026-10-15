@@ -1,32 +1,4 @@
-"""
-Fourier Spectrum Comparison: PQC vs PRISM (SIREN) — Reviewer C3
-================================================================
-Extends the existing benchmark_fourier_spectrum.py to include PRISM (SIREN)
-in the spectral comparison, producing side-by-side Fourier analysis that
-the reviewers explicitly requested.
-
-Compares 4 trained models:
-  1. Q-PRISM (Entangled PQC)
-  2. Separable Q-PRISM (No CNOTs)
-  3. Classical Twin (tanh-MLP)
-  4. PRISM (SIREN)
-
-Spectral similarity metrics:
-  - Cosine similarity of power spectra
-  - Earth Mover's Distance (Wasserstein-1)
-  - Dominant frequency overlap (top-5)
-  - Spectral entropy and concentration
-
-Outputs:
-  - paper/figures/figure_pqc_vs_prism_angular_response.png
-  - paper/figures/figure_pqc_vs_prism_spectra.png
-  - paper/figures/figure_spectral_similarity_matrix.png
-  - results/fourier_spectrum_pqc_vs_prism.json
-
-Usage:
-  cd /Users/kkyn/Documents/Work/Quantum/qgnn
-  pixi run python benchmarks/benchmark_fourier_spectrum_comparison.py
-"""
+"""Fourier spectrum comparison between PQC and PRISM (SIREN) models."""
 
 import os
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib"
@@ -68,12 +40,8 @@ from benchmarks.benchmark_fourier_spectrum import (
 )
 
 
-# =============================================================================
-# Spectral Similarity Metrics
-# =============================================================================
-
 def cosine_similarity_spectra(power_a, power_b):
-    """Cosine similarity between two power spectra (higher = more similar)."""
+    """Cosine similarity between two power spectra."""
     a = np.array(power_a).flatten()
     b = np.array(power_b).flatten()
     dot = np.dot(a, b)
@@ -103,10 +71,6 @@ def dominant_freq_overlap(power_a, power_b, top_k=5):
     top_b = set(np.argsort(b)[-top_k:])
     return float(len(top_a & top_b) / top_k)
 
-
-# =============================================================================
-# Plotting
-# =============================================================================
 
 MODEL_CONFIGS = [
     ("Q-PRISM (Entangled PQC)", "#2196F3"),
@@ -142,7 +106,7 @@ def plot_angular_response(all_results, angles, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"📊 Figure saved: {save_path}")
+    print(f"Figure saved: {save_path}")
 
 
 def plot_power_spectra(all_results, save_path):
@@ -189,7 +153,7 @@ def plot_power_spectra(all_results, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"📊 Figure saved: {save_path}")
+    print(f"Figure saved: {save_path}")
 
 
 def plot_similarity_matrix(sim_matrix, model_labels, save_path):
@@ -219,16 +183,12 @@ def plot_similarity_matrix(sim_matrix, model_labels, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=200, bbox_inches="tight")
     plt.close()
-    print(f"📊 Figure saved: {save_path}")
+    print(f"Figure saved: {save_path}")
 
-
-# =============================================================================
-# Main
-# =============================================================================
 
 def main():
     print("=" * 70)
-    print("FOURIER SPECTRUM COMPARISON: PQC vs PRISM (Reviewer C3)")
+    print("FOURIER SPECTRUM COMPARISON: PQC vs PRISM")
     print("=" * 70)
 
     TARGET = "homo"
@@ -238,7 +198,7 @@ def main():
 
     results = {}
 
-    # --- Step 1: Create and train all 4 models ---
+    # Train models
     model_factories = [
         ("Q-PRISM (Entangled PQC)",
          lambda: EQGNNModelV2(in_features=11, hidden_features=16, num_layers=2,
@@ -256,7 +216,7 @@ def main():
 
     trained_models = {}
     for label, factory in model_factories:
-        print(f"\n🔧 Training: {label}...")
+        print(f"\nTraining: {label}...")
         t0 = time.time()
         model = factory()
         model, mean, std, test_mae = train_model(model, target=TARGET, seed=SEED)
@@ -265,8 +225,8 @@ def main():
         print(f"   Done ({elapsed:.1f}s) | Test MAE = {test_mae:.4f} eV | "
               f"Params = {count_parameters(model):,}")
 
-    # --- Step 2: Extract representative fixed inputs ---
-    print("\n📐 Extracting representative node embeddings from training data...")
+    # Extract representative fixed inputs
+    print("\nExtracting representative node embeddings from training data...")
     train_set, _, _, _ = get_qm9_splits(
         root="./data/QM9", target=TARGET, num_train=100, num_val=50, num_test=50, seed=SEED
     )
@@ -286,10 +246,10 @@ def main():
     angle_median = float(angles_train.median())
     print(f"   Median bond angle: {np.degrees(angle_median):.1f}°")
 
-    # --- Step 3: Sweep angle for each model ---
+    # Sweep angle for each model
     angles_shared = None
     for label, _ in model_factories:
-        print(f"\n📈 Extracting angular response: {label}...")
+        print(f"\nExtracting angular response: {label}...")
         model = trained_models[label]
         layer0 = model.layers[0]
         head = layer0.head_electronic
@@ -328,8 +288,8 @@ def main():
         print(f"   Spectral entropy: {entropy:.2f} bits")
         print(f"   Top-5 concentration: {concentration:.1%}")
 
-    # --- Step 4: Compute pairwise similarity matrix ---
-    print("\n📊 Computing pairwise spectral similarities...")
+    # Compute pairwise similarity matrix
+    print("\nComputing pairwise spectral similarities...")
     model_labels = [label for label, _ in model_factories]
     n_models = len(model_labels)
     sim_matrix = np.zeros((n_models, n_models))
@@ -351,8 +311,8 @@ def main():
     wass_dist = wass_matrix[pqc_idx, prism_idx]
     freq_overlap = overlap_matrix[pqc_idx, prism_idx]
 
-    # --- Step 5: Generate figures ---
-    print("\n🎨 Generating publication figures...")
+    # Generate figures
+    print("\nGenerating publication figures...")
     fig_dir = PROJECT_ROOT / "paper" / "figures"
     os.makedirs(fig_dir, exist_ok=True)
     os.makedirs(PROJECT_ROOT / "results", exist_ok=True)
@@ -370,7 +330,7 @@ def main():
         fig_dir / "figure_spectral_similarity_matrix.png"
     )
 
-    # --- Step 6: Save JSON results ---
+    # Save JSON results
     results_compact = {}
     for label in model_labels:
         results_compact[label] = {
@@ -392,9 +352,9 @@ def main():
     save_path = PROJECT_ROOT / "results" / "fourier_spectrum_pqc_vs_prism.json"
     with open(save_path, "w") as f:
         json.dump(results_compact, f, indent=2)
-    print(f"\n💾 Results saved: {save_path}")
+    print(f"\nResults saved: {save_path}")
 
-    # --- Step 7: Print summary ---
+    # Print summary
     print("\n" + "=" * 70)
     print("SPECTRAL COMPARISON SUMMARY")
     print("=" * 70)
@@ -417,22 +377,22 @@ def main():
             print(f" {sim_matrix[i, j]:>10.3f}", end="")
         print()
 
-    print(f"\n🔑 KEY METRIC — Q-PRISM vs PRISM (SIREN):")
+    print(f"\nKey metric — Q-PRISM vs PRISM (SIREN):")
     print(f"   Cosine similarity:     {cos_sim:.4f}")
     print(f"   Wasserstein-1 distance: {wass_dist:.4f}")
     print(f"   Top-5 freq overlap:    {freq_overlap:.0%}")
 
     print()
     if cos_sim >= 0.8:
-        print("   ✅ SIMILAR (cos ≥ 0.8) → Supports 'dequantizing periodic bias' framing")
+        print("   SIMILAR (cos >= 0.8) -> Supports periodic bias framing")
     elif cos_sim >= 0.5:
-        print("   ⚠️  MODERATELY SIMILAR (0.5 ≤ cos < 0.8) → Partial support; "
+        print("   MODERATELY SIMILAR (0.5 <= cos < 0.8) -> Partial support; "
               "consider nuancing the narrative")
     else:
-        print("   ❌ DIFFER (cos < 0.5) → Must reframe: PRISM and PQC use "
+        print("   DIFFER (cos < 0.5) -> Models use "
               "different frequency structures")
 
-    print("\n✅ Fourier spectrum comparison complete!")
+    print("\nFourier spectrum comparison complete.")
 
 
 if __name__ == "__main__":

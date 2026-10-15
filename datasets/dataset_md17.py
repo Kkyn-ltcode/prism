@@ -1,15 +1,4 @@
-"""
-MD17 Molecular Dynamics Dataset Pipeline
-=========================================
-Loads MD17 conformational trajectory data (Ethanol, Aspirin) from PyG,
-constructs molecular graphs via k-NN or full connectivity, and provides
-train/val/test splits for energy and force prediction benchmarks.
-
-Physics:
-- Each sample is a single conformation of a fixed molecule.
-- Target: Potential Energy E [kcal/mol] (scalar, E(3)-invariant)
-- Target: Atomic Forces F = -∇E [kcal/mol/Å] (vector, E(3)-equivariant)
-"""
+"""MD17 molecular dynamics dataset pipeline."""
 
 import os
 import numpy as np
@@ -57,9 +46,7 @@ def build_knn_edges(pos, k=8):
 
 
 def prepare_md17_data(molecule_name='ethanol', root='./data/MD17', k_nn=8):
-    """
-    Load MD17 dataset and prepare graph data with one-hot features and k-NN edges.
-    """
+    """Load MD17 dataset and prepare graph data with one-hot features."""
     print(f"Loading MD17 '{molecule_name}' dataset from '{root}'...")
     dataset = MD17(root=root, name=molecule_name)
     print(f"Total MD17 '{molecule_name}' conformations: {len(dataset)}")
@@ -82,10 +69,7 @@ def prepare_md17_data(molecule_name='ethanol', root='./data/MD17', k_nn=8):
 def get_md17_splits(molecule_name='ethanol', root='./data/MD17',
                     num_train=1000, num_val=250, num_test=500,
                     seed=42, k_nn=8):
-    """
-    Create train/val/test splits from MD17 conformations.
-    Each sample is a PyG Data object with node features, positions, edge_index, energy, force.
-    """
+    """Create train/val/test splits from MD17 conformations."""
     dataset, node_features, ref_edge_index, n_atoms = prepare_md17_data(
         molecule_name=molecule_name, root=root, k_nn=k_nn
     )
@@ -136,9 +120,7 @@ def get_md17_splits(molecule_name='ethanol', root='./data/MD17',
 
 if __name__ == "__main__":
     for mol in ['ethanol', 'aspirin']:
-        print(f"\n{'='*60}")
-        print(f"Testing MD17 pipeline for: {mol}")
-        print('='*60)
+        print(f"\nTesting MD17 pipeline for: {mol}")
         train, val, test, e_mean, e_std = get_md17_splits(
             molecule_name=mol, num_train=100, num_val=50, num_test=50
         )
@@ -146,4 +128,4 @@ if __name__ == "__main__":
         print(f"  Sample: x={s.x.shape}, pos={s.pos.shape}, energy={s.energy.shape}, "
               f"force={s.force.shape}, edge_index={s.edge_index.shape}")
         print(f"  Energy mean={e_mean:.4f}, std={e_std:.4f}")
-    print("\n✅ MD17 dataset pipeline verified!")
+    print("\nMD17 dataset pipeline verified.")

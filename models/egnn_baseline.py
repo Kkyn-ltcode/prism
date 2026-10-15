@@ -1,23 +1,15 @@
-"""
-E(n) Equivariant Graph Neural Network (EGNN) Baseline
-=====================================================
-Classical baseline implementation from:
-"E(n) Equivariant Graph Neural Networks" (Satorras, Hoogeboom, Welling, ICML 2021).
-"""
+"""Classical E(n) Equivariant Graph Neural Network (EGNN) baseline."""
 
 import torch
 import torch.nn as nn
 
 class EGNNLayer(nn.Module):
-    """
-    A single classical E(n) Equivariant Graph Neural Network layer.
-    """
+    """Classical E(n) Equivariant Graph Neural Network layer."""
     def __init__(self, in_features, hidden_features=16, edge_feat_dim=0):
         super().__init__()
         self.in_features = in_features
         self.hidden_features = hidden_features
 
-        # Message MLP: phi_e(h_i, h_j, ||x_i - x_j||^2, a_ij) -> m_ij
         msg_in_dim = in_features * 2 + 1 + edge_feat_dim
         self.edge_mlp = nn.Sequential(
             nn.Linear(msg_in_dim, hidden_features),
@@ -26,14 +18,12 @@ class EGNNLayer(nn.Module):
             nn.SiLU()
         )
 
-        # Coordinate MLP: phi_x(m_ij) -> scalar weight
         self.coord_mlp = nn.Sequential(
             nn.Linear(hidden_features, hidden_features),
             nn.SiLU(),
             nn.Linear(hidden_features, 1, bias=False)
         )
 
-        # Node Feature MLP: phi_h(h_i, m_i) -> h_i_new
         self.node_mlp = nn.Sequential(
             nn.Linear(in_features + hidden_features, hidden_features),
             nn.SiLU(),
@@ -41,38 +31,23 @@ class EGNNLayer(nn.Module):
         )
 
     def forward(self, h, x, edge_index):
-        """
-        Args:
-            h: [N, in_features] Node feature matrix.
-            x: [N, 3] 3D coordinates.
-            edge_index: [2, E] Adjacency list (row, col).
-            
-        Returns:
-            h_new: [N, in_features]
-            x_new: [N, 3]
-        """
         row, col = edge_index[0], edge_index[1]
 
-        # 1. Compute Invariant Squared Euclidean Distance
         rel_x = x[row] - x[col]                             # [E, 3]
         d_ij = torch.sum(rel_x**2, dim=-1, keepdim=True)   # [E, 1]
 
-        # 2. Compute Edge Message
         edge_input = torch.cat([h[row], h[col], d_ij], dim=-1) # [E, 2*in_feat + 1]
         m_ij = self.edge_mlp(edge_input)                    # [E, hidden_features]
 
-        # 3. Equivariant Coordinate Update
         phi_x = self.coord_mlp(m_ij)                        # [E, 1]
         coord_msg = rel_x * phi_x                           # [E, 3]
         x_update = torch.zeros_like(x)
         x_update.index_add_(0, row, coord_msg)
         
-        # Exact per-node degree normalization: |N(i)|
         degrees = torch.zeros((x.size(0), 1), device=x.device)
         degrees.index_add_(0, row, torch.ones((row.size(0), 1), device=x.device))
         x_new = x + x_update / degrees.clamp(min=1.0)
 
-        # 4. Invariant Node Feature Update
         m_i = torch.zeros((h.size(0), m_ij.size(1)), device=h.device)
         m_i.index_add_(0, row, m_ij)
         h_new = h + self.node_mlp(torch.cat([h, m_i], dim=-1))
@@ -81,9 +56,7 @@ class EGNNLayer(nn.Module):
 
 
 class EGNNModel(nn.Module):
-    """
-    End-to-End Classical EGNN for Molecular Property Prediction.
-    """
+    """Classical EGNN model for molecular property prediction."""
     def __init__(self, in_features=11, hidden_features=16, num_layers=3, out_dim=1):
         super().__init__()
         self.embedding = nn.Linear(in_features, hidden_features)
@@ -104,7 +77,6 @@ class EGNNModel(nn.Module):
         for layer in self.layers:
             h, x = layer(h, x, edge_index)
 
-        # Global Invariant Mean Pooling
         num_graphs = int(batch.max().item()) + 1
         out_pool = torch.zeros((num_graphs, h.size(1)), device=h.device)
         out_pool.index_add_(0, batch, h)
@@ -122,19 +94,7 @@ def count_parameters(model):
 
 
 def create_param_matched_egnn(target_params, in_features=11, num_layers=2, out_dim=1):
-    """
-    Create an EGNN model whose parameter count closely matches `target_params`.
-    Searches over hidden_features to find the best match.
-    
-    Args:
-        target_params: Target number of trainable parameters to match.
-        in_features: Input feature dimension.
-        num_layers: Number of EGNN layers.
-        out_dim: Output dimension.
-        
-    Returns:
-        (model, actual_params): The EGNN model and its actual parameter count.
-    """
+    """Create an EGNN model matching target_params."""
     best_model = None
     best_diff = float("inf")
     best_params = 0
@@ -162,15 +122,7 @@ def create_param_matched_egnn(target_params, in_features=11, num_layers=2, out_d
 
 
 class ParamMatchedEGNNModel(EGNNModel):
-    """
-    Parameter-Matched EGNN Baseline (Tier 1 Iso-Parameter Comparison).
-    
-    Default configuration: hidden_features=8, num_layers=2
-    Expected param count with in_features=11: ~1,185
-    
-    For exact parameter matching against a specific Q-PRISM configuration,
-    use `create_param_matched_egnn(target_params)` factory instead.
-    """
+    """Parameter-matched EGNN baseline model."""
     def __init__(self, in_features=11, num_layers=2, out_dim=1, hidden_features=8):
         super().__init__(
             in_features=in_features,
@@ -192,7 +144,6 @@ if __name__ == "__main__":
 
     pred1 = model(h, x, edge_index, batch)
     
-    # SO(3) rotation + translation
     q, _ = torch.linalg.qr(torch.randn(3, 3))
     if torch.linalg.det(q) < 0:
         q[:, 0] = -q[:, 0]
@@ -202,16 +153,12 @@ if __name__ == "__main__":
     err = torch.abs(pred1 - pred2).item()
     print(f"EGNN Invariance Difference: {err:.2e}")
     assert err < 1e-5
-    print("✅ Classical EGNN Invariance Test PASSED!")
+    print("Classical EGNN Invariance Test PASSED.")
 
-    # Parameter count verification
-    print("\n--- Parameter Count Report ---")
     egnn_std = EGNNModel(in_features=11, hidden_features=16, num_layers=2)
     egnn_pm = ParamMatchedEGNNModel(in_features=11, num_layers=2)
     print(f"Standard EGNN (hidden=16):       {count_parameters(egnn_std):,} params")
     print(f"Param-Matched EGNN (hidden=8):   {count_parameters(egnn_pm):,} params")
     
-    # Auto-search demo
-    print("\n--- Auto Param-Match Search ---")
     create_param_matched_egnn(target_params=2500, in_features=11, num_layers=2)
-    print("✅ All EGNN baseline tests PASSED!")
+    print("All EGNN baseline tests PASSED.")
