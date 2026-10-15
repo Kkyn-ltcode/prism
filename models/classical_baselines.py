@@ -309,6 +309,11 @@ def create_param_matched_painn(target_params, in_features=11, num_interactions=2
     return best_model, total, best_h
 
 
+# Convenience and backward-compatible aliases
+SchNetBaseline = SchNetModel
+PaiNNBaseline = PaiNNModel
+
+
 if __name__ == "__main__":
     def count_p(m):
         return sum(p.numel() for p in m.parameters() if p.requires_grad)

@@ -1,10 +1,19 @@
 # Dequantizing Shallow Equivariant Quantum Graph Networks: Periodic Inductive Biases in Molecular Message Passing
 
-This repository contains the complete research codebase, model architectures, training engines, benchmarks, empirical results, and LaTeX manuscript for:
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch 2.2+](https://img.shields.io/badge/PyTorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
+[![PennyLane 0.35+](https://img.shields.io/badge/PennyLane-0.35+-ffd43b.svg)](https://pennylane.ai/)
+[![Target Venue](https://img.shields.io/badge/Target%20Venue-npj%20Quantum%20Information-darkgreen.svg)](paper/main.pdf)
+[![Reproducibility](https://img.shields.io/badge/Benchmarks-Deterministic%20Pixi-brightgreen.svg)](pixi.toml)
 
-> **Dequantizing Shallow Equivariant Quantum Graph Networks: Periodic Inductive Biases in Molecular Message Passing**  
-> Nguyen Trong Luu, Hieu Minh Pham, Anh Quoc Phan, Cho Xuan Do  
-> *Posts and Telecommunications Institute of Technology (PTIT), Hanoi, Vietnam*
+---
+
+### [📄 Read Main Manuscript (PDF)](paper/main.pdf) &nbsp;&bull;&nbsp; [📑 Read Supplementary Information (PDF)](paper/supplementary.pdf) &nbsp;&bull;&nbsp; [📊 Published Empirical Results](results/)
+
+> **Authors:** Nguyen Trong Luu, Hieu Minh Pham, Anh Quoc Phan, Cho Xuan Do  
+> *Posts and Telecommunications Institute of Technology (PTIT), Hanoi, Vietnam*  
+> *Target Journal: **npj Quantum Information** (Springer Nature)*
 
 ---
 
@@ -12,10 +21,11 @@ This repository contains the complete research codebase, model architectures, tr
 
 Parameterized quantum circuits (PQCs) integrated into $\mathrm{E}(3)$-equivariant graph neural networks (Q-PRISM) exhibit strong sample efficiency on molecular electronic orbital targets (HOMO, LUMO, HOMO-LUMO gap) at low parameter budgets ($\sim 2{,}500$ parameters). This repository investigates the mechanism driving this performance:
 
-1. **The Source of Advantage is Classical:** Systematic ablation across 20 independent seeds demonstrates that multi-qubit entanglement yields negligible advantage on electronic targets ($<2\%$ on HOMO, statistically indistinguishable on LUMO with $p=0.33$ and Gap with $p=0.16$). The active mechanism is that single-qubit data re-uploading rotations naturally compute truncated Fourier series ($\sin, \cos$), providing a compact periodic basis that standard monotonic activations ($\tanh$, SiLU) cannot express at matching parameter counts.
-2. **PRISM Architecture:** We introduce **PRISM**, an $\mathrm{E}(3)$-equivariant message-passing GNN that equips edge MLPs with internal periodic sinusoidal activations ($\sin(\omega_0 \mathbf{W}\mathbf{x} + \mathbf{b})$, SIREN). At identical parameter count ($2{,}527$), PRISM matches or exceeds the 4-qubit PQC across all QM9 electronic targets and outperforms PaiNN on four of six targets.
+1. **The Source of Advantage is Classical:** Systematic ablation across 20 independent seeds demonstrates that multi-qubit entanglement yields negligible advantage on electronic targets ($<2\%$ on HOMO, statistically indistinguishable on LUMO with $p=0.33$ and Gap with $p=0.16$). The active mechanism is that single-qubit data re-uploading rotations naturally compute truncated Fourier series ($\sin, \cos$), providing a compact periodic inductive bias that standard monotonic activations ($\tanh$, SiLU) cannot express at matching parameter counts.
+2. **PRISM Architecture:** We introduce **PRISM** (*Periodic Representation with Invariant Sinusoidal Message-passing*), an $\mathrm{E}(3)$-equivariant GNN that equips edge MLPs with internal periodic sinusoidal activations ($\sin(\omega_0 \mathbf{W}\mathbf{x} + \mathbf{b})$, SIREN). At identical parameter count ($2{,}527$), PRISM matches or exceeds the 4-qubit PQC across all QM9 electronic targets and outperforms PaiNN on four of six targets.
 3. **Asymptotic Convergence with Circuit Scaling:** Scaling PQC depth to $L = 16$ layers and width to $n_q = 8$ qubits shows that deep quantum entanglement asymptotically converges to, but never surpasses, PRISM's classical performance ($p = 0.969$), while PRISM delivers up to a $540\times$ training speedup.
-4. **Capacity and Dataset Scaling:** The periodic advantage persists on full-scale QM9 ($N = 110{,}000$, 5 seeds, $q_{\mathrm{FDR}} \le 0.055$) and widens monotonically from $+35.7\%$ to $+51.3\%$ as capacity scales to $100{,}127$ parameters.
+4. **Capacity and Dataset Scaling:** The periodic advantage persists on full-scale QM9 ($N = 110{,}000$, 5 seeds, $q_{\mathrm{FDR}} \le 0.055$) and widens monotonically from $+35.7\%$ to $+51.3\%$ as capacity scales to $100{,}127$ parameters across 6 tiers.
+5. **NISQ Noise Limits:** On simulated noisy quantum processors (depolarizing, bit-flip, readout error, and ZZ crosstalk), unmitigated quantum error rates exceed $40\%$, requiring Zero-Noise Extrapolation (ZNE) with $3\times$ to $5\times$ shot overhead to approach noise-free baselines, whereas PRISM achieves superior accuracy with zero quantum overhead.
 
 ---
 
@@ -31,29 +41,49 @@ All models maintain strict $\mathrm{E}(3)$ equivariance for atomic coordinates a
 | **RFF Twin** | `PRISMModel(head_type='fourier')` | Random Fourier Features ($\sigma = 10.0$) | $2{,}515$ | Section 3.3 |
 | **EGNN-PM** | `EGNNModel` (`models/egnn_baseline.py`) | Parameter-matched EGNN (Satorras et al., 2021) | $2{,}497$ | Table 1 |
 | **EGNN-Std** | `EGNNModel` (`models/egnn_baseline.py`) | Standard EGNN configuration | $4{,}289$ | Table 1 |
-| **PaiNN** | `PaiNNBaseline` (`models/classical_baselines.py`) | Directional equivariant message passing (Schutt et al., 2021) | $2{,}721$ | Table 1 |
-| **SchNet** | `SchNetBaseline` (`models/classical_baselines.py`) | Continuous-filter convolution (Schutt et al., 2017) | $2{,}473$ | Table 1 |
-| **Non-Equiv GNN** | `NonEquivariantGNN` (`models/classical_baselines.py`) | Standard MPNN control without geometric equivariance | $2{,}537$ | Table 1 |
+| **PaiNN** | `PaiNNModel` (`models/classical_baselines.py`) | Directional equivariant message passing (Schütt et al., 2021) | $2{,}721$ | Table 1 |
+| **SchNet** | `SchNetModel` (`models/classical_baselines.py`) | Continuous-filter convolution (Schütt et al., 2017) | $2{,}473$ | Table 1 |
+| **Non-Equiv GNN** | `NonEquivariantGNN` (`benchmarks/benchmark_symmetry_stress_test.py`) | Non-geometric MPNN symmetry control ($2\text{--}3$ layers) | $2{,}129\text{--}2{,}929$ | Table S13, Fig. S12 |
 
 ---
 
-## 3. Installation & Environment
+## 3. Installation & Quickstart
 
-This repository uses [Pixi](https://pixi.sh/) for deterministic environment management:
+### Environment Setup
+This repository uses [Pixi](https://pixi.sh/) for deterministic dependency resolution:
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/qgnn.git
-cd qgnn
+git clone https://github.com/KkynLuu/prism.git
+cd prism
 
-# Install environment and dependencies
+# Deterministically install all dependencies
 pixi install
 
-# Activate the shell or run commands directly via pixi
-pixi run python --version
+# Verify environment
+pixi run python -c "import torch, pennylane; print(f'PyTorch: {torch.__version__}, PennyLane: {pennylane.__version__}')"
 ```
 
-Dependencies include PyTorch 2.2+, PyTorch Geometric 2.5+, PennyLane 0.35+, RDKit, SciPy, NumPy, and Matplotlib.
+### 10-Second Quickstart (Minimal Working Example)
+Instantiate PRISM and run an $\mathrm{E}(3)$-equivariant forward pass on a 4-atom molecular graph:
+
+```python
+import torch
+from models.prism import PRISMModel
+
+# 1. Initialize parameter-matched PRISM (2,527 parameters)
+model = PRISMModel(in_features=11, hidden_features=16, num_layers=2, out_dim=1)
+
+# 2. Mock molecular graph: 4 atoms with 11-dim features and 3D coordinates
+h = torch.randn(4, 11)   # Atomic one-hot / orbital embeddings
+x = torch.randn(4, 3)    # 3D Cartesian coordinates (Å)
+edge_index = torch.tensor([[0, 0, 1, 1, 2, 2, 3, 3],
+                           [1, 2, 0, 2, 0, 1, 0, 1]], dtype=torch.long)
+
+# 3. Predict molecular electronic property (e.g., HOMO energy in eV)
+prediction = model(h, x, edge_index)
+print(f"Predicted Property: {prediction.item():.4f} eV")
+```
 
 ---
 
@@ -117,6 +147,8 @@ pixi run python training/run_omega_frequency_sweep.py --omega-values 1 5 10 20 3
 ```
 
 ### Tables S11–S12: Negative Controls (N-Body & MD17)
+Evaluates PRISM vs Q-PRISM on non-periodic macroscopic domains (gravitational/Coulombic orbits and molecular dynamics):
+
 ```bash
 # 3D Charged N-body dynamical trajectory prediction
 pixi run python training/train_nbody.py --model eqgnn --epochs 30
@@ -125,11 +157,32 @@ pixi run python training/train_nbody.py --model eqgnn --epochs 30
 pixi run python training/train_md17.py --molecule ethanol --epochs 30
 ```
 
+### Table S6 & Figure S6: NISQ Hardware Noise & ZNE Mitigation
+Simulates physical quantum decoherence (depolarizing, bit-flip, readout, ZZ crosstalk) and Zero-Noise Extrapolation:
+
+```bash
+# Hardware noise and Zero-Noise Extrapolation (ZNE) scaling
+pixi run python benchmarks/benchmark_hardware_noise_zne.py
+
+# Measurement readout noise ablation
+pixi run python benchmarks/benchmark_readout_noise.py
+
+# Spectator-qubit ZZ crosstalk phase drift
+pixi run python benchmarks/benchmark_zz_crosstalk.py
+```
+
+### Table S13 & Figure S12: Continuous Symmetry & Equivariance Stress Test
+Verifies exact $\mathrm{E}(3)$ equivariance and $\mathrm{O}(3)$ invariance under $10^4$ continuous 3D rotations, reflections, and translations:
+
+```bash
+pixi run python benchmarks/benchmark_symmetry_stress_test.py
+```
+
 ---
 
 ## 5. Generating Publication Figures
 
-All publication figures can be reproduced directly from experiment outputs:
+All publication figures in the main manuscript and supplementary information can be reproduced directly from experiment outputs:
 
 ```bash
 # Main Fig 1 & Supp Figs S18-S19: Scaling curves and crossover points
@@ -176,8 +229,8 @@ prism/
 ├── visualization/          # Paper figure generation scripts (Figs 1-3, S7, S9, Summary)
 ├── results/                # Published JSON benchmark outputs and LaTeX tables
 └── paper/                  # Publication manuscript and supplementary material
-    ├── main.pdf            # Pre-compiled Main Manuscript (Nature format)
-    ├── supplementary.pdf   # Pre-compiled Supplementary Information
+    ├── main.pdf            # Pre-compiled Main Manuscript (Nature format, 11 pages)
+    ├── supplementary.pdf   # Pre-compiled Supplementary Information (23 pages)
     ├── main.tex            # LaTeX source (11-page Research Article)
     ├── supplementary.tex   # Supplementary LaTeX source (23 pages)
     ├── references.bib      # Complete bibliography
@@ -188,13 +241,23 @@ prism/
 
 ## 7. Citation
 
-If you find this work or codebase helpful in your research, please cite:
+If you find this work, empirical data, or codebase helpful in your research, please cite:
 
 ```bibtex
 @article{luu2026dequantizing,
   title={Dequantizing Shallow Equivariant Quantum Graph Networks: Periodic Inductive Biases in Molecular Message Passing},
   author={Luu, Nguyen Trong and Pham, Hieu Minh and Phan, Anh Quoc and Do, Cho Xuan},
-  journal={arXiv preprint},
+  journal={npj Quantum Information (Under Review) / arXiv preprint},
   year={2026}
 }
 ```
+
+---
+
+## 8. License & Contact
+
+This project is open-source under the [MIT License](LICENSE).
+
+For questions or discussions, please open an issue or contact the corresponding authors:
+- **Nguyen Trong Luu** (Lead Author): `NguyenLT.B26CHKH078@stu.ptit.edu.vn`
+- **Cho Xuan Do** (Corresponding Author): `chodx@ptit.edu.vn`
