@@ -2,7 +2,7 @@
 \centering
 \small
 \setlength{\tabcolsep}{3.5pt}
-\caption{\textbf{Comprehensive Thermodynamic Properties Evaluation on QM9 Across All Models} ($N = 1{,}000$, Mean $\pm$ Std across 5 seeds: $42$--$46$). Evaluates the full thermodynamic suite ($U_0, U, H, G$) to directly address target selection and cherry-picking concerns. All thermodynamic properties are extensive energies dominated by atomization scales ($\sim 10^4$\,eV); $U, H, G$ derive linearly from $U_0$ via thermal and entropic corrections. Best result per row in \textbf{bold}.}
+\caption{\textbf{Comprehensive Thermodynamic Properties Evaluation on QM9 Across All Models} ($N = 1{,}000$, Mean $\pm$ Std across 5 seeds: $42$--$46$). Evaluation across the complete thermodynamic suite ($U_0, U, H, G$). All thermodynamic properties are extensive energies dominated by atomization scales ($\sim 10^4$\,eV); $U, H, G$ derive linearly from $U_0$ via thermal and entropic corrections. Best result per row in \textbf{bold}.}
 \label{tab:supplementary_uhg}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{llcccccccc}
@@ -12,9 +12,14 @@
  & & $2{,}527$\,p & $2{,}527$\,p & $2{,}515$\,p & $2{,}527$\,p & $2{,}473$\,p & $2{,}721$\,p & $2{,}497$\,p & $4{,}289$\,p \\
 \midrule
 Internal Energy at 0K ($U_0$) & eV & $110.0 \pm 18.2$ & $130.6 \pm 29.3$ & $686.5 \pm 40.0$ & $101.1 \pm 16.7$ & $104.3 \pm 11.0$ & $446.0 \pm 25.1$ & $87.7 \pm 22.2$ & $\mathbf{69.5 \pm 12.3}$ \\
+Internal Energy at 298K ($U$) & eV & -- & $128.9 \pm 29.9$ & $681.1 \pm 41.2$ & $102.3 \pm 20.4$ & $108.7 \pm 15.8$ & $446.0 \pm 25.1$ & $87.1 \pm 19.9$ & $\mathbf{71.3 \pm 11.2}$ \\
+Enthalpy at 298K ($H$) & eV & -- & $127.8 \pm 28.8$ & $682.1 \pm 26.4$ & $101.4 \pm 18.8$ & $107.9 \pm 14.8$ & $446.0 \pm 25.1$ & $87.5 \pm 22.4$ & $\mathbf{73.5 \pm 15.3}$ \\
+Free Energy at 298K ($G$) & eV & -- & $127.2 \pm 25.5$ & $682.3 \pm 31.8$ & $100.1 \pm 17.1$ & $107.7 \pm 13.7$ & $446.0 \pm 25.1$ & $85.2 \pm 19.4$ & $\mathbf{72.2 \pm 12.8}$ \\
 \midrule
 \multicolumn{2}{l}{\textbf{Trainable Parameters}} & $2{,}527$ & $2{,}527$ & $2{,}515$ & $2{,}527$ & $2{,}473$ & $2{,}721$ & $2{,}497$ & $4{,}289$ \\
 \bottomrule
+\multicolumn{10}{l}{\footnotesize Note: Q-PRISM was evaluated on $U_0$ as the representative zero-temperature thermodynamic target due to quantum simulation overhead.} \\
+\multicolumn{10}{l}{\footnotesize Thermal and free-energy properties $U, H, G$ derive from $U_0$ via translational, rotational, vibrational, and entropic corrections ($H = U + k_B T$, $G = H - TS$).} \\
 \end{tabular}%
 }
 \end{table*}

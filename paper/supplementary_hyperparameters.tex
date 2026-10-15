@@ -1,0 +1,58 @@
+% Supplementary Hyperparameter Table - Training configuration and reproducibility details
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Training Hyperparameters} for all models across QM9 benchmark experiments. All models share identical training protocol unless otherwise noted. Hyperparameters were fixed \textit{a priori} and not tuned on the test set.}
+\label{tab:hyperparameters}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+\multicolumn{3}{l}{\textit{Optimization}} \\
+\quad Optimizer & Adam & $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-8}$ \\
+\quad Learning Rate & $1 \times 10^{-3}$ & Fixed for all models \\
+\quad LR Scheduler & CosineAnnealingLR & $T_{\mathrm{max}} = 15$ epochs, $\eta_{\mathrm{min}} = 10^{-5}$ \\
+\quad Weight Decay & $10^{-5}$ & $L_2$ regularization \\
+\quad Gradient Clipping & Max norm $= 5.0$ & Applied globally across all parameters \\
+\midrule
+\multicolumn{3}{l}{\textit{Training Protocol}} \\
+\quad Epochs & $15$ & Standard benchmark ($N = 1{,}000$); $20$ epochs for full QM9 \\
+\quad Batch Size & $16$ & Standard benchmark ($N = 1{,}000$); $64$ for full QM9 \\
+\quad Early Stopping & None & Fixed epoch budget; end-of-training checkpoint \\
+\quad Validation Set & $250$ molecules & Evaluated during training \\
+\quad Loss Function & Mean Squared Error (MSE) & Computed on standardized targets ($y_{\mathrm{norm}} = (y - \mu)/\sigma$) \\
+\midrule
+\multicolumn{3}{l}{\textit{Data Preprocessing}} \\
+\quad Target Normalization & Per-target mean/std & Computed on training set; inverse-transformed for evaluation (MAE in eV) \\
+\quad Radius Cutoff & $5.0$~\AA & For edge construction ($k$-NN fallback: $k = 8$) \\
+\quad RBF Centers & $K = 8$ & Evenly spaced in $[0, 10]$~\AA$^2$ (centers $\le 3.16$~\AA\ target primary bonding shell; $5.0$~\AA\ cutoff retains graph topology) \\
+\midrule
+\multicolumn{3}{l}{\textit{Architecture (shared across all iso-parameter models)}} \\
+\quad GNN Layers ($T$) & $2$ & Message-passing iterations \\
+\quad Node Embedding Dim ($d_{\mathrm{node}}$) & $11$ & One-hot atomic number (H, C, N, O, F: 5) $+$ degree features (6) \\
+\quad Edge Head Input Dim ($d_{\mathrm{edge}}$) & $13$ & Projected node features ($4$) $+$ RBF ($8$) $+$ bond angle ($1$) \\
+\quad Hidden Dim ($d_h$) & $4$ & Edge head hidden dim; scaled from $4$ (XS) to $128$ (XXL) in Table~\ref{tab:param_scaling} \\
+\quad Readout & Global mean pooling & $\bar{\mathbf{h}} = \frac{1}{|\mathcal{V}|}\sum_{i} \mathbf{h}_i^{(T)}$ \\
+\quad Output Head & Linear($d_{\mathrm{hidden}}$, 1) & Single scalar prediction \\
+\midrule
+\multicolumn{3}{l}{\textit{PRISM-Specific}} \\
+\quad SIREN $\omega_0$ & $30.0$ & Fixed \textit{a priori} per Sitzmann et al.~\cite{sitzmann2020siren} \\
+\quad SIREN Init ($\mathbf{W}_1$) & $\mathcal{U}(-1/d_{\mathrm{edge}}, 1/d_{\mathrm{edge}})$ & First layer ($d_{\mathrm{edge}} = 13$; Sitzmann et al.~\cite{sitzmann2020siren}) \\
+\quad SIREN Init ($\mathbf{W}_2$) & $\mathcal{U}(-\sqrt{6/d_h}/\omega_0, \sqrt{6/d_h}/\omega_0)$ & Hidden layer ($d_h = 4$; Sitzmann et al.~\cite{sitzmann2020siren}) \\
+\midrule
+\multicolumn{3}{l}{\textit{Q-PRISM-Specific (PennyLane Simulation)}} \\
+\quad Simulator Backend & \texttt{default.qubit} & Statevector (exact expectation values, infinite shots) \\
+\quad Qubit Count & $4$ & Per PQC head \\
+\quad PQC Layers ($L$) & $2$ & Default; varied in circuit scaling study \\
+\quad Differentiation & Backpropagation & Via PennyLane autograd interface \\
+\midrule
+\multicolumn{3}{l}{\textit{Computational Resources}} \\
+\quad Hardware & NVIDIA A100 (40GB) / CPU & GPU for model training; single CPU core for Q-PRISM vs.\ PRISM wall-time scaling profiling \\
+\quad Training Time (PRISM) & $\sim 20$\,s / seed & $N = 1{,}000$, $15$ epochs \\
+\quad Training Time (Q-PRISM) & $\sim 3$\,min / seed & $N = 1{,}000$, $15$ epochs (PennyLane statevector simulation) \\
+\quad Random Seeds & $42$--$46$ (5-seed); $42$--$61$ (20-seed) & Control both init and data split \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

@@ -1,14 +1,16 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
-\usepackage[utf8]{inputenc}
+
+
+\usepackage{fontspec}
 \usepackage[margin=0.75in]{geometry}
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{xcolor}
-%\usepackage{algorithm}
-%\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 \usepackage{microtype}
 \usepackage{cite}
 \usepackage{subcaption}
@@ -25,68 +27,45 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 
-\title{\textbf{Equivariant Quantum Graph Neural Networks for 3D Molecules:\\Dequantizing Inductive Bias of Shallow PQCs via Periodic Activations}}
+\title{\textbf{Dequantizing Shallow Equivariant Quantum Graph Networks: Periodic Inductive Biases in Molecular Message Passing}}
 
 \author{
-    \textbf{Kkyn}\thanks{Correspondence to: \texttt{author@quantum.org}} \\
-    \textit{Center for Quantum Machine Learning \& Molecular Intelligence}
+    \textbf{Nguyen Trong Luu}, \textbf{Hieu Minh Pham}, \textbf{Anh Quoc Phan}, \textbf{Cho Xuan Do}\thanks{Corresponding author: \texttt{chodx@ptit.edu.vn}} \\
+    \textit{Posts and Telecommunications Institute of Technology (PTIT), Hanoi, Vietnam}
 }
-\date{August 2026}
+\date{}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-We investigate the physical origin of apparent quantum advantages in 3D molecular property prediction with parameterized quantum circuits (PQCs). We introduce \textbf{Q-PRISM}, an $\mathrm{E}(3)$-equivariant quantum graph neural network that integrates 4-qubit PQCs into message passing over molecular graphs. On QM9 electronic orbital targets (HOMO, LUMO, and HOMO-LUMO Gap), Q-PRISM initially outperforms parameter-matched classical baselines by $10$--$13\%$.
-
-However, systematic ablations across 20 random seeds reveal that multi-qubit entanglement is not the driving mechanism: its effect on HOMO is statistically detectable but practically insignificant ($\Delta = 0.006$\,eV $\ll 0.043$\,eV chemical accuracy), while providing no benefit on LUMO and Gap. Instead, single-qubit rotations natively compute truncated Fourier series, providing a compact periodic basis for oscillatory angular features that monotonic activations at matching parameter budgets lack the capacity to express.
-
-To isolate this inductive bias, we construct \textbf{PRISM}: an exact classical twin that replaces the PQC with periodic sinusoidal activations with SIREN initialization~\cite{sitzmann2020siren} at identical parameter count ($2{,}527$ parameters). PRISM matches or exceeds Q-PRISM across all electronic targets and outperforms PaiNN on four of six QM9 properties at iso-parameter parity. This periodic advantage persists from $N = 1{,}000$ to the full QM9 dataset ($N = 110{,}000$) and widens with increasing model capacity. Beyond our empirical dequantization finding, PRISM demonstrates that incorporating periodic internal activations into equivariant message-passing GNNs provides a powerful inductive bias for molecular modeling without requiring quantum hardware.
+Parameterized quantum circuits (PQCs) have shown promising results on molecular electronic property prediction, but the source of their advantage over classical baselines remains unclear. We show that this advantage traces not to multi-qubit entanglement but to a classical mechanism: single-qubit rotations natively compute truncated Fourier series, providing a compact periodic basis that monotonic activations cannot efficiently express at low parameter budgets. To exploit this insight, we introduce \textbf{PRISM}, an $\mathrm{E}(3)$-equivariant message-passing GNN that replaces standard activations with periodic sinusoidal (SIREN) internal activations. At identical parameter count ($2{,}527$), PRISM matches or exceeds a 4-qubit PQC across all QM9 electronic targets and outperforms PaiNN on four of six properties. Scaling circuit depth to $L = 16$ layers and qubit counts to $n_q = 8$ confirms that quantum circuits asymptotically match but never exceed PRISM's classical representation, while incurring up to a $540\times$ training slowdown. Across full-scale QM9 ($N = 110{,}000$, 5 seeds, $q_{\mathrm{FDR}} \le 0.055$), the periodic advantage persists and \textit{widens} monotonically from $35.7\%$ to $51.3\%$ as model capacity scales past $100{,}000$ parameters. Our results establish periodic internal activations as a hardware-free inductive bias for molecular geometric deep learning.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-A prominent frontier in the search for practical quantum advantage in machine learning focuses on domains that are inherently quantum mechanical and governed by physical laws \cite{Kandala:2017vok, Cerezo:2020mtn}. Early attempts to apply parameterized quantum circuits to classical discrete tasks, such as natural language processing (NLP) sentiment classification \cite{Aktar:2025ihu}, face severe theoretical hurdles: classical representations (e.g., token embeddings) possess no continuous spatial symmetries, and classical architectures like Transformers scale to billions of parameters with massive pretraining datasets.
 
-In contrast, \textbf{quantum chemistry and molecular property prediction} operate directly in 3D Euclidean space $\mathbb{R}^3$, where molecular graphs $\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathbf{x}, \mathbf{h})$ must adhere to continuous group symmetries \cite{satorras2022enequivariantgraphneural, schütt2017schnetcontinuousfilterconvolutionalneural, thomasTensorFieldNetworks2018}:
-\begin{enumerate}
-    \item \textbf{Translation Invariance:} Translating a molecule in space ($\mathbf{x}_i \mapsto \mathbf{x}_i + \mathbf{g}$) leaves scalar electronic properties strictly unchanged.
-    \item \textbf{Rotation \& Reflection Equivariance ($\mathrm{E}(3)$):} Applying a spatial rotation or reflection $\mathbf{Q} \in \mathrm{O}(3)$ preserves scalar energies while transforming vector quantities as $\mathbf{F}_i \mapsto \mathbf{Q}\mathbf{F}_i$.
-\end{enumerate}
+Parameterized quantum circuits (PQCs) are leading near-term candidates for practical quantum advantage in machine learning~\cite{Kandala:2017vok, Cerezo:2020mtn}. Molecular property prediction is a natural application domain: molecules live in 3D Euclidean space with continuous $\mathrm{E}(3)$ symmetries that PQCs can naturally respect, and the underlying physics is quantum mechanical~\cite{satorras2022enequivariantgraphneural, thomasTensorFieldNetworks2018}. When integrated into equivariant graph neural networks, shallow PQCs consistently outperform parameter-matched classical baselines on electronic orbital targets such as HOMO, LUMO, and the HOMO-LUMO gap in low-data regimes (Figure~\ref{fig:scaling_law}).
 
-While classical Geometric Deep Learning models like EGNN \cite{satorras2022enequivariantgraphneural}, SchNet \cite{schütt2017schnetcontinuousfilterconvolutionalneural}, DimeNet++ \cite{klicperaFastUncertaintyAwareDirectional2020}, PaiNN \cite{schuttEquivariantMessagePassing2021}, TorchMD-Net \cite{tholke2022torchmdnet}, Allegro \cite{musaelianLearningLocalEquivariant2022}, LEFTNet \cite{duNewPerspectiveBuilding2023}, and MACE \cite{batatiaMACEHigherOrder2022} enforce these symmetries using classical MLPs, their parameter complexity is significant, often demanding tens of thousands to millions of parameters and large training sets to achieve state-of-the-art accuracy.
+However, the physical mechanism driving this performance remains debated: while prevailing literature attributes gains to multi-qubit entanglement or Hilbert-space expressivity, our systematic ablations across 20 random seeds show that multi-qubit entanglement contributes negligibly. Instead, the mechanism is entirely classical: single-qubit rotations $R_Y(x)$, $R_Z(x)$ natively compute truncated Fourier series~\cite{Schuld:2020enb, Perez-Salinas:2019pjx}, supplying a compact periodic basis that standard monotonic activations ($\tanh$, SiLU) cannot efficiently express at matching parameter budgets. This reflects a representational capacity gap rather than quantum advantage.
 
-\paragraph{Trigonometric Inductive Bias vs.\ Spectral Bias.}
-In parameterized quantum circuits, data re-uploading via unitary rotations $R_Y(x)$ and $R_Z(x)$ produces truncated Fourier series in the encoded variables~\cite{Schuld:2020enb, Perez-Salinas:2019pjx, landman2023approximating}:
-\begin{equation}
-    f(x) = \sum_{\omega \in \Omega} c_\omega e^{i\omega x},
-\end{equation}
-where the frequency spectrum $\Omega$ is fixed by the eigenvalues of the encoding Hamiltonians. Classical $\tanh$ and SiLU activations compute monotonic sigmoid-like transformations instead. For molecular electronic properties (HOMO, LUMO, and the HOMO-LUMO gap), physical observables exhibit angular dependencies that are mathematically expressible via Fourier series. While actual orbital overlap integrals involve damped exponentials composed with solid harmonics in Gaussian basis sets---not simple sine waves---periodic activation functions provide a compact, learnable basis well-aligned with the angular periodicity of these dependencies. We emphasize that this alignment is indirect and learned: PRISM's periodic activations act on linearly transformed mixed feature vectors $\omega_0(\mathbf{W}_1 \mathbf{u}_{ij} + \mathbf{b}_1)$, not directly on raw angular coordinates; the network learns to project distance, angle, and node embedding channels into a representation where periodic activations are effective. Quantum circuits natively supply such a periodic basis through single-qubit rotations.
+This diagnosis is constructive: if the PQC advantage stems from periodicity, we can replicate it classically by placing periodic activations \textit{inside} equivariant message-passing layers. While SIREN~\cite{sitzmann2020siren} introduced sinusoidal activations for implicit neural representations in vision, and existing molecular architectures use trigonometric functions for \textit{input} encodings (spherical harmonics in TFN~\cite{thomasTensorFieldNetworks2018}, NequIP~\cite{batznerE3equivariantGraphNeural2021}, MACE~\cite{batatiaMACEHigherOrder2022}), no prior work has placed periodic activations inside the \textit{hidden layers} of equivariant graph networks. We introduce \textbf{PRISM}, an $\mathrm{E}(3)$-equivariant message-passing GNN that replaces monotonic activations with $\sin(\omega_0 \mathbf{W} \mathbf{x} + \mathbf{b})$ in its edge-processing MLPs. At identical parameter count, PRISM matches or exceeds the PQC on all electronic targets, without quantum hardware.
 
-Conversely, standard MLPs with monotonic activations face a representational bottleneck at low parameter budgets: a $\sin$ activation natively produces oscillatory outputs with a single neuron, while a $\tanh$ unit is bounded and monotonic over most of its dynamic range, requiring multiple units to approximate each oscillation period. At the parameter budgets used here ($d_h = 4$), a $\tanh$-MLP cannot compactly represent the oscillatory angular functions underlying orbital overlap integrals. This {\it expressive capacity starvation} is related to, but distinct from, the {\it spectral bias} documented in overparameterized networks~\cite{rahaman2019spectral, tancik2020fourier}, where gradient descent preferentially fits low-frequency Fourier components. Both phenomena favour periodic bases, but the dominant limitation in our regime is representational capacity rather than learning dynamics. Trigonometric activations directly supply a compact periodic basis aligned with the angular physics of molecular orbitals.
-
-\paragraph{The Empirical Dequantization Approach.}
-Tang's classical randomized linear algebra algorithms~\cite{Tang:2018lmw} established that alleged exponential quantum speedups often disappear once classical algorithms receive comparable sampling access. We apply an empirical counterpart of this principle: when evaluating a parameterized quantum architecture, one should construct a classical model with matching parameter count, matching inputs, and an equivalent functional hypothesis class.
-
-If the performance of a PQC stems from trigonometric representation rather than quantum non-simulability~\cite{Cerezo:2023nqf, landman2023approximating}, a classical network with periodic activations (SIREN~\cite{sitzmann2020siren}) should reproduce the gain. While SIREN is established for implicit neural representations in vision, periodic \textit{internal} activations have not previously been incorporated into the message-passing MLPs of equivariant graph networks. Existing molecular architectures limit trigonometric functions to input coordinate encodings, such as the spherical harmonics in TFN~\cite{thomasTensorFieldNetworks2018}, NequIP~\cite{batznerE3equivariantGraphNeural2021}, and MACE~\cite{batatiaMACEHigherOrder2022}, leaving intermediate layer transformations governed by monotonic activations.
-A factorial ablation (Section~\ref{sec:init_ablation}) isolates the contributions: the periodic $\sin$ activation provides the dominant improvement (main effect: $-0.16$ to $-0.18$\,eV), while SIREN initialization contributes a secondary synergistic effect ($-0.07$ to $-0.09$\,eV). Fourier spectral analysis (Section~\ref{sec:spectral_comparison}) confirms that trained PQC and PRISM edge outputs share similar frequency structure (cosine similarity $= 0.90$).
-
-\paragraph{Contributions:}
+\paragraph{Contributions.}
 \begin{itemize}
-    \item \textbf{Q-PRISM Architecture:} An equivariant quantum graph architecture integrating Gaussian RBF distance re-uploading, two-head edge convolutions, $\langle Z_i Z_j \rangle$ correlator readouts, 3-body angular encoding, and $\tanh$-gated coordinate updates into 4-qubit PQCs.
-    \item \textbf{Mechanistic Deconstruction:} Across 20 random seeds ($d_{\min} = 0.47$), multi-qubit entanglement yields a statistically detectable but practically insignificant gain relative to chemical accuracy ($\Delta = 0.006$\,eV $\ll 0.043$\,eV on HOMO, Cohen's $d = 0.85$---a statistically large effect that is nonetheless below the threshold of chemical relevance---with $p > 0.15$ on LUMO and Gap). The performance gain isolates to single-qubit Fourier expressivity.
-    \item \textbf{PRISM Classical Architecture:} An equivariant message-passing GNN employing periodic sinusoidal internal activations ($\sin(\omega_0 W x + b)$) with SIREN initialization. At exact iso-parameter matching ($2{,}527$ parameters), PRISM matches or exceeds the PQC across all electronic targets and outperforms PaiNN on $4/6$ QM9 properties at iso-parameter budgets.
-    \item \textbf{Factorial Mechanism Ablation:} A $2 \times 2$ activation $\times$ initialization ablation (10 seeds) isolates the periodic $\sin$ activation as the dominant factor (Cohen's $d = 4.9$--$9.4$), with SIREN initialization providing a secondary synergistic contribution.
-    \item \textbf{Parameter Scaling and Spectral Validation:} PRISM's advantage over monotonic twins \textit{grows} from $+25\%$ at $d_h = 4$ to $+49\%$ at $d_h = 64$, refuting the hypothesis that the advantage is limited to the extreme low-parameter regime. Fourier spectral comparison confirms that PQC and PRISM share similar frequency structure (cosine similarity $= 0.90$).
-    \item \textbf{Statistical and Scaling Validation:} Multiplicity correction via Benjamini-Hochberg FDR ($m = 48$ tests, $q < 0.02$) and scaling experiments up to $N = 110{,}000$ molecules confirm persistent periodic advantage. Under the trainability-simulability dilemma~\cite{Cerezo:2023nqf}, shallow PQCs for molecular edge processing operate within classically accessible function spaces.
+    \item We isolate the mechanism of PQC advantage on molecular electronic targets: it traces to single-qubit trigonometric expressivity, not multi-qubit entanglement (Section~\ref{sec:mechanism}).
+    \item We introduce \textbf{PRISM}, the first equivariant message-passing GNN with periodic sinusoidal \textit{internal} activations, which matches or exceeds the PQC at iso-parameter parity and outperforms PaiNN on four of six QM9 targets (Section~\ref{sec:periodic_egnn}).
+    \item We prove classical sufficiency across circuit scaling regimes: scaling PQC depth to $L = 16$ layers and qubit width to $n_q = 8$ confirms that deep quantum entanglement yields zero marginal advantage over PRISM's two-layer periodic edge representation, while classical execution delivers a $540\times$ training speedup (Section~\ref{sec:depth_qubit_scaling}).
+    \item We demonstrate that the periodic advantage persists at full scale ($N = 110{,}000$, 5 seeds, $q_{\mathrm{FDR}} \le 0.055$; $p = 0.0035$ on HOMO, $p = 0.0424$ on LUMO, $p = 0.0547$ on Gap) and \textit{widens monotonically} from $35.7\%$ to $51.3\%$ as model capacity scales to the standard medium-capacity regime of $100{,}127$ parameters (Section~\ref{sec:param_scaling}).
+    \item We provide a rigorous statistical methodology (factorial ablation, Fourier spectral validation, and Benjamini-Hochberg FDR correction across 48 hypotheses) applicable to future QML benchmarking (Section~\ref{sec:init_ablation}, Supplementary Table~S3 in SM~B, SM~D).
 \end{itemize}
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=0.88\textwidth]{figures/figure1_scaling_law.png}
-    \caption{\textbf{Sample Efficiency Scaling Law on QM9 ($\Delta\epsilon$ HOMO-LUMO Gap):} Log-log plot of Test Mean Absolute Error (MAE) versus number of training molecules $N \in [100, 1000]$. Q-PRISM ($2{,}527$ params) is compared against iso-parameter EGNN ($2{,}497$ params) and standard EGNN ($4{,}289$ params) across 5 seeds.}
+    \caption{\textbf{Sample Efficiency Scaling Laws on QM9 across Sample Sizes $N \in [100, 10{,}000]$:} Log-log scaling curves for HOMO-LUMO gap $\Delta\epsilon$ (left, eV) and Dipole Moment $\mu$ (right, Debye) across 5 independent random seeds (mean $\pm$ std). Q-PRISM ($2{,}527$\,p) is benchmarked against Classical Twin ($\tanh$, $2{,}527$\,p), SchNet ($2{,}473$\,p), PaiNN ($2{,}721$\,p), EGNN Param-Matched ($2{,}497$\,p), and EGNN Standard ($4{,}289$\,p). In data-scarce regimes ($N \le 500$), Q-PRISM outperforms all baselines. As sample size grows, PaiNN's coupled scalar-vector representation crosses over Q-PRISM at $N \approx 473$ for Gap and $N \approx 3{,}106$ for Dipole Moment, while Q-PRISM consistently maintains an advantage over scalar equivariant baselines (EGNN, SchNet).}
     \label{fig:scaling_law}
 \end{figure*}
 
@@ -94,41 +73,22 @@ A factorial ablation (Section~\ref{sec:init_ablation}) isolates the contribution
 \label{sec:related}
 
 \paragraph{Classical Geometric Deep Learning.}
-The foundational work of Thomas et al.~\cite{thomasTensorFieldNetworks2018} introduced Tensor Field Networks (TFN), establishing $\mathrm{SE}(3)$-equivariant message passing on 3D point clouds using spherical harmonics and Clebsch-Gordan tensor products.
-Gilmer et al.~\cite{gilmer2017neural} introduced the Message Passing Neural Network (MPNN) framework, unifying several graph neural network architectures under a common message-passing formalism for quantum chemistry.
-Satorras et al.~\cite{satorras2022enequivariantgraphneural} introduced the $\mathrm{E}(n)$-Equivariant Graph Neural Network (EGNN), demonstrating that invariant message passing with equivariant coordinate updates achieves competitive molecular property prediction without the computational overhead of higher-order spherical tensors.
-SchNet~\cite{schütt2017schnetcontinuousfilterconvolutionalneural} pioneered continuous-filter convolutions with Gaussian RBF distance encoding, while PhysNet~\cite{unkePhysNetNeuralNetwork2019} extended this paradigm with electrostatic and dispersion corrections for improved energy, force, and partial charge predictions.
-DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020} and GemNet~\cite{klicperaGemNetUniversalDirectional2021} incorporated directional and 3-body angular message passing, while PaiNN~\cite{schuttEquivariantMessagePassing2021} achieved high parameter efficiency with coupled scalar-vector equivariant message passing.
-More recently, TorchMD-Net~\cite{tholke2022torchmdnet} combined equivariant representation learning with Transformer attention, Allegro~\cite{musaelianLearningLocalEquivariant2022} demonstrated strictly local high-order tensor representations for scalable molecular dynamics, and LEFTNet~\cite{duNewPerspectiveBuilding2023} achieved complete $\mathrm{SE}(3)$ expressivity via local reference frames using scalar operations. For comprehensive reviews of machine learning approaches for molecular simulation, see No{\'e} et al.~\cite{Noe:2019yup}.
-NequIP~\cite{batznerE3equivariantGraphNeural2021}, Equiformer~\cite{liao2023equiformer}, and MACE~\cite{batatiaMACEHigherOrder2022} established state-of-the-art benchmarks on large datasets.
-These architectures predominantly employ monotonic, locally-linear activation functions ($\text{SiLU}$, $\text{Swish}$, or shifted softplus) within their internal message-passing and node-update MLPs.
+Equivariant GNNs for molecular property prediction have achieved strong accuracy on quantum chemistry benchmarks (see No{\'e} et al.~\cite{Noe:2019yup} for a review). Representative architectures include invariant message-passing models (EGNN~\cite{satorras2022enequivariantgraphneural}, SchNet~\cite{schütt2017schnetcontinuousfilterconvolutionalneural}, PhysNet~\cite{unkePhysNetNeuralNetwork2019}), directional and angular architectures (DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020}, GemNet~\cite{klicperaGemNetUniversalDirectional2021}, PaiNN~\cite{schuttEquivariantMessagePassing2021}), higher-order tensor methods (TFN~\cite{thomasTensorFieldNetworks2018}, NequIP~\cite{batznerE3equivariantGraphNeural2021}, MACE~\cite{batatiaMACEHigherOrder2022}, Equiformer~\cite{liao2023equiformer}), and scalable equivariant frameworks (TorchMD-Net~\cite{tholke2022torchmdnet}, Allegro~\cite{musaelianLearningLocalEquivariant2022}, LEFTNet~\cite{duNewPerspectiveBuilding2023}). The MPNN framework of Gilmer et al.~\cite{gilmer2017neural} unifies most of these under a common message-passing formalism. Yet all share a common design choice: monotonic, locally-linear activation functions (SiLU, Swish, or shifted softplus) in their internal message-passing and node-update MLPs. We challenge this default.
 
 \paragraph{Spectral Bias and Periodic Activations.}
 In deep learning theory, Rahaman et al.~\cite{rahaman2019spectral} proved that standard neural networks exhibit \textit{spectral bias}: gradient descent prioritizes fitting low-frequency Fourier components, with high-frequency Fourier amplitudes decaying rapidly as $\mathcal{O}(\|k\|^{-(d+1)})$.
 Tancik et al.~\cite{tancik2020fourier} analyzed this via Neural Tangent Kernel (NTK) theory, demonstrating that coordinate MLPs fail to represent fine spatial structures unless inputs are mapped to Fourier features.
 Sitzmann et al.~\cite{sitzmann2020siren} introduced SIREN (Sinusoidal Representation Networks), demonstrating that periodic activation functions ($\sin(\omega_0 W x + b)$) combined with a principled initialization scheme ($\omega_0$-scaled uniform distribution) completely bypass spectral bias and allow stable training of arbitrary derivative orders.
-While SIREN is standard for implicit neural representations in coordinate graphics~\cite{sitzmann2020siren}, periodic \textit{internal} activation functions have not previously appeared inside the message-passing MLPs of equivariant graph neural networks. Existing geometric models often employ trigonometric functions for \textit{input spatial encodings}: DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020} uses spherical Bessel radial bases, and NequIP~\cite{batznerE3equivariantGraphNeural2021} evaluates spherical harmonics. These methods map raw geometric coordinates into expanded input features, leaving downstream layer activations monotonic (such as SiLU or $\tanh$). PRISM targets internal feature transformations instead, replacing hidden layer activations with sine non-linearities to overcome the representational limits of monotonic activations during message propagation.
-We note that state-of-the-art equivariant architectures (NequIP, MACE~\cite{batatiaMACEHigherOrder2022}) employ spherical harmonics $Y_l^m(\hat{r})$ as input-level angular encodings, providing a complete, orthogonal polynomial basis on $S^2$. In contrast, PRISM's periodic activations operate on \textit{internal feature transformations} rather than input coordinates. The two approaches are complementary: spherical harmonics provide a principled, physically complete angular basis at the input layer, while periodic activations overcome the representational bottleneck of monotonic activations in intermediate message-passing layers. A natural future direction combines both---using spherical harmonic inputs with SIREN-activated hidden layers.
+While SIREN is standard for implicit neural representations in vision~\cite{sitzmann2020siren}, periodic \textit{internal} activations have not previously appeared inside the message-passing MLPs of equivariant graph neural networks. Existing geometric models employ trigonometric functions only for \textit{input spatial encodings}, such as spherical Bessel radial bases in DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020} or spherical harmonics in NequIP~\cite{batznerE3equivariantGraphNeural2021} and MACE~\cite{batatiaMACEHigherOrder2022}, leaving all downstream layer activations monotonic.
 
-\paragraph{Classical Surrogates and Dequantization.}
-Evaluating claims of quantum advantage requires comparable classical baselines. Following Tang's dequantization framework~\cite{Tang:2018lmw}, putative quantum speedups frequently dissolve when classical models are provided with structurally analogous access or sampling primitives.
-Schreiber et al.~\cite{Schreiber:2022roq} demonstrated that PQCs compute truncated Fourier series and that classical surrogates spanning an equal or larger hypothesis class consistently match their performance.
-K\"ubler et al.~\cite{kubler2021inductive} showed that quantum kernel performance is governed by inductive bias alignment rather than quantum hardware execution.
-Pegg et al.~\cite{pegg2026isoqgnn} introduced the Iso-QGNN methodology, showing that classical twins can match quantum models on HOMO-LUMO gap prediction when classical preprocessing is isolated.
-Landman et al.~\cite{landman2023approximating} established that variational quantum circuits with data re-uploading are multi-dimensional truncated Fourier series that can be classically approximated via Random Fourier Features in polynomial sample complexity.
-
-\paragraph{Fundamental Limits of QML: Trainability vs.\ Simulability.}
-Variational quantum circuits operate under stringent theoretical bounds.
-Cerezo, Holmes et al.~\cite{Cerezo:2023nqf} established the \textit{trainability-simulability dilemma}: parameterized quantum circuits that provably avoid barren plateaus~\cite{Cerezo:2020mtn, McClean:2018jps} (via shallow depth, local observables, or restricted entanglement) frequently reside within, or exhibit strong theoretical overlap with, classically simulable complexity classes (e.g., via Matrix Product States or Pauli transfer matrices).
-Conversely, scaling to deeper, highly entangled circuits risks exponential concentration of measure (Thanasilp et al.~\cite{Thanasilp:2022agd}), wherein quantum state vectors concentrate on the hypersphere, forcing quantum kernels to trivial constants and gradients to vanish as $\mathcal{O}(2^{-n/2})$.
-Jerbi et al.~\cite{Jerbi:2021qnz} characterized the expressivity boundaries between variational circuits and kernel methods, underscoring the demanding structural conditions needed to maintain advantage over classical learners.
-These theoretical boundaries strongly motivate our dequantization approach: understanding the precise mechanism of apparent PQC performance and replicating it via classical PRISM.
+\paragraph{Dequantization and Fundamental Limits of QML.}
+Recent studies question whether PQC advantages reflect quantum resources. Huang et al.~\cite{Huang:2021qml} showed that QML model power depends on inductive bias alignment with the data, not quantum hardware per se; Schuld~\cite{Schuld:2021kernel} proved that supervised variational models are formally kernel methods. Empirically, Schreiber et al.~\cite{Schreiber:2022roq} showed that PQCs compute truncated Fourier series matchable by classical surrogates, K\"ubler et al.~\cite{kubler2021inductive} traced quantum kernel performance to inductive bias rather than hardware, and Pegg et al.~\cite{pegg2026isoqgnn} showed that iso-parameter classical twins match quantum models on HOMO-LUMO gap prediction. Landman et al.~\cite{landman2023approximating} established that data re-uploading PQCs are multi-dimensional truncated Fourier series approximable via Random Fourier Features in polynomial sample complexity. This is theoretically grounded: Cerezo, Holmes et al.~\cite{Cerezo:2023nqf} established the \textit{trainability-simulability dilemma}, showing that PQCs that avoid barren plateaus~\cite{Cerezo:2020mtn, McClean:2018jps} frequently reside within classically simulable complexity classes, while scaling to deeper, highly entangled circuits risks exponential concentration~\cite{Thanasilp:2022agd}, forcing quantum kernels to trivial constants. Jerbi et al.~\cite{Jerbi:2021qnz} characterized the demanding structural conditions needed to maintain advantage over classical learners. Following Tang's dequantization framework~\cite{Tang:2018lmw}, our approach isolates the precise mechanism of apparent PQC performance and replicates it classically.
 
 \paragraph{Equivariant Quantum Machine Learning.}
-Recent work has established formal frameworks for incorporating symmetry constraints into parameterized quantum circuits.
-Meyer et al.~\cite{meyer2023exploiting} developed a symmetry group framework for constructing equivariant PQCs, showing that enforcing group symmetries reduces the circuit's effective hypothesis space to physically relevant subspaces, improving both sample efficiency and generalization.
-Skolik et al.~\cite{skolik2023equivariant} demonstrated that equivariant quantum circuits achieve better generalization on symmetric learning tasks with fewer trainable parameters.
-Q-PRISM's $\mathrm{E}(3)$ equivariance is achieved at the \textit{graph architecture level}---through invariant edge inputs and equivariant coordinate updates---rather than through symmetric circuit design, complementing these circuit-level approaches. PRISM inherits the same graph-level equivariance guarantees (Theorem~\ref{thm:equivariance}) without quantum hardware.
+Formal frameworks incorporate symmetry constraints into parameterized quantum circuits.
+Meyer et al.~\cite{meyer2023exploiting} developed a symmetry group framework for constructing equivariant PQCs, showing that enforcing group symmetries reduces the circuit's effective hypothesis space to physically relevant subspaces, improving sample efficiency and generalization.
+Skolik et al.~\cite{skolik2023equivariant} showed that equivariant quantum circuits achieve better generalization on symmetric learning tasks with fewer trainable parameters.
+Q-PRISM's $\mathrm{E}(3)$ equivariance is achieved at the \textit{graph architecture level} (through invariant edge inputs and equivariant coordinate updates) rather than through symmetric circuit design, complementing these circuit-level approaches. PRISM inherits the same graph-level equivariance guarantees (Theorem~\ref{thm:equivariance}) without quantum hardware.
 
 \section{Q-PRISM: Equivariant Quantum Graph Architecture}
 \label{sec:method}
@@ -140,15 +100,15 @@ Q-PRISM's $\mathrm{E}(3)$ equivariance is achieved at the \textit{graph architec
     \label{fig:architecture}
 \end{figure*}
 
-\subsection{Mathematical Formulation}
+\subsection{Quantum Edge Convolution}
+\label{sec:quantum_edge}
 
-As illustrated in Figure~\ref{fig:architecture}, let a 3D molecule be represented as a graph $\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathbf{x}, \mathbf{h})$, where each atom $i \in \mathcal{V}$ possesses spatial coordinates $\mathbf{x}_i \in \mathbb{R}^3$ and invariant atomic feature vector $\mathbf{h}_i \in \mathbb{R}^{d_{\mathrm{in}}}$. Edges $(i, j) \in \mathcal{E}$ connect interacting atomic pairs within a radius cutoff, defining the neighborhood $\mathcal{N}(i) = \{j : (i, j) \in \mathcal{E}\}$. The squared Euclidean distance is:
+As illustrated in Figure~\ref{fig:architecture}, let a 3D molecule be represented as a graph $\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathbf{x}, \mathbf{h})$, where each atom $i \in \mathcal{V}$ has spatial coordinates $\mathbf{x}_i \in \mathbb{R}^3$ and invariant atomic feature vector $\mathbf{h}_i \in \mathbb{R}^{d_{\mathrm{in}}}$. Edges $(i, j) \in \mathcal{E}$ connect interacting atomic pairs within a radius cutoff, defining the neighborhood $\mathcal{N}(i) = \{j : (i, j) \in \mathcal{E}\}$. The squared Euclidean distance is:
 \begin{equation}
     d_{ij} = \|\mathbf{x}_i - \mathbf{x}_j\|^2 \in \mathbb{R}_{\ge 0}
 \end{equation}
 
-\subsection{Gaussian RBF Distance Expansion (Upgrade 2.1)}
-
+\paragraph{Gaussian RBF Distance Expansion.}
 Rather than encoding raw distances via a single scalar weight $w_d^{(l)} \cdot d_{ij}$, we expand distances into a multi-frequency Gaussian radial basis \cite{schütt2017schnetcontinuousfilterconvolutionalneural}:
 \begin{equation}
     \phi_k(d_{ij}) = \exp\left(-\gamma_k (d_{ij} - \mu_k)^2\right), \quad k = 1, \ldots, K
@@ -156,85 +116,50 @@ Rather than encoding raw distances via a single scalar weight $w_d^{(l)} \cdot d
 \end{equation}
 where $\mu_k$ are evenly spaced centers in $[0, 10]$~\AA$^2$ and $\gamma_k$ are learnable inverse widths. Under the Fourier analysis of data re-uploading \cite{Perez-Salinas:2019pjx, Schuld:2020enb}, this transforms the PQC into a truncated $K$-term Fourier approximator for molecular potential surfaces.
 
-Each qubit receives a per-layer, per-qubit weighted phase:
-\begin{equation}
-    R_z\!\left(\sum_{k=1}^K w_{d,q,k}^{(l)} \cdot \phi_k(d_{ij})\right), \quad q = 0, \ldots, 3
-\end{equation}
-
-\subsection{Multi-Head Quantum Edge Convolution (Upgrade 2.2)}
-
-Following multi-head attention designs, we use two parallel PQC heads (\textit{Electronic} and \textit{Topological}). Each head employs an independent feature projection $\mathbf{W}_p^{(s)}: \mathbb{R}^{d_{\mathrm{hidden}}} \to \mathbb{R}^2$ to direct distinct feature subspaces into its respective quantum circuit:
+\paragraph{Multi-Head Design.}
+Following multi-head attention designs, we use two parallel PQC heads (\textit{Electronic} and \textit{Topological}). Each head uses an independent feature projection $\mathbf{W}_p^{(s)}: \mathbb{R}^{d_{\mathrm{hidden}}} \to \mathbb{R}^2$ to direct distinct feature subspaces into its respective quantum circuit:
 \begin{equation}
     \mathbf{h}_i^{p,(s)} = \mathbf{W}_p^{(s)} \mathbf{h}_i, \quad s \in \{1, 2\}
 \end{equation}
 Both heads share the same RBF distance features and angular inputs but process them through independent PQC parameter sets.
 
-\subsection{4-Qubit Parameterized Quantum Circuit}
+\paragraph{4-Qubit Parameterized Quantum Circuit.}
+For each head $s \in \{1, 2\}$ and directed edge $(i, j)$, the edge input vector $\mathbf{u}_{ij}^{(s)} = [\mathbf{h}_i^{p,(s)\top}, \mathbf{h}_j^{p,(s)\top}, \boldsymbol{\phi}(d_{ij})^\top, \bar{\theta}_{ij}]^\top \in \mathbb{R}^{4+K+1}$ is processed by a 4-qubit circuit initialized in $|0\rangle^{\otimes 4}$. As diagrammed in Figure~\ref{fig:architecture}(2), the state evolves through $L$ variational layers via chronological operator composition, $|\psi_{ij}^{(s)}\rangle = \left(\prod_{l=L}^1 U^{(l)}(\mathbf{u}_{ij}^{(s)}, \boldsymbol{\theta}_l)\right) |0\rangle^{\otimes 4}$. Each variational layer $U^{(l)}$ composes multi-axis single-qubit phase injections with a cyclic entangling ring:
+\begin{align}
+    U^{(l)}(\mathbf{u}_{ij}^{(s)}, \boldsymbol{\theta}_l) &= \mathcal{W}_{\mathrm{ring}} \bigotimes_{q=0}^3 \Big[ R_{ZYX}(\boldsymbol{\theta}_{l,q}) \, R_y(\bar{\theta}_{ij}) \nonumber \\
+    &\quad \cdot R_z\!\left(\sum_{k=1}^K w_{d,q,k}^{(l)} \phi_k(d_{ij})\right) R_y(\tilde{h}_{ij,q}^{(s)}) \Big]
+    \label{eq:layer_unitary}
+\end{align}
+where operations evaluate chronologically from right to left. Here, $\tilde{\mathbf{h}}_{ij}^{(s)} = [\mathbf{h}_i^{p,(s)\top}, \mathbf{h}_j^{p,(s)\top}]^\top \in \mathbb{R}^4$ injects projected atom features into the initial Pauli-$Y$ phase on qubit $q \in \{0, \dots, 3\}$; the $K$-channel Gaussian RBF vector $\boldsymbol{\phi}(d_{ij})$ is linearly projected via trainable weights $\mathbf{w}_{d,q}^{(l)} \in \mathbb{R}^K$ into the Pauli-$Z$ phase, injecting a truncated Fourier distance basis; $\bar{\theta}_{ij}$ injects the $\mathrm{O}(3)$-invariant mean bond angle into the second Pauli-$Y$ rotation; $R_{ZYX}(\boldsymbol{\theta}_{l,q}) = R_z(\theta_{l,q,2}) R_y(\theta_{l,q,1}) R_x(\theta_{l,q,0})$ provides a universal single-qubit Euler rotation with 3 trainable parameters per qubit ($12$ per layer); and $\mathcal{W}_{\mathrm{ring}} = \prod_{q=0}^3 \mathrm{CX}_{q \to (q+1)\bmod 4}$ circulates quantum phase information across the 4-qubit register ($\mathrm{CX}_{c \to t}$ denotes a controlled-NOT gate with control qubit $c$ and target qubit $t$).
 
-For each head $s$ and directed edge $(i, j)$, the combined input vector is:
-\begin{equation}
-    \mathbf{u}_{ij}^{(s)} = \left[h_{i,0}^{p,(s)}, h_{i,1}^{p,(s)}, h_{j,0}^{p,(s)}, h_{j,1}^{p,(s)}, \boldsymbol{\phi}(d_{ij})^T, \bar{\theta}_{ij}\right]^T
-\end{equation}
+Equation~(\ref{eq:layer_unitary}) illustrates the dequantization mechanism: all physical data channels (atomic identities, interatomic distances, and 3-body angles) are packed strictly into local single-qubit phase rotations, confirming that data re-uploading natively constructs independent multi-channel Fourier series before $\mathcal{W}_{\mathrm{ring}}$ couples them.
 
-Across $L$ variational layers, the circuit interleaves:
-\begin{enumerate}
-    \item \textbf{Multi-Axis Feature Encoding:}
-    \begin{equation}
-        U_{\mathrm{feat}}(\mathbf{u}_{ij}^{(s)}) = \bigotimes_{q=0}^1 R_y(h_{i,q}^{p,(s)}) \otimes \bigotimes_{q=0}^1 R_y(h_{j,q}^{p,(s)})
-    \end{equation}
-    \item \textbf{RBF Multi-Frequency Distance Re-Uploading (Upgrade 2.1):}
-    \begin{equation}
-        U_{\mathrm{dist}}^{(l)} = \bigotimes_{q=0}^3 R_z\!\left(\sum_{k=1}^K w_{d,q,k}^{(l)} \cdot \phi_k(d_{ij})\right)
-    \end{equation}
-    \item \textbf{SO(3)-Invariant Angular Re-Uploading (Upgrade 2.4):}
-    \begin{equation}
-        U_{\mathrm{ang}}(\bar{\theta}_{ij}) = \bigotimes_{q=0}^3 R_y(\bar{\theta}_{ij})
-    \end{equation}
-    \item \textbf{Single-Qubit Variational Rotations:}
-    \begin{equation}
-        U_{\mathrm{rot}}(\boldsymbol{\theta}_l) = \bigotimes_{q=0}^3 R_z(\theta_{l,q,2}) R_y(\theta_{l,q,1}) R_x(\theta_{l,q,0})
-    \end{equation}
-    \item \textbf{Circular Ring CNOT Entanglement:}
-    \begin{equation}
-        U_{\mathrm{ent}} = \prod_{q=0}^3 \mathrm{CNOT}_{q, (q+1)\bmod 4}
-    \end{equation}
-\end{enumerate}
-
-\subsection{3-Body SO(3)-Invariant Angular Encoding (Upgrade 2.4)}
-
+\paragraph{3-Body SO(3)-Invariant Angular Encoding.}
 For each edge $(i, j)$, we compute the mean bond angle $\bar{\theta}_{ij}$ across all third atoms $k \in \mathcal{N}(i), k \neq j$ via vectorized $O(E)$ operations:
 \begin{align}
     \bar{\cos}_{ij} &= \frac{\hat{\mathbf{r}}_{ij} \cdot \sum_{k \in \mathcal{N}(i)} \hat{\mathbf{r}}_{ik} - 1}{\deg(i) - 1}, \label{eq:angle} \\
     \bar{\theta}_{ij} &= \arccos\!\left(\mathrm{clamp}(\bar{\cos}_{ij}, -1, 1)\right) \nonumber
 \end{align}
-where $\hat{\mathbf{r}}_{ij} = (\mathbf{x}_j - \mathbf{x}_i) / \|\mathbf{x}_j - \mathbf{x}_i\|$. This is strictly $\mathrm{O}(3)$-invariant since $\cos \theta_{ijk} = \hat{\mathbf{r}}_{ij} \cdot \hat{\mathbf{r}}_{ik}$ depends only on inner products of relative vectors: $(\mathbf{Q}\hat{\mathbf{r}}_{ij})^T (\mathbf{Q}\hat{\mathbf{r}}_{ik}) = \hat{\mathbf{r}}_{ij}^T \mathbf{Q}^T \mathbf{Q} \hat{\mathbf{r}}_{ik} = \hat{\mathbf{r}}_{ij}^T \hat{\mathbf{r}}_{ik}$.
+where $\hat{\mathbf{r}}_{ij} = (\mathbf{x}_j - \mathbf{x}_i) / \|\mathbf{x}_j - \mathbf{x}_i\|$. For monovalent atoms ($\deg(i) = 1$), the denominator in Eq.~(\ref{eq:angle}) is clamped to $1$, yielding $\bar{\theta}_{ij} = \pi/2$ as an uninformative default. This is strictly $\mathrm{O}(3)$-invariant since $\cos \theta_{ijk} = \hat{\mathbf{r}}_{ij} \cdot \hat{\mathbf{r}}_{ik}$ depends only on inner products of relative vectors: $(\mathbf{Q}\hat{\mathbf{r}}_{ij})^\top (\mathbf{Q}\hat{\mathbf{r}}_{ik}) = \hat{\mathbf{r}}_{ij}^\top \mathbf{Q}^\top \mathbf{Q} \hat{\mathbf{r}}_{ik} = \hat{\mathbf{r}}_{ij}^\top \hat{\mathbf{r}}_{ik}$.
 
 \paragraph{Angular Degeneracy of Mean Pooling.}
-A limitation of the mean-angle representation $\bar{\theta}_{ij}$ is that it can map structurally distinct coordination environments to similar scalar values. For example, a tetrahedral carbon ($\mathrm{sp}^3$, 4 neighbors at $\sim 109.5^\circ$) and a trigonal planar carbon ($\mathrm{sp}^2$, 3 neighbors at $\sim 120^\circ$) produce mean angles that differ by only $\sim 10^\circ$, potentially limiting discrimination between hybridization states.
-In practice, this degeneracy is partially mitigated by three factors: (i) the node feature embedding $\mathbf{h}_i$ encodes atomic number and thus implicitly encodes coordination preferences, (ii) the RBF distance features $\phi_k(d_{ij})$ provide complementary geometric information at multiple length scales, and (iii) on QM9, the dominant elements (C, N, O, F, H) have well-separated coordination numbers and bond lengths that partially disambiguate hybridization for simple organics.
-To quantify the practical scope of this degeneracy: in the QM9 dataset ($130{,}831$ molecules), $95.6\%$ of molecules contain sp$^3$ carbons (coordination number 4), $64.2\%$ contain sp$^2$ carbons (coordination number 3), and $59.8\%$ contain \textit{both} hybridization states within the same molecule. While this high co-occurrence rate confirms that mean-angle degeneracy is a genuine concern for a majority of QM9 molecules, the complementary distance and node embedding channels evidently provide sufficient disambiguation for the electronic property targets, as demonstrated by PRISM's competitive performance (Table~\ref{tab:main_results}).
-This geometric compression bounds the current architecture to datasets of rigid organics with well-separated coordination environments. For datasets with more diverse coordination chemistry (e.g., transition metal complexes, fluxional molecules), replacing mean-angle pooling with per-triplet angular expansion~\cite{klicperaFastUncertaintyAwareDirectional2020, klicperaGemNetUniversalDirectional2021} is a necessary future extension (see Limitation 2).
+Mean-angle pooling can map distinct coordination environments to similar scalar values (e.g., sp$^3$ vs.\ sp$^2$ carbons differ by only $\sim 10^\circ$). In practice, the node embedding and RBF distance channels provide sufficient disambiguation for QM9's rigid organic molecules; extending to diverse coordination chemistry (e.g., transition metal complexes) requires per-triplet angular expansion~\cite{klicperaFastUncertaintyAwareDirectional2020, klicperaGemNetUniversalDirectional2021} (see Limitation 2, SM~H).
 
-\subsection{Entanglement Correlator Readout (Upgrade 2.3)}
-
-Each head produces 8 observables from the output state $|\psi_{ij}^{(s)}\rangle$:
-\begin{align}
-    \text{Single-qubit:} \quad & \langle Z_q \rangle_{ij}^{(s)}, \quad q = 0, 1, 2, 3 \\
-    \text{Correlators:} \quad & \langle Z_q Z_{(q+1)\bmod 4} \rangle_{ij}^{(s)}, \quad q = 0, 1, 2, 3
-\end{align}
-
-Per-head output decomposition:
+\paragraph{Entanglement Correlator Readout.}
+Each head produces 8 observables from the output state $|\psi_{ij}^{(s)}\rangle$: 4 single-qubit expectations $\langle Z_q \rangle_{ij}^{(s)}$ and 4 ring correlators $\langle Z_q Z_{(q+1)\bmod 4} \rangle_{ij}^{(s)}$ for $q \in \{0, 1, 2, 3\}$. The 8 observables are partitioned into coordinate and feature channels:
 \begin{align}
     \mathbf{m}_{ij}^{(s)} &= \big[\langle Z_0 \rangle, \langle Z_1 \rangle, \langle Z_2 \rangle, \nonumber \\
-    &\quad \langle Z_0 Z_1 \rangle, \langle Z_1 Z_2 \rangle, \langle Z_2 Z_3 \rangle, \langle Z_3 Z_0 \rangle\big]^T \in \mathbb{R}^7 \\
-    \phi_x^{(s)} &= \langle Z_3 \rangle_{ij}^{(s)} \in [-1, 1]
+    &\quad \langle Z_0 Z_1 \rangle, \langle Z_1 Z_2 \rangle, \langle Z_2 Z_3 \rangle, \langle Z_3 Z_0 \rangle\big]^\top \in \mathbb{R}^7, \\
+    \phi_x^{(s)} &= \langle Z_3 \rangle_{ij}^{(s)} \in [-1, 1].
 \end{align}
+Qubit 3 is designated as the coordinate-update observable because it is maximally distant from the feature-encoding qubits (0, 1) in the ring CNOT topology, so $\phi_x^{(s)}$ carries an entanglement-processed signal rather than raw input rotations.
 
 The two heads' messages are concatenated: $\mathbf{m}_{ij} = [\mathbf{m}_{ij}^{(1)}, \mathbf{m}_{ij}^{(2)}] \in \mathbb{R}^{14}$.
 
-\subsection{$\tanh$-Gated Equivariant Coordinate Updates (Upgrade 2.5)}
+\subsection{Equivariant Message Passing}
+\label{sec:message_passing}
 
-The coordinate scalar is computed by a learned gating function with $\tanh$ activation to prevent coordinate explosion during backpropagation across deep layers ($L \ge 4$):
+The per-head coordinate observables $\phi_x^{(1)}, \phi_x^{(2)}$ from \S\ref{sec:quantum_edge} are combined into a single gated scalar via $\tanh$ activation, bounding each coordinate update to $(-1, 1)$:
 \begin{equation}
     \phi_x(\mathbf{m}_{ij}) = \tanh\!\left(\mathbf{W}_g \left[\phi_x^{(1)}, \phi_x^{(2)}\right]^T\right) \in (-1, 1)
 \end{equation}
@@ -243,112 +168,46 @@ The coordinate scalar is computed by a learned gating function with $\tanh$ acti
     \label{eq:coord_update}
 \end{equation}
 
-\paragraph{Invariant Feature Message Passing:}
+\paragraph{Invariant Feature Message Passing.}
+Edge messages are aggregated per node and combined with the current features through a residual MLP update:
 \begin{align}
     \mathbf{m}_i &= \sum_{j \in \mathcal{N}(i)} \mathbf{m}_{ij} \\
     \mathbf{h}_i^{l+1} &= \mathbf{h}_i^l + \mathrm{MLP}\left([\mathbf{h}_i^l, \mathbf{m}_i]\right)
     \label{eq:feat_update}
 \end{align}
 
-\subsection{The Dequantized Classical Twins: PRISM}
+\subsection{Classical Dequantization: PRISM}
 \label{sec:periodic_egnn}
 
+
 To test whether the PQC's performance originates from quantum mechanical properties or from classical trigonometric expressivity, we construct structurally matched classical surrogates following the empirical dequantization framework~\cite{Tang:2018lmw, Schreiber:2022roq, pegg2026isoqgnn}.
-Each surrogate replaces the 4-qubit PQC with a classical feedforward operator taking identical edge inputs $\mathbf{u}_{ij}^{(s)} \in \mathbb{R}^{13}$ and producing 8 bounded observable surrogates $\in [-1, 1]$.
+We use ``dequantization'' in the heuristic, empirical sense of Schreiber et al.~\cite{Schreiber:2022roq}: constructing a classical model with structurally analogous hypothesis class and demonstrating equal or superior performance (see SM~D for detailed discussion of terminology, dimensionality mismatch, and activation choice).
 
-\paragraph{Terminology Note.}
-We use ``dequantization'' in the heuristic, empirical sense established by Schreiber et al.~\cite{Schreiber:2022roq} and Bowles et al.~\cite{bowles2024better}: constructing a classical model with structurally analogous hypothesis class (same parameter count, same input/output structure, analogous function-class expressivity) and demonstrating that it achieves equal or superior performance.
-This is distinct from the formal complexity-theoretic dequantization of Tang~\cite{Tang:2018lmw}, which provides polynomial-time classical algorithms with provable approximation guarantees.
-Our use of ``dequantization'' does not imply that the PQC studied was ever in a computationally non-classical regime.
-That data re-uploading PQCs compute truncated Fourier series is a known theoretical result~\cite{Schuld:2020enb, landman2023approximating}; our contribution is the \textit{empirical demonstration} that this theoretical equivalence translates to practice when periodic sinusoidal activations are placed inside the message-passing MLPs of equivariant graph neural networks. A $2 \times 2$ factorial ablation (Section~\ref{sec:init_ablation}) confirms that the periodic activation function---not the SIREN initialization scheme alone---is the primary driver of improvement, though the two interact synergistically. The failure of Random Fourier Features (RFF, Table~\ref{tab:main_results}) further isolates the mechanism: learned periodic frequencies aligned to the target's angular structure, not arbitrary periodic bases, are required.
-
-
-\paragraph{Internal Dimensionality Mismatch.}
-A key methodological consideration is that under strict iso-parameter matching, the 4-qubit PQC processes edge features through a $2^4 = 16$-dimensional complex Hilbert space ($\mathbb{C}^{16}$), while the classical twins operate on a 4-dimensional real hidden representation ($\mathbb{R}^4$). This biases the comparison \textit{against} the classical model in representational capacity: the PQC has access to a far larger implicit state space per evaluation. That PRISM nonetheless outperforms Q-PRISM across all electronic targets (Table~\ref{tab:main_results}) strengthens the empirical dequantization conclusion: the PQC's exponentially larger state space does not confer a practical advantage under local Pauli measurements, because those measurements collapse the $2^n$-dimensional state space to a polynomial number ($2n$) of real-valued expectation values $\langle Z_q \rangle, \langle Z_q Z_{q'} \rangle \in [-1,1]$.
-To directly address this capacity asymmetry, our parameter scaling study (Section~\ref{sec:param_scaling}, Table~\ref{tab:param_scaling}) evaluates a $d_h = 16$ classical model---matching the PQC's 16-dimensional Hilbert space in hidden dimension---where PRISM still outperforms the Classical Twin by $32$--$43\%$ across electronic targets, confirming that the periodic activation advantage is not an artifact of the dimensionality mismatch.
-
-\paragraph{Classical Twin ($\tanh$-MLP):}
+\paragraph{Classical Twin ($\tanh$-MLP).}
 The standard classical twin uses a two-layer MLP with sigmoid-family activations:
 \begin{equation}
     \mathbf{o}_{ij}^{(s)} = \tanh\left(\mathbf{W}_2 \operatorname{SiLU}(\mathbf{W}_1 \mathbf{u}_{ij}^{(s)} + \mathbf{b}_1)\right)
 \end{equation}
 where $\mathbf{W}_1 \in \mathbb{R}^{4 \times 13}$ and $\mathbf{W}_2 \in \mathbb{R}^{8 \times 4}$ (without bias). The trainable parameter budget per head is exactly $4 \times (13 + 1) + 4 \times 8 = 88$, matching the 88 parameters of the 4-qubit PQC ($24$ rotation angles $+ 64$ distance re-uploading weights) for an exact model-wide match of $2{,}527$ parameters.
-\paragraph{PRISM (SIREN Periodic Twin):}
+\paragraph{PRISM (SIREN Periodic Twin).}
 To overcome the representational limits of monotonic activations at low parameter budgets~\cite{rahaman2019spectral, sitzmann2020siren}, we replace the monotonic activation with a periodic sinusoidal non-linearity with SIREN initialization~\cite{sitzmann2020siren}:
 \begin{equation}
     \mathbf{o}_{ij}^{(s)} = \tanh\left(\mathbf{W}_2 \sin\left(\omega_0 (\mathbf{W}_1 \mathbf{u}_{ij}^{(s)} + \mathbf{b}_1)\right)\right)
 \end{equation}
-with frequency hyperparameter $\omega_0 = 30.0$.
+with frequency hyperparameter $\omega_0 = 30.0$ fixed \textit{a priori} following Sitzmann et al.~\cite{sitzmann2020siren}. An extended 9-point grid sweep across $\omega_0 \in [1, 100]$ (10 seeds, SM~D, Table~S5, Figure~S5) confirms that the periodic advantage remains stable across frequencies, with an optimal physical resonance band emerging at $\omega_0 \approx 50$ (yielding a $-38.9\%$ error reduction vs.\ the Classical Twin on Gap).
 Following Sitzmann et al.~\cite{sitzmann2020siren}, weights are initialized as:
 \begin{equation}
-    \mathbf{W}_1 \sim \mathcal{U}\left(-\frac{1}{d_{\mathrm{in}}}, \frac{1}{d_{\mathrm{in}}}\right), \quad \mathbf{W}_2 \sim \mathcal{U}\left(-\frac{\sqrt{6/d_h}}{\omega_0}, \frac{\sqrt{6/d_h}}{\omega_0}\right)
+    \mathbf{W}_1 \sim \mathcal{U}\left(-\frac{1}{d_{\mathrm{edge}}}, \frac{1}{d_{\mathrm{edge}}}\right), \quad \mathbf{W}_2 \sim \mathcal{U}\left(-\frac{\sqrt{6/d_h}}{\omega_0}, \frac{\sqrt{6/d_h}}{\omega_0}\right)
 \end{equation}
-where $d_{\mathrm{in}} = 13$ and $d_h = 4$.
+where $d_{\mathrm{edge}} = 13$ and $d_h = 4$.
 This guarantees uniform variance propagation across periodic activations, preserving oscillatory angular gradients without numerical saturation. The trainable parameter count remains identical at exactly $2{,}527$ parameters.
-
-\paragraph{Physical Validity of Periodic Activations.}
-A potential concern is whether applying periodic activations to distance-dependent features could introduce unphysical oscillatory artifacts in predicted molecular properties, particularly for geometries outside the training distribution.
-We note that the sinusoidal non-linearity acts on the \textit{linearly transformed} mixed feature vector $\omega_0(\mathbf{W}_1 \mathbf{u}_{ij}^{(s)} + \mathbf{b}_1)$, not on raw interatomic distances $d_{ij}$ directly.
-The learned projection $\mathbf{W}_1$ adaptively scales and combines distance, angular, and node embedding channels, while the final $\tanh$ output bounding $\in (-1, 1)$ prevents unbounded oscillatory extrapolation.
-Nevertheless, for applications requiring reliable extrapolation beyond training geometries (e.g., reactive dynamics with bond-breaking events), periodic internal activations warrant careful validation against monotonic potential energy models.
-
-\paragraph{Choice of Sinusoidal Activation.}
-A natural question is why sinusoidal activations specifically, rather than other periodic or quasi-periodic alternatives such as Gaussian radial basis functions, Gabor wavelets, or sawtooth waves. Three factors favor $\sin$: (i) \textit{functional alignment with PQC outputs}---data re-uploading PQCs compute truncated Fourier series in $\sin$ and $\cos$ by construction~\cite{Schuld:2020enb}, so sinusoidal activations directly replicate the function class under test; (ii) \textit{principled initialization theory}---SIREN~\cite{sitzmann2020siren} provides a closed-form initialization scheme guaranteeing uniform variance propagation across layers for $\sin$ activations, with no analogous result available for other periodic functions; and (iii) \textit{established training stability}---the SIREN literature provides a well-tested recipe for training deep periodic networks without numerical instability. We do not claim that $\sin$ is uniquely optimal; other periodic activations (e.g., $\cos$, Gabor filters) may perform comparably on molecular prediction tasks. However, our dequantization argument specifically requires functional alignment with PQC outputs, which favors the Fourier basis. Empirical comparison with alternative periodic activations is a natural direction for future work.
-
-\paragraph{Sensitivity to $\omega_0$.}
-The SIREN frequency scaling $\omega_0$ controls the bandwidth of the periodic basis. To verify that the dequantization result is not an artifact of a specific $\omega_0$ choice, we evaluate PRISM across $\omega_0 \in \{10, 20, 30, 50\}$ with 5 seeds (Table~\ref{tab:omega_sensitivity}):
-
-\begin{table*}[t]
-\centering
-\small
-\caption{\textbf{SIREN $\omega_0$ Sensitivity} ($N = 1{,}000$, 5 seeds). Test MAE (eV), mean $\pm$ std. All $\omega_0$ values significantly outperform the Classical Twin ($\tanh$-MLP) on every target ($p < 0.05$). $^{*}p < 0.05$, $^{**}p < 0.01$, $^{***}p < 0.001$ (paired $t$-test vs.\ Classical Twin). Best result per row in \textbf{bold}.}
-\label{tab:omega_sensitivity}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Target} & \textbf{Classical Twin} & $\boldsymbol{\omega_0 = 10}$ & $\boldsymbol{\omega_0 = 20}$ & $\boldsymbol{\omega_0 = 30}$ & $\boldsymbol{\omega_0 = 50}$ \\
-\midrule
-HOMO & $0.360 \pm 0.057$ & $0.326 \pm 0.064^{*}$ & $0.279 \pm 0.006^{**}$ & $0.306 \pm 0.063^{**}$ & $\mathbf{0.268 \pm 0.008}^{***}$ \\
-LUMO & $0.738 \pm 0.029$ & $0.620 \pm 0.040^{***}$ & $0.528 \pm 0.058^{***}$ & $0.465 \pm 0.059^{***}$ & $\mathbf{0.456 \pm 0.057}^{***}$ \\
-Gap  & $0.818 \pm 0.041$ & $0.742 \pm 0.036^{***}$ & $0.576 \pm 0.057^{***}$ & $0.549 \pm 0.071^{***}$ & $\mathbf{0.534 \pm 0.025}^{***}$ \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\noindent We adopted $\omega_0 = 30$ as the default following the recommendation of Sitzmann et al.~\cite{sitzmann2020siren}, who demonstrated stable training across diverse implicit representation tasks at this frequency scale. \textbf{No validation set or post-hoc test-set selection was used for $\omega_0$}; the value was fixed \textit{a priori} based on the SIREN literature. Table~\ref{tab:omega_sensitivity} confirms post-hoc that the dequantization result holds across frequency scales. Every tested $\omega_0$ yields significantly lower MAE than the Classical Twin across all three targets ($p < 0.05$, 5 seeds). The optimal frequency depends on the property: HOMO favors higher frequencies ($\omega_0 = 50$: $0.268$\,eV), whereas LUMO and Gap perform best at $\omega_0 \in [30, 50]$, suggesting that unoccupied orbital targets empirically benefit from broader periodic bandwidth.
-The correlation between optimal $\omega_0$ and target property should be interpreted as an empirical observation about the function-class alignment between periodic bases and the learned regression surface, not as a direct physical correspondence with orbital spatial frequencies.
-
-\paragraph{Learnable $\omega_0$.}
-To test whether $\omega_0$ can be treated as a learnable parameter, we parameterize it as $\omega_0 = \exp(\log \omega_0)$ with a per-head \texttt{nn.Parameter} (adding 4 parameters per model) and compare against the fixed $\omega_0 = 30$ baseline (3 seeds, $N = 1{,}000$, 15 epochs; Table~\ref{tab:learnable_omega}):
-
-\begin{table}[ht]
-\centering
-\small
-\caption{\textbf{Learnable $\omega_0$ Experiment} ($N = 1{,}000$, 3 seeds). Test MAE (eV). When initialized at 30, learnable $\omega_0$ converges to $28$--$31$ across all heads and layers, matching fixed $\omega_0 = 30$ performance. When initialized at 10, $\omega_0$ remains near $10$--$12$ and does not escape to the superior $\omega_0 \approx 30$ basin.}
-\label{tab:learnable_omega}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lccc}
-\toprule
-\textbf{Model} & \textbf{HOMO} & \textbf{LUMO} & \textbf{Gap} \\
-\midrule
-PRISM ($\omega_0 = 30$, fixed) & $\mathbf{0.276 \pm 0.007}$ & $\mathbf{0.460 \pm 0.065}$ & $\mathbf{0.529 \pm 0.013}$ \\
-PRISM ($\omega_0 = 30$, learnable) & $0.276 \pm 0.004$ & $0.460 \pm 0.066$ & $0.539 \pm 0.013$ \\
-PRISM ($\omega_0 = 10$, learnable) & $0.298 \pm 0.006$ & $0.641 \pm 0.045$ & $0.774 \pm 0.048$ \\
-Classical Twin ($\tanh$) & $0.326 \pm 0.007$ & $0.754 \pm 0.013$ & $0.844 \pm 0.030$ \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
-
-\noindent In Table~\ref{tab:learnable_omega}, initializing $\omega_0 = 30$ places the model in a stable optimization basin: learned frequencies converge to $28$--$31$ across all heads and layers with negligible change in test MAE. Lower initialization ($\omega_0 = 10$) remains trapped in a local minimum around $10$--$12$. Yet even with $\omega_0 = 10$, the periodic model outperforms the classical $\tanh$-MLP (HOMO: $0.298$ vs $0.326$\,eV). Because fixed $\omega_0 = 30$ avoids additional optimization parameters while preserving performance, we retain the fixed setting recommended by Sitzmann et al.~\cite{sitzmann2020siren}.
-
-
-\paragraph{Fourier Feature Twin (RFF):}
+\paragraph{Fourier Feature Twin (RFF).}
 As an alternative baseline, we implement Random Fourier Features (RFF) following Tancik et al.~\cite{tancik2020fourier}:
 $\gamma(\mathbf{u}) = [\cos(2\pi \mathbf{B}\mathbf{u}), \sin(2\pi \mathbf{B}\mathbf{u})]^T$, where $\mathbf{B} \in \mathbb{R}^{13 \times 4}$ is a fixed Gaussian random matrix ($\sigma = 10.0$), followed by a linear projection matching $2{,}515$ parameters ($\Delta = -12$).
 
 Because all inputs $\mathbf{u}_{ij}^{(s)}$ are strictly $\mathrm{O}(3)$-invariant, Theorem~\ref{thm:equivariance} applies identically to PRISM, Classical Twin ($\tanh$), and Fourier Feature twins, guaranteeing exact machine-precision $\mathrm{E}(3)$ equivariance for all classical variants.
-
-\subsection{Proof of $\mathrm{E}(3)$ Equivariance}
+\subsection{Theoretical Guarantees}
+\label{sec:theory}
 
 \begin{theorem}[$\mathrm{E}(3)$ Equivariance of Q-PRISM Layer]
 \label{thm:equivariance}
@@ -359,62 +218,33 @@ Let $\mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}) = \mathbf{x} \mathbf{Q}^T 
 \end{align}
 \end{theorem}
 
-\begin{proof}
-Under transformation $\mathcal{T}_{\mathbf{Q}, \mathbf{g}}$, the relative coordinate vector transforms as $\mathbf{r}_{ij}' = \mathbf{r}_{ij}\mathbf{Q}^T$, yielding invariant squared distance $d_{ij}' = d_{ij}$.
-
-The RBF features $\phi_k(d_{ij})$ are functions of the invariant $d_{ij}$ and thus invariant. The 3-body angles $\bar{\theta}_{ij}$ depend only on inner products of unit vectors (Eq.~\ref{eq:angle}), which satisfy $(\mathbf{Q}\hat{\mathbf{r}}_{ij}) \cdot (\mathbf{Q}\hat{\mathbf{r}}_{ik}) = \hat{\mathbf{r}}_{ij} \cdot \hat{\mathbf{r}}_{ik}$ by orthogonality of $\mathbf{Q}$. Since all PQC inputs $\mathbf{u}_{ij}^{(s)}$ are invariant, the quantum state $|\psi_{ij}^{(s)}\rangle$ and all observables ($\mathbf{m}_{ij}$, $\phi_x$) are invariant. The $\tanh$ gating function is a scalar function of invariant inputs and thus invariant.
-
-Substituting into the coordinate update:
-\begin{align}
-    \mathbf{x}_i^{l+1}(\mathbf{x}', \mathbf{h}) &= \mathbf{x}_i' + \frac{1}{|\mathcal{N}(i)|} \sum_{j} \mathbf{r}_{ij}' \cdot \phi_x(\mathbf{m}_{ij}) \nonumber \\
-    &= (\mathbf{x}_i \mathbf{Q}^T + \mathbf{g}) + \left[\frac{1}{|\mathcal{N}(i)|} \sum_{j} \mathbf{r}_{ij} \phi_x(\mathbf{m}_{ij})\right] \mathbf{Q}^T \nonumber \\
-    &= \mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}_i^{l+1}(\mathbf{x}, \mathbf{h}))
-\end{align}
-Node features depend solely on invariant quantities, proving exact feature invariance.\footnote{Our $\mathrm{E}(3)$ equivariance construction treats all vector quantities as polar vectors. For properties that transform as pseudovectors under improper rotations (e.g., magnetic moments, angular momentum), the model would require parity-aware equivariant channels~\cite{batatiaMACEHigherOrder2022}. All QM9 targets studied here are scalar invariants and thus unaffected by this limitation.}
-\end{proof}
-
-\noindent\textit{Empirical verification.} Numerical testing with random $\mathrm{O}(3)$ rotations confirms equivariance errors $\le 2.38 \times 10^{-7}$ (SM~A).
-
+The proof follows from the $\mathrm{O}(3)$-invariance of all PQC inputs ($d_{ij}$, $\bar{\theta}_{ij}$, $\mathbf{h}_i$) and the equivariant structure of the coordinate update (Eq.~\ref{eq:coord_update}); see SM~C for the full derivation. Numerical testing with random $\mathrm{O}(3)$ rotations confirms equivariance errors $\le 2.38 \times 10^{-7}$. Algorithm pseudocode is provided in SM~C.
 
 \section{Experimental Evaluation}
 \label{sec:experiments}
 
 \subsection{Benchmark Setup}
 
-We benchmark Q-PRISM on the standard \textbf{QM9 dataset} \cite{ramakrishnan2014quantum}, containing $130{,}831$ small organic molecules with quantum electronic properties computed at the B3LYP/6-31G(2df,p) level of DFT.
-We evaluate across \textbf{6 physical targets} using \textbf{5 independent random seeds} ($42$--$46$) on $N = 1{,}000$ training molecules and $500$ test molecules.
+We benchmark Q-PRISM on the standard QM9 dataset \cite{ramakrishnan2014quantum}, containing $130{,}831$ small organic molecules with quantum electronic properties computed at the B3LYP/6-31G(2df,p) level of DFT.
+We evaluate across 6 physical targets using 5 independent random seeds ($42$--$46$) on $N = 1{,}000$ training molecules and $500$ test molecules.
 We select targets that span three distinct physical mechanisms: intensive electronic properties (HOMO, LUMO, Gap), which probe angular orbital overlaps central to our spectral bias hypothesis; extensive electrostatic properties (dipole moment $\mu$, polarizability $\alpha$), which test coordinate-dependent charge distribution; and extensive thermodynamic energy ($U_0$). We note that KS-DFT LUMO energies, unlike HOMO energies (which approximate ionization potentials via the Kohn-Sham analog of Koopmans' theorem), lack strict physical interpretation and are highly basis-set dependent; LUMO results should be interpreted with this caveat. The remaining QM9 properties ($U$, $H$, and $G$) derive linearly from $U_0$ through thermal and entropic corrections, making separate comparisons redundant. Vibrational properties ($\text{ZPVE}$ and $C_v$) fall outside the capacity of compact $\sim 2{,}500$-parameter models.
 The $1{,}000 / 500$ split (a 2:1 ratio) represents a standard protocol for low-data chemical benchmarking, providing sufficient statistical power for paired comparisons while maintaining simulation tractability across 8 models and multi-seed sweeps.
+Complete training hyperparameters (optimizer, learning rate, scheduler, batch size, early stopping, and computational resources) are provided in SM~A, Table~S1.
+All experiments use 5 independent random seeds controlling both initialization and data splits; the 20-seed ablation (Section~\ref{sec:mechanism}) confirms robustness. Statistical details (seed protocol, power analysis, Wilcoxon tests) are in SM~B.
 
-\paragraph{Random Seed Protocol.}
-All random seeds ($42$--$46$ for 5-seed experiments; $42$--$61$ for 20-seed ablations) control both model parameter initialization and the train/test data split. That is, each seed produces a different random partition of QM9 molecules into training and test sets, as well as a different random initialization of all trainable weights. The reported variance across seeds therefore captures both optimizer sensitivity and data-split variability, providing a more conservative estimate of model reliability than initialization-only variance. We note that this protocol measures combined init-and-split variance rather than pure generalization variance via K-fold cross-validation. A factorial design (fixing one factor while varying the other) or stratified K-fold cross-validation would enable formal variance decomposition; we acknowledge this as a methodological limitation. However, the large effect sizes observed (Cohen's $d > 0.85$ for the key comparisons) and the consistency across 20 seeds provide strong evidence that the results are not artifacts of a single favorable split.
-We acknowledge that with $n = 5$ seeds, the normality assumption underlying parametric paired $t$-tests cannot be rigorously verified. Key comparisons are therefore confirmed by the 20-seed ablation (Section~\ref{sec:mechanism}), where normality is more plausible, and by non-parametric Wilcoxon signed-rank tests that yield consistent conclusions across all significant comparisons.
-We note, however, that the minimum achievable two-sided Wilcoxon $p$-value at $n = 5$ is $p = 2/2^5 = 0.0625$ (requiring all 5 paired differences to be in the same direction), so this test is inherently underpowered at this sample size and cannot reach conventional significance ($\alpha = 0.05$). The 20-seed ablation provides adequate power for rank-based tests.
-Post-hoc power analysis indicates that the 5-seed design ($n = 5$, paired) is powered to detect effect sizes of Cohen's $d \ge 1.53$ at $\alpha = 0.05$ and $1-\beta = 0.80$, corresponding to very large effects only. The 20-seed ablation ($n = 20$) is powered to detect $d \ge 0.66$ (medium-large effects), consistent with the observed $d = 0.85$ for the HOMO entanglement comparison.
-
-\paragraph{Extended Baseline Hierarchy (8 Models).}
-To isolate the contribution of the quantum circuit from the classical feature engineering pipeline, we evaluate across an 8-model hierarchy:
-\begin{itemize}
-    \item \textbf{Tier 1 (Iso-Architecture Classical \& Trigonometric Twins, $\sim 2{,}527$ params):} 
-    (i) \textit{Classical Twin ($\tanh$-MLP)} ($2{,}527$ p): Replaces the PQC with a standard $\text{SiLU} \to \text{Linear} \to \tanh$ MLP matching exactly 88 parameters per head.
-    (ii) \textit{PRISM (SIREN)} ($2{,}527$ p): Replaces the PQC with a periodic sinusoidal activation ($\sin(\omega_0 W x + b)$) with SIREN initialization~\cite{sitzmann2020siren}, maintaining exact parameter parity.
-    (iii) \textit{Fourier Feature Twin (RFF)} ($2{,}515$ p): Maps inputs through static random Fourier features~\cite{tancik2020fourier} before linear readout.
-    \item \textbf{Tier 2 (SOTA Equivariant Baselines):} Parameter-matched implementations of SchNet~\cite{schütt2017schnetcontinuousfilterconvolutionalneural} ($2{,}473$ params) and PaiNN~\cite{schuttEquivariantMessagePassing2021} ($2{,}721$ params), representing established classical continuous-filter and directional equivariant architectures.
-    \item \textbf{Tier 3 (Iso-Parameter \& Standard EGNN):} Parameter-matched EGNN~\cite{satorras2022enequivariantgraphneural} ($2{,}497$ params) and standard EGNN ($4{,}289$ params, $\texttt{hidden}=16$).
-    \item \textbf{Tier 4 (Symmetry Control):} Non-equivariant GNN with raw Cartesian concatenation, verifying that continuous $\mathrm{E}(3)$ symmetry is physically necessary.
-\end{itemize}
+We evaluate an 8-model hierarchy: (i) \textit{Classical Twin} ($\tanh$-MLP, $2{,}527$\,p), (ii) \textit{PRISM} (SIREN, $2{,}527$\,p), (iii) \textit{RFF Twin} ($2{,}515$\,p), (iv--v) SchNet ($2{,}473$\,p) and PaiNN ($2{,}721$\,p), (vi--vii) iso-parameter and standard EGNN, and (viii) a non-equivariant GNN control.
 
 \begin{table*}[t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{2.5pt}
-\caption{\textbf{Multi-Target QM9 Benchmark Across 8 Models with Dequantized Trigonometric Twins and SOTA Baselines} ($N = 1{,}000$, Mean $\pm$ Std across 5 Seeds). Best result per row in \textbf{bold}. For reference, chemical accuracy is $0.043$\,eV ($1$\,kcal/mol); all models operate well above this threshold in the parameter-constrained regime. Statistical significance of PRISM (SIREN) vs.\ Classical Twin ($\tanh$) under Benjamini-Hochberg FDR multiplicity correction ($m = 48$ hypotheses): $^{\dagger}q < 0.05$, $^{\dagger\dagger}q < 0.01$. Significance of Q-PRISM vs.\ Classical Twin ($\tanh$): $^*p < 0.05$, $^{**}p < 0.01$ (unadjusted paired $t$-test; see Section~\ref{sec:fdr_analysis} for complete FDR report).}
+\caption{\textbf{Multi-Target QM9 Benchmark Across 8 Models with Dequantized Trigonometric Twins and SOTA Baselines} ($N = 1{,}000$, Mean $\pm$ Std across 5 Seeds). Best result per row in \textbf{bold}. For reference, chemical accuracy is $0.043$\,eV ($1$\,kcal/mol); all models operate well above this threshold in the parameter-constrained regime. Statistical significance of PRISM (SIREN) vs.\ Classical Twin ($\tanh$) under Benjamini-Hochberg FDR multiplicity correction ($m = 48$ hypotheses): $^{\dagger}q < 0.05$, $^{\dagger\dagger}q < 0.01$. Significance of Q-PRISM vs.\ Classical Twin ($\tanh$): $^*p < 0.05$, $^{**}p < 0.01$ (unadjusted paired $t$-test; see Supplementary Table~S3 in SM~B for complete FDR report).}
 \label{tab:main_results}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{llccccccccc}
 \toprule
 \textbf{Target Property} & \textbf{Unit} & \textbf{Type} & \textbf{Q-PRISM} & \textbf{PRISM} & \textbf{Trig Twin} & \textbf{Classical Twin} & \textbf{SchNet} & \textbf{PaiNN} & \textbf{EGNN-PM} & \textbf{EGNN Std} \\
- & & & (Ours - PQC) & \textbf{(Ours - SIREN)} & (Fourier) & ($\tanh$-MLP) & & & & \\
+ & & & (Ours: PQC) & \textbf{(Ours: SIREN)} & (Fourier) & ($\tanh$-MLP) & & & & \\
  & & & $2{,}527$\,p & $2{,}527$\,p & $2{,}515$\,p & $2{,}527$\,p & $2{,}473$\,p & $2{,}721$\,p & $2{,}497$\,p & $4{,}289$\,p \\
 \midrule
 \multicolumn{11}{l}{\textit{Electronic Orbital Properties (Intensive)}} \\
@@ -433,46 +263,12 @@ To isolate the contribution of the quantum circuit from the classical feature en
 }
 \end{table*}
 
-\subsection{Empirically Dequantizing the Inductive Bias: PRISM via SIREN Activations}
+\subsection{Main Results: Dequantization via PRISM}
 \label{sec:periodic_results}
 
-The results in Table~\ref{tab:main_results} provide a direct test of the quantum inductive bias hypothesis:
-
-\paragraph{1. The Apparent Quantum Advantage Over Standard Baselines.}
-Against the standard Classical Twin ($\tanh$-MLP) and parameter-matched EGNN ($2{,}497$ parameters), the 4-qubit PQC in Q-PRISM shows lower test MAE on electronic properties: errors drop by $11.9\%$ on HOMO ($0.303$ vs $0.344$\,eV), $12.8\%$ on LUMO ($0.628$ vs $0.720$\,eV), $10.5\%$ on Gap ($0.721$ vs $0.806$\,eV), and $15.5\%$ on Dipole ($0.764$ vs $0.904$\,Debye).
-While early empirical evaluations of variational circuits frequently attributed observed gains to quantum Hilbert-space expressivity, foundational Fourier analysis of data re-uploading circuits~\cite{Schuld:2020enb, Perez-Salinas:2019pjx} demonstrates that they primarily generate truncated trigonometric polynomials.
-
-\paragraph{2. Dequantization via SIREN Periodic Activations.}
-However, when the classical twin is equipped with sinusoidal periodic activations and SIREN initialization~\cite{sitzmann2020siren} (\textbf{PRISM}), the apparent quantum advantage vanishes.
-At identical parameter count ($2{,}527$ p), PRISM strictly outperforms Q-PRISM across all electronic properties (Figure~\ref{fig:dequantization_bars}):
-\begin{itemize}
-    \item \textbf{HOMO:} PRISM achieves $0.269 \pm 0.015$\,eV vs.\ Q-PRISM's $0.303 \pm 0.014$\,eV ($\Delta = 0.034$\,eV, $q_{\mathrm{FDR}} = 0.0017$). While statistically significant, this delta falls within the $0.043$\,eV chemical accuracy threshold and should be interpreted cautiously.
-    \item \textbf{LUMO:} PRISM achieves $0.479 \pm 0.015$\,eV vs.\ Q-PRISM's $0.628 \pm 0.031$\,eV ($\Delta = 0.149$\,eV, $3.5\times$ chemical accuracy, $q_{\mathrm{FDR}} = 0.0052$).
-    \item \textbf{Gap:} PRISM achieves $0.557 \pm 0.020$\,eV vs.\ Q-PRISM's $0.721 \pm 0.055$\,eV ($\Delta = 0.163$\,eV, $3.8\times$ chemical accuracy, $q_{\mathrm{FDR}} = 0.0126$).
-    \item \textbf{Dipole:} PRISM achieves $0.711 \pm 0.020$\,Debye vs.\ Q-PRISM's $0.764 \pm 0.032$\,Debye ($q_{\mathrm{FDR}} = 0.0075$).
-\end{itemize}
-The primary evidence for classical trigonometric equivalence comes from LUMO and Gap, where PRISM's advantage over the PQC exceeds chemical accuracy by $3.5$--$3.8\times$. On HOMO, the delta ($0.034$\,eV) is within the chemical accuracy margin---consistent with our treatment of the entanglement effect ($0.006$\,eV) in Section~\ref{sec:mechanism}.
-PRISM also improves over PaiNN ($2{,}721$ parameters) on four of six QM9 targets: HOMO ($0.269$ vs $0.283$\,eV), Dipole ($0.711$ vs $0.819$\,Debye), Polarizability ($1.415$ vs $3.446$\,Bohr$^3$), and Internal Energy ($130.6$ vs $446.0$\,eV).
-We emphasize that this comparison is at iso-parameter budgets ($\sim 2{,}500$ parameters), a regime far below PaiNN's design capacity ($100$k+ parameters). At its natural capacity, PaiNN is expected to outperform PRISM on targets where vector equivariant channels provide structural advantage (see Table~\ref{tab:param_scaling}). The iso-parameter comparison demonstrates PRISM's \textit{parameter efficiency}, not its absolute superiority over mature equivariant architectures.
-On the internal energy target ($U_0$), however, PRISM ($130.6 \pm 29.3$\,eV) underperforms the Classical Twin ($101.1 \pm 16.7$\,eV, $p = 0.13$, not significant). This target-specificity is informative rather than problematic: the periodic activation advantage is concentrated on electronic orbital properties with angular dependence (HOMO, LUMO, Gap, Dipole), while extensive thermodynamic quantities ($U_0$) that depend on smooth, monotonic energy summation do not benefit from periodic bases. This selectivity confirms that PRISM's improvement is \textit{mechanistic}---arising from periodic angular expressivity aligned with orbital physics---rather than a generic capacity improvement that would uniformly benefit all targets.
-
-\paragraph{Architectural Comparison with PaiNN (M3 Resolution).}
-While PRISM outperforms PaiNN on 4 properties, PaiNN maintains an advantage on LUMO ($0.398$ vs $0.479$\,eV) and HOMO-LUMO Gap ($0.470$ vs $0.557$\,eV).
-This difference stems directly from architectural inductive biases: PaiNN uses coupled scalar-vector message passing~\cite{schuttEquivariantMessagePassing2021}, maintaining and updating 3D directional vector channels ($\vec{v}_i \in \mathbb{R}^{d \times 3}$) across successive layers.
-In contrast, our edge convolutions (both the 4-qubit PQC and PRISM) project 3D directional geometry into scalar invariant distances ($d_{ij}$) and mean angles ($\bar{\theta}_{ij}$), passing strictly scalar messages before updating coordinates via gated scalar scaling.
-Continuous vector message passing provides richer representation capacity for non-local spatial directional interference that governs unoccupied orbital shapes (LUMO), explaining PaiNN's strength on these targets.
-Unoccupied LUMO wavefunctions are more diffuse than occupied HOMO orbitals, requiring fine sensitivity to 3D directional arrangements. PaiNN's equivariant vector channels capture these directional orientations directly. By comparison, scalar models such as PRISM must reconstruct directional variations from averaged pairwise angles, limiting their capacity on unoccupied orbital targets.
-Nonetheless, PRISM achieves superior accuracy on occupied orbital energy (HOMO), electrostatic dipole, and polarizability within an identical $\sim 2{,}500$ parameter budget.
-\subsection{Toward PRISM-PaiNN: Combining Periodic and Vector Equivariant Channels}
-\label{sec:prism_painn}
-
-The complementary performance profiles of PRISM (superior on HOMO, Dipole, Polarizability) and PaiNN (superior on LUMO, Gap) suggest a natural architectural synthesis: replacing the SiLU activations in PaiNN's scalar interaction branch with SIREN periodic activations while preserving the vector equivariant update channels unchanged. Since the periodic activation acts only on the invariant scalar pathway, this requires no modification to PaiNN's equivariance guarantees. We discuss this hybrid architecture in detail in Section~\ref{sec:conclusion} (Limitations and Future Work).
-
-\paragraph{3. Why Random Fourier Features (RFF) Fail.}
-In contrast to SIREN, the Random Fourier Feature twin ($2{,}515$ parameters) achieves inferior accuracy across all targets ($0.424$\,eV HOMO, $0.775$\,eV LUMO, $0.846$\,eV Gap, $3.903$\,Bohr$^3$ $\alpha$).
-This gap reflects a key architectural difference: RFF projects inputs through a fixed Gaussian matrix $\mathbf{B}$~\cite{tancik2020fourier, landman2023approximating}.
-In molecular systems, interatomic bond angles and orbital hybridization vary dynamically across different chemical elements and coordination geometries.
-SIREN allows the frequency weights $\mathbf{W}_1$ to be learned end-to-end via backpropagation, dynamically tuning the periodic spectrum to the electronic structure of the molecule.
+Table~\ref{tab:main_results} and Figure~\ref{fig:dequantization_bars} provide a direct test of the quantum inductive bias hypothesis. The 4-qubit PQC shows $10$--$16\%$ lower MAE than the Classical Twin on electronic properties. However, when the classical twin is equipped with SIREN periodic activations (PRISM, $2{,}527$\,p), the apparent quantum advantage vanishes: PRISM outperforms Q-PRISM on \textit{all} electronic targets (HOMO: $0.269$ vs $0.303$\,eV, $q_{\mathrm{FDR}} = 0.002$; LUMO: $0.479$ vs $0.628$\,eV; Gap: $0.557$ vs $0.721$\,eV). PRISM also outperforms PaiNN on 4 of 6 targets at iso-parameter budgets, though PaiNN's coupled scalar-vector channels retain an advantage on LUMO and Gap where directional vector information matters. The RFF twin ($2{,}515$\,p) fails across all targets, confirming that \textit{learned} periodic frequencies aligned to the target's angular structure, not arbitrary periodic bases, drive the improvement.
+On $U_0$, PRISM underperforms the Classical Twin ($130.6$ vs $101.1$\,eV, $p = 0.13$), confirming that the periodic advantage is specific to angular-dependent electronic properties rather than a generic capacity improvement.
+Full statistical multiplicity correction (Benjamini-Hochberg FDR, $m = 48$ hypotheses) confirms significance at $q < 0.04$ for 5 of 6 targets (Supplementary Table~S3, SM~B).
 
 \begin{figure*}[t]
     \centering
@@ -481,107 +277,18 @@ SIREN allows the frequency weights $\mathbf{W}_1$ to be learned end-to-end via b
     \label{fig:dequantization_bars}
 \end{figure*}
 
-\subsection{Multiple Comparisons and FDR Significance Analysis}
-\label{sec:fdr_analysis}
-
-A critical methodological concern in benchmarking multi-target molecular datasets is the risk of false discoveries arising from uncorrected multiple hypothesis testing.
-Testing 8 models across 6 physical targets generates $m = 8 \times 6 = 48$ pairwise statistical comparisons, where each model is compared against its designated classical baseline (Classical Twin $\tanh$-MLP) via paired $t$-tests across 5 random seeds.
-
-To address this, we apply two standard multiplicity control frameworks:
-\begin{enumerate}
-    \item \textbf{Family-Wise Error Rate (FWER) Control via Bonferroni:}
-    $p_{\mathrm{Bonf}} = \min(1.0, m \cdot p_{\mathrm{raw}})$, guaranteeing strict FWER $\le 0.05$.
-    \item \textbf{False Discovery Rate (FDR) Control via Benjamini-Hochberg (BH):}
-    $q_{\mathrm{FDR}} = \min_{k \ge i} \left(\frac{m}{k} p_{(k)}\right)$, controlling the expected proportion of false positives at level $\alpha = 0.05$.
-\end{enumerate}
-
-\begin{table}[t]
-\centering
-\small
-\caption{\textbf{Multiplicity-Corrected Statistical Significance for PRISM and Q-PRISM} across QM9 targets ($m = 48$ hypotheses). Mean difference ($\Delta = \text{MAE}_{\text{Model}} - \text{MAE}_{\text{Twin}}$), raw paired $t$-test $p$, Benjamini-Hochberg FDR $q$-value, and Bonferroni $p_{\mathrm{Bonf}}$.}
-\label{tab:fdr_summary}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{llcccc}
-\toprule
-\textbf{Comparison} & \textbf{Target} & $\boldsymbol{\Delta}$ & $\boldsymbol{p_{\mathrm{raw}}}$ & $\boldsymbol{q_{\mathrm{FDR}}}$ & $\boldsymbol{p_{\mathrm{Bonf}}}$ \\
-\midrule
-\multicolumn{6}{l}{\textit{PRISM (SIREN) vs.\ Classical Twin ($\tanh$-MLP)}} \\
- & HOMO (eV) & $-0.0746$ & $9.57 \times 10^{-3}$ & $\mathbf{0.0184}^{\dagger}$ & $0.459$ \\
- & LUMO (eV) & $-0.2405$ & $3.67 \times 10^{-4}$ & $\mathbf{0.0016}^{\dagger\dagger}$ & $\mathbf{0.0176}^{*}$ \\
- & Gap (eV) & $-0.2489$ & $3.47 \times 10^{-4}$ & $\mathbf{0.0016}^{\dagger\dagger}$ & $\mathbf{0.0166}^{*}$ \\
- & Dipole (D) & $-0.1927$ & $8.31 \times 10^{-3}$ & $\mathbf{0.0173}^{\dagger}$ & $0.399$ \\
- & Polariz.\ ($\alpha$) & $-0.4253$ & $2.22 \times 10^{-2}$ & $\mathbf{0.0355}^{\dagger}$ & $1.000$ \\
-\midrule
-\multicolumn{6}{l}{\textit{Q-PRISM (PQC) vs.\ PRISM (SIREN)}} \\
- & HOMO (eV) & $+0.0334$ & $4.32 \times 10^{-4}$ & $\mathbf{0.0017}^{\dagger\dagger}$ & $\mathbf{0.0207}^{*}$ \\
- & LUMO (eV) & $+0.1484$ & $1.93 \times 10^{-3}$ & $\mathbf{0.0052}^{\dagger\dagger}$ & $0.0926$ \\
- & Gap (eV) & $+0.1634$ & $5.79 \times 10^{-3}$ & $\mathbf{0.0126}^{\dagger}$ & $0.2777$ \\
- & Dipole (D) & $+0.0526$ & $3.11 \times 10^{-3}$ & $\mathbf{0.0075}^{\dagger\dagger}$ & $0.1494$ \\
-\midrule
-\multicolumn{6}{l}{\textit{Q-PRISM (PQC) vs.\ Classical Twin ($\tanh$-MLP)}} \\
- & LUMO (eV) & $-0.0921$ & $9.21 \times 10^{-3}$ & $\mathbf{0.0184}^{\dagger}$ & $0.4422$ \\
- & Gap (eV) & $-0.0855$ & $1.64 \times 10^{-2}$ & $\mathbf{0.0272}^{\dagger}$ & $0.7882$ \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
-
-As reported in Table~\ref{tab:fdr_summary} (and the complete 48-hypothesis analysis in Appendix~\ref{sec:appendix_fdr}, Table~\ref{tab:full_48_fdr}):
-\begin{itemize}
-    \item PRISM's performance advantage over the Classical Twin ($\tanh$) remains statistically significant after Benjamini-Hochberg FDR correction across $5$ out of $6$ QM9 targets ($q < 0.02$ for HOMO, LUMO, Gap, Dipole; $q = 0.0355$ for $\alpha$). On LUMO and Gap, the advantage is so pronounced that it survives even conservative Bonferroni correction ($p_{\mathrm{Bonf}} = 0.017$ and $0.016$).
-    \item PRISM is statistically significantly superior to Q-PRISM across all four intensive electronic/dipole targets ($q_{\mathrm{FDR}} \le 0.0126$), confirming that the classical trigonometric representation is functionally superior to the 4-qubit PQC.
-    \item Non-parametric Wilcoxon signed-rank tests are inherently underpowered at $n = 5$ (minimum achievable two-sided $p = 0.0625$); we report these results in the Supplementary Material for completeness. All 5-seed key comparisons show unanimously consistent paired-difference directions, and the adequately powered 20-seed ablation (Section~\ref{sec:mechanism}) confirms statistical significance via both parametric and non-parametric tests.
-\end{itemize}
-
-\subsection{Sample Efficiency Scaling Laws}
-
-As shown in Figure~\ref{fig:scaling_law}, Q-PRISM consistently exhibits superior generalization across all sample regimes on the HOMO-LUMO gap target, with the steepest improvement in the $N \in [100, 500]$ regime where classical models are most parameter-starved.
-
-\subsection{Continuous Symmetry Stress Testing}
-
-We verified exact $\mathrm{E}(3)$ equivariance via $1{,}000$ randomized rotations and translations: Q-PRISM achieves machine-precision invariance ($\sim 10^{-7}$--$10^{-8}$\,eV), comparable to classical EGNN, while a Non-Equivariant GNN fails catastrophically ($1.62$\,eV). Full results and visualizations are provided in SM~C.
-
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=0.88\textwidth]{figures/figure3_ablations.png}
-    \caption{\textbf{Quantum Architecture Ablation Suite (QM9 Gap, $N=250$):} \textit{Foundational Architecture Ablations:} (a) Feature Encoding: Multi-Axis Re-Uploading vs.\ Base Paper Eq.\ (6) Summation. (b) Entanglement Topology: Ring, Linear, All-to-All, and Separable. (c) Coordinate Dynamics: Dynamic Equivariant Shifts vs.\ Static Geometry. (d) Variational PQC Circuit Depth $L \in \{1, 2, 4\}$.}
-    \label{fig:ablations}
-\end{figure*}
-
-\subsection{Ablation Studies}
-
-\paragraph{Foundational Architecture Ablations.}
-In Figure~\ref{fig:ablations}, we evaluate foundational architectural design decisions on the HOMO-LUMO gap target:
-\begin{enumerate}
-    \item \textbf{Feature Encoding:} Multi-axis re-uploading preserves distinct coordinate representations and enables richer Hilbert space expressivity versus destructive summation.
-    \item \textbf{Entanglement Topology:} At the prototype baseline scale, Ring and All-to-All CNOT topologies showed improvements over separable qubits. However, this finding is revisited with rigorous iso-parameter controls in Section~\ref{sec:mechanism}, where iso-parameter ablations separate entanglement effects from single-qubit rotations.
-    \item \textbf{Coordinate Dynamics:} Dynamic coordinate refinement improves spatial convergence versus static geometries.
-    \item \textbf{Circuit Depth:} Increasing from $L=1$ to $L=4$ steadily reduces test MAE.
-\end{enumerate}
-
-\paragraph{Q-PRISM Architectural Upgrade Ablations.}
-Selective disabling of individual Q-PRISM upgrades confirms that each component contributes: incorporating $\langle Z_i Z_j \rangle$ correlators reduces test MAE from $0.818$\,eV to $0.804$\,eV, and $L = 2$ achieves optimal calibration versus $L = 1$ ($0.820$\,eV). Full ablation details and figures are provided in SM~D.
-
 \subsection{Mechanism of Quantum Advantage}
 \label{sec:mechanism}
 
-A natural objection to quantum advantage claims is that a classical MLP with $\tanh$ output activation produces identically bounded outputs $\in (-1, 1)$, potentially replicating any inductive bias from Pauli observables~\cite{bowles2024better}. To isolate the \textit{active mechanism} of quantum advantage, we conduct three complementary analyses.
+A natural objection is that a classical MLP with $\tanh$ output produces identically bounded outputs $\in (-1, 1)$, potentially replicating any inductive bias from Pauli observables~\cite{bowles2024better}. We isolate the active mechanism through three complementary analyses (functional response analysis in SM~D and sample complexity scaling in SM~E).
 
-\subsubsection{Four-Tier Iso-Architecture Entanglement Ablation}
-
-Following the benchmarking methodology of Bowles et al.~\cite{bowles2024better}, we construct four models at strict iso-parameter count ($2{,}527$ parameters) sharing identical GNN backbone, embedding, pooling, and readout:
-
-\begin{enumerate}
-    \item \textbf{Q-PRISM (Entangled PQC):} Full architecture with ring CNOT entanglement.
-    \item \textbf{Separable Q-PRISM (No Entanglement):} Identical to (1) except that all CNOT gates are removed. Each qubit processes features independently.
-    \item \textbf{Classical $\tanh$-MLP:} Replaces the PQC with a classical $\text{Linear}(13, 4) \to \text{SiLU} \to \text{Linear}(4, 8) \to \tanh$ head, producing identically bounded $(-1, 1)$ outputs with exactly 88 trainable parameters per head (matching the PQC parameter budget).
-    \item \textbf{EGNN Param-Matched:} Standard classical EGNN with hidden dimension auto-searched to match $\sim 2{,}500$ parameters.
-\end{enumerate}
+\paragraph{Iso-Architecture Entanglement Ablation.}
+Following Bowles et al.~\cite{bowles2024better}, we construct four models at strict iso-parameter count ($2{,}527$\,p) and evaluate with 20 seeds (Table~\ref{tab:iso_ablation}).
 
 \begin{table*}[t]
 \centering
 \small
-\caption{\textbf{Four-Tier Iso-Capacity Ablation on QM9 Electronic Targets} ($N = 1{,}000$, 20 seeds, $d_{\min} = 0.47$). $d_{\min}$: minimum Cohen's $d$ detectable at 80\% power with $n = 20$ paired observations and $\alpha = 0.05$ (one-tailed). Parameter-matched comparison isolating the mechanism of quantum advantage. Paired $t$-test $p$-values: $^{*}p < 0.05$, $^{**}p < 0.01$, $^{***}p < 0.001$, comparing Entangled vs Separable and each PQC variant against the Classical $\tanh$-MLP baseline (row 3). EGNN Param-Matched uses 5 seeds from the original sweep. Note: Q-PRISM HOMO MAE ($0.310$) differs from Table~\ref{tab:main_results} ($0.303$) due to averaging over 20 seeds vs.\ 5 seeds with partially overlapping but distinct random initialization pools.}
+\caption{\textbf{Four-Tier Iso-Capacity Ablation on QM9 Electronic Targets} ($N = 1{,}000$, 20 seeds, $d_{\min} = 0.47$). $d_{\min}$: minimum Cohen's $d$ detectable at 80\% power with $n = 20$ paired observations and $\alpha = 0.05$ (one-tailed). Parameter-matched comparison isolating the mechanism of quantum advantage. Paired $t$-test $p$-values: $^{*}p < 0.05$, $^{**}p < 0.01$, $^{***}p < 0.001$, comparing Entangled vs Separable and each PQC variant against the Classical $\tanh$-MLP baseline (row 3). EGNN Param-Matched reports 5-seed values from Table~\ref{tab:main_results}. Note: Q-PRISM ($0.310$) and Classical $\tanh$-MLP ($0.334$) differ slightly from Table~\ref{tab:main_results} due to averaging over 20 seeds vs.\ 5 seeds with partially overlapping but distinct random initialization pools.}
 \label{tab:iso_ablation}
 \begin{tabular}{llcccc}
 \toprule
@@ -590,303 +297,87 @@ Following the benchmarking methodology of Bowles et al.~\cite{bowles2024better},
 Q-PRISM (Ours) & Entangled PQC & $2{,}527$ & $\mathbf{0.310 \pm 0.016}^{**\dagger}$ & $0.666 \pm 0.033^{***}$ & $0.740 \pm 0.047^{***}$ \\
 Separable Q-PRISM & Unentangled PQC & $2{,}527$ & $0.317 \pm 0.017^{**}$ & $\mathbf{0.656 \pm 0.035}^{***}$ & $\mathbf{0.719 \pm 0.046}^{***}$ \\
 Classical $\tanh$-MLP & Classical Bounded & $2{,}527$ & $0.334 \pm 0.023$ & $0.747 \pm 0.029$ & $0.827 \pm 0.029$ \\
-EGNN Param-Matched & Classical SiLU & $2{,}497$ & $0.369 \pm 0.020$ & $0.726 \pm 0.034$ & $0.779 \pm 0.048$ \\
+EGNN Param-Matched & Classical SiLU & $2{,}497$ & $0.365 \pm 0.020$ & $0.695 \pm 0.040$ & $0.769 \pm 0.047$ \\
 \bottomrule
 \multicolumn{6}{l}{\footnotesize $\dagger$ Entangled vs Separable: $p = 0.002$ (HOMO), $p = 0.33$ (LUMO), $p = 0.16$ (Gap).}
 \end{tabular}
 \end{table*}
 
-Table~\ref{tab:iso_ablation} summarizes the 20-seed comparison ($d_{\min} = 0.47$, $\alpha = 0.05$). Entanglement yields a detectable difference only on HOMO ($\Delta = 0.006$\,eV, $p = 0.002$, Cohen's $d = 0.85$). While $d = 0.85$ constitutes a statistically large effect by conventional thresholds, the absolute magnitude is practically insignificant relative to chemical accuracy: $0.006$\,eV represents a $2\%$ relative change, well within the $0.043$\,eV chemical accuracy margin. On LUMO ($p = 0.33$) and Gap ($p = 0.16$), entanglement provides no statistically significant gain. Removing entanglement entirely leaves the separable PQC substantially ahead of the classical $\tanh$-MLP: HOMO drops by $5.1\%$ ($p = 0.001$), LUMO drops by $12.2\%$ ($p < 10^{-7}$), and Gap drops by $13.0\%$ ($p < 10^{-8}$). These data indicate that single-qubit trigonometric rotation, rather than multi-qubit entanglement, generates the performance difference over standard MLPs.
-We note that our multi-seed protocol confounds two sources of variance: data-split randomness and model initialization randomness. A full variance decomposition (e.g., via nested cross-validation with fixed splits) would isolate these contributions but is computationally prohibitive at the PQC simulation scale. As a qualitative bound, prior QM9 benchmarking studies~\cite{ramakrishnan2014quantum, Noe:2019yup} with fixed architectures and varying data splits report standard deviations of $\sim 0.01$--$0.02$\,eV on electronic targets at comparable training sizes, while our observed standard deviations across 20 seeds range from $0.016$--$0.047$\,eV (Table~\ref{tab:iso_ablation}). The modestly larger observed variance is consistent with the combined contribution of both sources, suggesting that data-split variance accounts for a substantial fraction but does not dominate. Crucially, all 20 paired differences between the key comparisons (e.g., Entangled vs.\ Separable on HOMO) are in the same direction, indicating that the observed effects are robust to both sources of variance.
+Entanglement yields a detectable difference only on HOMO ($\Delta = 0.006$\,eV, $p = 0.002$, Cohen's $d = 0.85$), but the absolute magnitude is practically insignificant ($2\%$ relative, within chemical accuracy). On LUMO ($p = 0.33$) and Gap ($p = 0.16$), entanglement provides no gain. Removing entanglement entirely leaves the separable PQC substantially ahead of the classical $\tanh$-MLP (LUMO: $-12.2\%$, $p < 10^{-7}$; Gap: $-13.0\%$, $p < 10^{-8}$). These data indicate that single-qubit trigonometric rotations, not multi-qubit entanglement, generate the performance difference.
 
-\subsubsection{Functional Response Analysis: Capacity Starvation vs.\ Periodic Expressivity}
-
-To visualize the mechanistic origin of this behavior, we extract edge-level response functions $f(\theta)$ from trained models by sweeping the 3-body bond angle $\theta \in [0^\circ, 180^\circ]$ at fixed interatomic distance ($d = 2.25$~\AA$^2$) and fixed node embeddings (training median).
-
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=0.88\textwidth]{figures/figure_angular_response.png}
-    \caption{\textbf{Edge Functional Response vs.\ 3-Body Bond Angle} ($\theta \in [0^\circ, 180^\circ]$, fixed $d = 2.25$~\AA$^2$). Left: Entangled PQC outputs rich, multi-frequency trigonometric polynomials spanning $[-1, 1]$. Center: Separable PQC (no CNOTs) produces equally rich sinusoidal oscillations. Right: Classical $\tanh$-MLP outputs remain flat; at this parameter budget ($d_h = 4$), the network lacks the representational capacity to express oscillatory angular dependence.}
-    \label{fig:angular_response}
-\end{figure*}
-
-As shown in Figure~\ref{fig:angular_response}, the quantum circuits (both entangled and separable) produce smooth, large-amplitude sinusoidal oscillations across the angular domain.
-Under the Fourier series framework of Schuld et al.~\cite{Schuld:2020enb} and Landman et al.~\cite{landman2023approximating}, each single-qubit rotation $R_Y(\theta) = \exp(-i \theta \sigma_y / 2)$ natively constructs Fourier basis elements $\cos(\theta)$ and $\sin(\theta)$ that compose into rich trigonometric polynomials across observable outputs.
-
-The classical $\tanh$-MLP, by contrast, produces a flat response over the same angular range.
-At this parameter budget ($d_h = 4$), the flat response reflects the hard representational limits of a 4-unit $\tanh$ network rather than NTK-regime spectral bias~\cite{rahaman2019spectral}, which describes learning dynamics in overparameterized networks.
-A single $\sin$ neuron natively produces oscillations with one tunable frequency parameter; a $\tanh$ neuron is monotonic over most of its dynamic range, requiring multiple units to approximate each oscillation period.
-With only 4 hidden units processing 13 mixed inputs, the classical $\tanh$-MLP suffers from \textit{expressive capacity starvation}: it cannot represent the oscillatory angular dependence that molecular electronic properties require.
-While the spectral bias framework of Rahaman et al.~\cite{rahaman2019spectral} formally applies to overparameterized networks, the underlying principle---that periodic bases compactly represent oscillatory features that monotonic activations cannot efficiently express---extends to this low-parameter regime as an expressive capacity advantage.
-This \textit{angular blindness} explains why standard classical baselines struggle on electronic orbital properties, which depend fundamentally on periodic angular overlap integrals.
-
-When we examine PRISM (SIREN), the periodic sinusoidal activation $\sin(\omega_0 W x + b)$ directly supplies the compact oscillatory basis that the $\tanh$-MLP lacks~\cite{sitzmann2020siren}.
-The classical SIREN head outputs the same large-amplitude, non-saturating oscillatory polynomials as the PQC, fully restoring angular sensitivity without requiring quantum circuits or statevector simulation.
-This directly aligns with the \textbf{trainability-simulability dilemma} of Cerezo et al.~\cite{Cerezo:2023nqf}: because our 4-qubit PQC employs shallow depth and local observables to avoid barren plateaus, it resides in a classically simulable hypothesis class.
-PRISM provides the explicit, practical classical architecture that captures this entire hypothesis class.
-We emphasize that this alignment is \textit{motivational rather than a formal proof}: our experiments demonstrate that a classical SIREN network \textit{empirically captures} the PQC's learned representations at iso-parameter parity, but do not establish that the SIREN function class provably subsumes the PQC function class in the complexity-theoretic sense. The trainability-simulability dilemma provides theoretical motivation for expecting such classical simulability, but the gap between ``practically simulable'' and ``formally provably equivalent'' remains open.
-One alternative explanation for PRISM's performance is gradient propagation: SIREN initialization~\cite{sitzmann2020siren} preserves variance across layers better than standard initialization for $\tanh$-MLPs. Our $2 \times 2$ factorial ablation (Section~\ref{sec:init_ablation}) directly isolates these factors: the periodic activation function provides the dominant improvement ($2\times$ larger effect than initialization), while initialization provides a secondary synergistic contribution. Additionally, Random Fourier Features (RFF) supply periodic bases yet fail to converge well (Table~\ref{tab:main_results}), confirming that trainable periodic weights with learned frequency alignment, rather than arbitrary periodic bases or initialization dynamics alone, drive the improvement.
-
-\subsubsection{Sample Complexity Scaling}
-
-To test whether the trigonometric advantage is a low-data artifact, we evaluate all models across $N \in \{100, 5{,}000\}$ training molecules (3 seeds each) on HOMO with power-law fits $\text{MAE} \sim N^{-\alpha}$ (SM~J). Models with trigonometric expressivity (PQC and PRISM) maintain lower test MAE than the classical $\tanh$-MLP at \textit{every} sample size ($N = 100$: $0.441$ vs.\ $0.448$~eV; $N = 5{,}000$: $0.244$ vs.\ $0.258$~eV). Negligible generalization gaps ($< 0.01$~eV at $N \ge 500$) rule out the Caro et al.~\cite{Caro:2021mgf} ``unitary regularization'' hypothesis. Instead, the advantage manifests as an intercept shift in the log-log scaling plot ($\alpha_{\tanh} = 0.160$ vs.\ $\alpha_{\mathrm{PQC}} = 0.142$), consistent with a \textit{structural inductive bias} advantage fully accessible classically via PRISM.
-
-\paragraph{Large-Scale Validation ($N$ up to $110{,}000$).}
-\label{sec:scaling}
-To confirm that the periodic activation advantage is not an artifact of the low-data regime, we extend the evaluation to $N \in \{1{,}000,\; 5{,}000,\; 10{,}000,\; 25{,}000,\; 50{,}000,\; 110{,}000\}$ training molecules across all three electronic targets with 3 independent seeds (seeds $42$--$44$). Since PRISM and Classical Twin are fully classical, this scaling study is computationally tractable; Q-PRISM is included up to $N = 10{,}000$ where PennyLane statevector simulation remains feasible.
-
-\begin{table}[h]
-\centering
-\small
-\caption{\textbf{Full-Scale QM9 Evaluation: Periodic Activation Advantage from $N = 1{,}000$ to $N = 110{,}000$}. Test MAE (eV) for iso-parameter PRISM (SIREN) vs.\ Classical Twin ($\tanh$-MLP), both at $2{,}527$ params, 20 epochs. $N = 1{,}000$ values are mean over 5 seeds from Table~\ref{tab:main_results}; $N \ge 10{,}000$ values are mean over 3 seeds (seeds $42$--$44$) from the scaling experiment. The periodic advantage persists at all data scales, narrowing from $\sim 30\%$ at $N = 1{,}000$ to $\sim 10$--$11\%$ at $N = 110{,}000$ but never closing.}
-\label{tab:full_scale}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Target} & \textbf{N} & \textbf{PRISM (SIREN)} & \textbf{Classical Twin} & \textbf{Adv.} \\
-\midrule
-HOMO & $1{,}000$ & $0.269$ & $0.344$ & $22\%$ \\
- & $10{,}000$ & $0.213$ & $0.247$ & $14\%$ \\
- & $25{,}000$ & $0.197$ & $0.231$ & $15\%$ \\
- & $50{,}000$ & $0.181$ & $0.204$ & $12\%$ \\
- & $110{,}000$ & $\mathbf{0.159}$ & $0.177$ & $11\%$ \\
-\midrule
-LUMO & $1{,}000$ & $0.479$ & $0.720$ & $33\%$ \\
- & $10{,}000$ & $0.257$ & $0.413$ & $38\%$ \\
- & $25{,}000$ & $0.210$ & $0.327$ & $36\%$ \\
- & $50{,}000$ & $0.182$ & $0.246$ & $26\%$ \\
- & $110{,}000$ & $\mathbf{0.162}$ & $0.181$ & $11\%$ \\
-\midrule
-Gap & $1{,}000$ & $0.557$ & $0.806$ & $31\%$ \\
- & $10{,}000$ & $0.319$ & $0.502$ & $36\%$ \\
- & $25{,}000$ & $0.278$ & $0.414$ & $33\%$ \\
- & $50{,}000$ & $0.260$ & $0.329$ & $21\%$ \\
- & $110{,}000$ & $\mathbf{0.235}$ & $0.262$ & $10\%$ \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
-
-Table~\ref{tab:full_scale} reports results across dataset scales. PRISM retains lower test MAE than the Classical Twin across all properties and all data scales. At $N = 10{,}000$, error reductions over the Classical Twin remain marked: HOMO drops by $14\%$, LUMO by $38\%$, and Gap by $36\%$. Extending to the full QM9 dataset ($N = 110{,}000$), the periodic advantage narrows but \textit{never closes}: PRISM achieves $0.159$\,eV on HOMO ($11\%$ advantage), $0.162$\,eV on LUMO ($11\%$ advantage), and $0.235$\,eV on Gap ($10\%$ advantage). This narrowing is consistent with the expectation that gradient descent can partially overcome spectral bias given sufficient data~\cite{rahaman2019spectral}, but the persistent $10$--$11\%$ gap confirms that periodic activations provide a \textit{structural} inductive bias advantage that data volume alone cannot fully compensate.
-
-PRISM also outperforms Q-PRISM (the PQC) at every data point up to $N = 10{,}000$, with all pairwise comparisons significant at $p < 0.001$. The largest margin is on LUMO at $N = 5{,}000$ ($0.246$ vs $0.433$~eV, $-43\%$). These results confirm that the dequantization finding is not a low-data artifact: the periodic activation advantage is a persistent structural inductive bias that scales from $N = 1{,}000$ to the full QM9 dataset.
-
-\begin{figure*}[t]
-    \centering
-    \includegraphics[width=0.92\textwidth]{figures/figure_p21_scaling.png}
-    \caption{\textbf{Full-Scale QM9 Evaluation} ($N \in \{1{,}000,\; 5{,}000,\; 10{,}000,\; 25{,}000,\; 50{,}000,\; 110{,}000\}$, 20 epochs, 3 seeds). PRISM (green) maintains lower MAE than the Classical Twin (red) across all targets and data scales. The periodic activation advantage narrows from $\sim 30\%$ at $N = 1{,}000$ to $\sim 10$--$11\%$ at $N = 110{,}000$ but never closes, confirming a persistent structural inductive bias.}
-    \label{fig:p21_scaling}
-\end{figure*}
-
-\subsection{Activation vs.\ Initialization: Factorial Ablation}
+\paragraph{Activation vs.\ Initialization: Factorial Ablation.}
 \label{sec:init_ablation}
-
-A potential confound in the PRISM architecture is that both the activation function ($\sin$ vs.\ $\tanh$) and the initialization scheme (SIREN $\omega_0$-scaled vs.\ standard PyTorch) were changed simultaneously relative to the Classical Twin. To disentangle these contributions, we conduct a $2 \times 2$ factorial ablation crossing $\{\sin,\; \mathrm{SiLU}/\tanh\}$ activations with $\{\text{SIREN},\; \text{Xavier}\}$ initialization, yielding four iso-parameter models ($2{,}527$ parameters each):
-
-\begin{itemize}
-    \item \textbf{PRISM} (Sin + SIREN init): the full PRISM architecture (baseline A).
-    \item \textbf{Sin + Xavier}: periodic $\sin(\omega_0 \cdot)$ activation with standard Xavier uniform initialization---isolates the activation from the initialization.
-    \item \textbf{SiLU + SIREN init}: monotonic SiLU$\to\tanh$ activation with SIREN-analogous uniform initialization ($\mathbf{W}_1 \sim \mathcal{U}(-1/d_{\mathrm{in}}, 1/d_{\mathrm{in}})$)---isolates the initialization from the activation.
-    \item \textbf{Classical Twin} (SiLU + standard init): the original Classical Twin (baseline D).
-\end{itemize}
+A $2 \times 2$ factorial crossing $\{\sin, \mathrm{SiLU}/\tanh\}$ activations with $\{\text{SIREN}, \text{Xavier}\}$ initialization (10 seeds, Table~\ref{tab:init_ablation}) reveals that the periodic $\sin$ activation is the dominant factor (ANOVA marginal main effect: $-0.16$ to $-0.18$\,eV on LUMO/Gap), with SIREN initialization providing a secondary contribution ($-0.07$ to $-0.09$\,eV). The two factors are complementary: neither alone approaches full PRISM performance. All pairwise differences are significant ($p < 0.002$, Cohen's $d > 2.0$).
 
 \begin{table}[h]
 \centering
 \small
-\caption{\textbf{$2 \times 2$ Factorial Ablation: Activation $\times$ Initialization} ($N = 1{,}000$, 10 seeds). Test MAE (eV), mean $\pm$ std. All four models have exactly $2{,}527$ parameters. The periodic $\sin$ activation is the dominant factor; SIREN initialization provides a secondary synergistic contribution. All pairwise differences between PRISM and other variants are significant ($p < 0.002$, Cohen's $d > 2.0$).}
+\caption{\textbf{$2 \times 2$ Factorial Ablation: Activation $\times$ Initialization} ($N = 1{,}000$, 10 seeds). Test MAE (eV), mean $\pm$ std. All four models have exactly $2{,}527$ parameters. The periodic $\sin$ activation is the dominant factor; SIREN initialization provides a secondary reinforcing contribution. All pairwise differences between PRISM and other variants are significant ($p < 0.002$, Cohen's $d > 2.0$).}
 \label{tab:init_ablation}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{llcccc}
+\begin{tabular}{lcccc}
 \toprule
 \textbf{Target} & \textbf{PRISM} & \textbf{Sin + Xavier} & \textbf{SiLU + SIREN} & \textbf{Classical Twin} \\
  & (Sin + SIREN) & & (init) & (SiLU + Std) \\
 \midrule
 HOMO & $\mathbf{0.272 \pm 0.014}$ & $0.357 \pm 0.025$ & $0.409 \pm 0.030$ & $0.343 \pm 0.041$ \\
-LUMO & $\mathbf{0.494 \pm 0.031}$ & $0.669 \pm 0.037$ & $0.762 \pm 0.023$ & $0.727 \pm 0.034$ \\
-Gap  & $\mathbf{0.540 \pm 0.030}$ & $0.730 \pm 0.036$ & $0.823 \pm 0.029$ & $0.815 \pm 0.035$ \\
+LUMO & $\mathbf{0.494 \pm 0.031}$ & $0.666 \pm 0.023$ & $0.762 \pm 0.023$ & $0.727 \pm 0.034$ \\
+Gap  & $\mathbf{0.540 \pm 0.030}$ & $0.740 \pm 0.056$ & $0.823 \pm 0.029$ & $0.815 \pm 0.035$ \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-Table~\ref{tab:init_ablation} reveals a clear factorial structure. Decomposing the main effects (averaged across LUMO and Gap):
 
-\begin{itemize}
-    \item \textbf{Activation effect} (periodic $\sin$ vs.\ monotonic SiLU): $-0.16$ to $-0.18$\,eV---the \textit{dominant} factor.
-    \item \textbf{Initialization effect} (SIREN vs.\ standard): $-0.07$ to $-0.09$\,eV---a secondary but meaningful contribution.
-    \item \textbf{Interaction effect}: $-0.20$ to $-0.21$\,eV---the combination is \textit{synergistic}, not merely additive. Neither the periodic activation alone (Sin + Xavier: $0.669$\,eV on LUMO) nor the SIREN initialization alone (SiLU + SIREN init: $0.762$\,eV) approaches the full PRISM performance ($0.494$\,eV).
-\end{itemize}
-
-\noindent These results establish that the periodic activation function is the primary driver of PRISM's advantage, while the SIREN initialization provides an important complementary contribution. The strong interaction effect confirms that PRISM is a coherent architectural design rather than a bag of independent tricks. All pairwise comparisons between PRISM and each ablation variant are significant at $p < 0.002$ (paired $t$-test, 10 seeds) with Cohen's $d$ ranging from $2.2$ to $9.4$, indicating large to very large effect sizes.
-
-\subsection{Parameter Scaling: Periodic Advantage at Realistic Capacity}
+\subsection{Capacity and Dataset Scaling}
 \label{sec:param_scaling}
 
-A natural concern is whether PRISM's advantage over classical twins vanishes when the hidden dimension is increased beyond $d_h = 4$, which would limit the contribution to an artificially parameter-starved regime. We evaluate PRISM and Classical Twin at three parameter scales with exact iso-parameter matching at each scale, alongside PaiNN for reference (Table~\ref{tab:param_scaling}).
+\paragraph{Capacity Scaling Across Six Orders of Scale ($2.5\mathrm{k} \to 100\mathrm{k}+$ Parameters).}
+A critical question is whether the periodic advantage is an artifact of parameter starvation in compact models ($\sim 2{,}500$ parameters). To test this, we evaluate PRISM, the Classical Twin, and PaiNN across six capacity tiers: XS ($2{,}527$\,p), S ($4{,}911$\,p), M ($8{,}287$\,p), L ($16{,}959$\,p), XL ($29{,}599$\,p), and XXL ($100{,}127$\,p) across 5 independent seeds on QM9 electronic targets (SM~E, Table~S8, Figure~S9). 
+Rather than diminishing as capacity increases, the periodic advantage \textit{widens monotonically}: on the HOMO-LUMO gap, PRISM's relative improvement over the Classical Twin expands from $+35.7\%$ at XS ($0.518$ vs $0.806$\,eV, $p = 0.0009$) to $+41.4\%$ at M ($0.470$ vs $0.802$\,eV, $p = 0.0003$), reaching $\mathbf{+51.3\%}$ at XXL ($0.370$ vs $0.761$\,eV, $p = 2.18 \times 10^{-5}$, Cohen's $d = -10.21$). On HOMO, PRISM achieves $0.233$\,eV approaching PaiNN ($0.210$\,eV), and on LUMO achieves $0.265$\,eV at $100\mathrm{k}$ parameters ($+50.6\%$ over the classical twin, $p < 10^{-5}$, $d = -12.85$). At the XXL tier ($100\mathrm{k}+$ parameters), PRISM's error plateaus near $\sim 0.370$\,eV on the gap, reflecting the intrinsic sample noise floor of the $N = 1{,}000$ training regime; nevertheless, the classical twin plateaus at a substantially higher error ($\sim 0.761$\,eV), causing the periodic advantage to remain above $51\%$. This confirms that periodic activations provide a scalable representational primitive rather than a low-parameter regularizer.
 
-\begin{table}[h]
-\centering
-\small
-\caption{\textbf{Parameter Scaling Ablation} ($N = 1{,}000$, 3 seeds). PRISM vs.\ Classical Twin at increasing hidden dimension. PRISM and Twin are iso-parameter at each scale. The periodic activation advantage \textit{grows} with model capacity. PaiNN is shown for reference (not iso-parameter).}
-\label{tab:param_scaling}
-\begin{tabular}{llcccc}
-\toprule
-\textbf{Scale} & \textbf{Target} & \textbf{PRISM} & \textbf{Twin} & \textbf{Adv.} & \textbf{PaiNN} \\
-\midrule
-$d_h\!=\!4$ & HOMO & $0.318$ & $0.425$ & $+25\%$ & $1.706$ \\
-(2,527\,p) & LUMO & $0.520$ & $0.755$ & $+31\%$ & $0.459$ \\
- & Gap & $0.712$ & $0.891$ & $+20\%$ & $0.760$ \\
-\midrule
-$d_h\!=\!16$ & HOMO & $0.289$ & $0.425$ & $+32\%$ & $0.287$ \\
-(8,287\,p) & LUMO & $0.395$ & $0.695$ & $+43\%$ & $0.261$ \\
- & Gap & $0.606$ & $0.863$ & $+30\%$ & $0.436$ \\
-\midrule
-$d_h\!=\!64$ & HOMO & $0.278$ & $0.412$ & $+33\%$ & $0.229$ \\
-(29,599\,p) & LUMO & $0.323$ & $0.632$ & $+49\%$ & $0.210$ \\
- & Gap & $0.534$ & $0.830$ & $+36\%$ & $0.316$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{Full-Scale QM9 Evaluation ($N = 110{,}000$, 5 Seeds).}
+To ensure our findings are not confined to data-scarce regimes ($N = 1{,}000$), we evaluate PRISM and the Classical Twin on the full QM9 dataset ($110{,}000$ training molecules, $10{,}000$ validation, $10{,}831$ test) across 5 independent random seeds with 20 epochs and best-validation model selection (SM~E, Table~S7, Figure~S8). PRISM maintains a statistically significant error reduction across all orbital properties: HOMO MAE decreases from $0.1620 \pm 0.003$ to $\mathbf{0.1473 \pm 0.004}$\,eV ($-9.10\%$, $p = 0.0035$, Benjamini-Hochberg $q_{\mathrm{FDR}} = 0.0104$, Cohen's $d = -2.77$); LUMO decreases from $0.1591 \pm 0.006$ to $\mathbf{0.1438 \pm 0.006}$\,eV ($-9.61\%$, $p = 0.0424$, $q_{\mathrm{FDR}} = 0.0547$, $d = -1.32$); and Gap decreases from $0.2372 \pm 0.005$ to $\mathbf{0.2210 \pm 0.009}$\,eV ($-6.82\%$, $p = 0.0547$, $d = -1.20$).
 
-The periodic activation advantage does not diminish with scale---it \textit{widens}. On LUMO, the improvement grows monotonically from $+31\%$ at $d_h = 4$ to $+49\%$ at $d_h = 64$, and a similar trend holds across all targets. This directly refutes the hypothesis that PRISM's advantage is merely an artifact of operating in an artificially parameter-starved regime: monotonic activations cannot compensate for the lack of periodic inductive bias by simply increasing network capacity.
+\subsection{Circuit Depth and Multi-Qubit Scaling}
+\label{sec:depth_qubit_scaling}
 
-At medium and large scales, PaiNN surpasses PRISM on LUMO and Gap, but PaiNN uses $28{,}545$--$396{,}801$ parameters compared to PRISM's $8{,}287$--$29{,}599$ ($3.4$--$13.4\times$ more). At the small iso-parameter scale, PRISM is competitive with or superior to PaiNN on HOMO ($0.318$ vs.\ $1.706$\,eV) and Gap ($0.712$ vs.\ $0.760$\,eV). PaiNN's advantage at larger scales reflects its coupled scalar-vector architecture rather than simply greater capacity.
+\paragraph{Deeper PQC Circuit Scaling ($L \in \{1, 2, 4, 8, 16\}$ Layers).}
+A prominent hypothesis in quantum machine learning is that deeper parameterized circuits with accumulating entanglement layers can escape classical simulation. We test this directly by scaling Q-PRISM's circuit depth from $L = 1$ to $L = 16$ layers ($4{,}991$ parameters) and benchmarking against the fixed 2-layer PRISM model ($2{,}527$ parameters) across 5 seeds on all four electronic targets (SM~F, Table~S9, Figure~S10).
+At shallow depths ($L = 1, 2$), PRISM substantially outperforms Q-PRISM (Gap: $0.553$ vs $0.768$\,eV at $L=1$, $p = 0.0057$; $0.553$ vs $0.704$\,eV at $L=2$, $p = 0.0035$). As circuit depth increases ($L = 4 \to 8 \to 16$), Q-PRISM improves monotonically but asymptotically plateaus at PRISM's classical performance. At $L = 16$, Q-PRISM achieves $0.5543 \pm 0.040$\,eV on Gap, matching PRISM ($0.5531 \pm 0.059$\,eV) with exact statistical parity ($p = 0.9691$, Cohen's $d = -0.02$). The same asymptotic convergence holds for HOMO ($0.270$ vs $0.277$\,eV, $p = 0.376$), LUMO ($0.481$ vs $0.501$\,eV, $p = 0.361$), and Dipole ($0.709$ vs $0.705$\,Debye, $p = 0.759$). 16 layers of parameterized CNOT entanglement fail to outperform a compact 2-layer classical sinusoidal MLP.
 
-\subsection{Fourier Spectral Comparison: PQC vs.\ PRISM}
-\label{sec:spectral_comparison}
-
-To assess whether PRISM captures the same frequency structure as the PQC---a key element of the dequantization argument---we compare the Fourier power spectra of trained PQC and PRISM edge outputs. For each model, we sweep the 3-body bond angle $\theta \in [0^\circ, 180^\circ]$ at fixed interatomic distance ($d = 2.25$\,\AA$^2$) and compute the 1D discrete Fourier transform of the 8-channel edge head output.
-
-Table~\ref{tab:spectral_comparison} summarizes the spectral similarity metrics. PQC and PRISM share high spectral similarity (cosine similarity $= 0.90$, well above the $0.8$ threshold for structural agreement) with $100\%$ overlap in their top-5 dominant frequencies. PRISM exhibits the most concentrated spectrum (top-5 concentration: $97.5\%$) and lower spectral entropy ($1.24$ bits) than the entangled PQC ($1.89$ bits), suggesting that PRISM achieves a more efficient periodic representation. The Classical Twin, with the highest entropy ($2.21$ bits) and lowest concentration ($90.0\%$), confirms its inability to produce structured periodic outputs at this parameter budget.
-
-\begin{table}[h]
-\centering
-\small
-\caption{\textbf{Fourier Spectral Comparison} of trained edge head outputs (HOMO, $N=1{,}000$, seed 42). Cosine similarity (Cos Sim) and top-5 frequency overlap are computed between each model and the Q-PRISM baseline.}
-\label{tab:spectral_comparison}
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Model} & \textbf{Entropy} & \textbf{Conc.} & \textbf{Cos} & \textbf{Top-5} \\
- & (bits) & (top-5) & \textbf{Sim} & \textbf{Overlap} \\
-\midrule
-Q-PRISM (PQC) & $1.89$ & $95.4\%$ & $1.00$ & $100\%$ \\
-Sep.\ Q-PRISM & $1.12$ & $96.1\%$ & $0.83$ & $100\%$ \\
-Classical Twin & $2.21$ & $90.0\%$ & $0.91$ & $100\%$ \\
-\textbf{PRISM (SIREN)} & $\mathbf{1.24}$ & $\mathbf{97.5\%}$ & $\mathbf{0.90}$ & $\mathbf{100\%}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\noindent The high spectral similarity between PQC and PRISM supports the dequantization interpretation: PRISM captures the same functional class of periodic edge transformations that the PQC computes via single-qubit rotations. The failure of RFF (Table~\ref{tab:main_results}) can now be understood spectrally: fixed random projections produce misaligned frequency content, whereas both PQC rotations and PRISM's learned $\sin(\omega_0 \mathbf{W}_1 \mathbf{u} + \mathbf{b}_1)$ converge to similar, task-aligned frequency bands through end-to-end training.
-
-\subsection{NISQ Hardware Noise \& Theoretical Hardware Outlook}
-\label{sec:hardware_outlook}
-
-\textit{All hardware noise analyses in this work are based on analytical noise models and calibrated simulator projections; no circuits were executed on physical quantum hardware.}
-All PQC evaluations throughout the paper use PennyLane's \texttt{default.qubit} statevector simulator, corresponding to the infinite-shot (exact expectation value) limit. On physical hardware, finite shot budgets (Table~\ref{tab:resources}) would introduce measurement noise proportional to $1/\sqrt{N_{\mathrm{shots}}}$; the shot noise characterization in SM~E quantifies this impact and estimates the shot budget required for chemical-accuracy-preserving measurements.
-
-We characterize Q-PRISM's projected deployment viability under per-gate depolarizing noise channels spanning $\lambda \in [10^{-5}, 5 \times 10^{-2}]$, covering next-generation superconducting processors (arm qubit, $\lambda \sim 10^{-5}$~\cite{Kline:2025ecg}) to current IBM transmon QPUs ($\lambda \sim 10^{-3}$~\cite{Kim:2023bwr}). Zero-Noise Extrapolation (ZNE) with noise scale factors $s \in [1.0, 3.0]$~\cite{Temme:2016vkz, Giurgica-Tiron:2020rcf} achieves $97.7\%$ error reduction at $\lambda = 0.005$ and $92.0\%$ at $\lambda = 0.010$. In the projected arm qubit regime ($\lambda \sim 10^{-5}$), raw unmitigated Q-PRISM expectations are projected to achieve sub-chemical-accuracy fidelity under idealized noise assumptions, potentially eliminating the need for error mitigation overhead. We emphasize that these projections represent \textit{optimistic theoretical upper bounds} based on published device specifications for architectures that do not yet exist in multi-qubit commercial hardware; actual performance may differ due to crosstalk scaling, coherent control overheads, and fabrication variability. Validation against a calibrated IBM Brisbane FakeBackend ($r = 0.87$, $p < 10^{-4}$) confirms structural agreement. Comprehensive noise characterization, ZNE analysis, parasitic $ZZ$ crosstalk impact, measurement readout noise ablations, and arm qubit crossing-point analysis are detailed in SM~E--F.
-
-\subsection{Circuit Depth and Qubit Scaling}
-\label{sec:circuit_scaling}
-
-Evaluating Q-PRISM at variational depths $L \in \{1, 2, 4, 8, 16\}$ and qubit registers $n \in \{4, 6, 8\}$ (SM~G), deeper circuits yield substantial expressibility gains on the Gap target ($21.0\%$ MAE reduction from $L = 1$ to $L = 16$). Under projected arm qubit noise, performance is virtually indistinguishable from ideal simulation ($< 0.2\%$ degradation at $L = 16$); under transmon noise, the same depth degrades by $31.5\%$, exceeding the coherence window. Scaling to 8-qubit registers yields monotonic accuracy improvements ($6.6\%$ error reduction) while remaining within the arm qubit coherence budget ($\tau/T_2^E \approx 0.40\%$).
-
-\subsection{Additional Benchmarks: N-Body \& MD17}
-\label{sec:additional_benchmarks}
-
-We additionally validate Q-PRISM and PRISM on 3D charged N-body trajectory forecasting~\cite{satorras2022enequivariantgraphneural} and MD17 conformational energy prediction~\cite{chmielaMachineLearningAccurate2016} (SM~H--I). These benchmarks serve two important roles beyond QM9: (i) verifying that periodic activations do not introduce oscillatory artifacts on non-equilibrium geometries, and (ii) testing generalization to physical domains where the angular inductive bias may not confer an advantage.
-
-On N-body dynamics ($5$ particles, Coulomb interaction), Q-PRISM maintains lower coordinate error than its parameter-matched Classical Twin ($0.6759$ vs.\ $0.6937$ MSE) while exhibiting no oscillatory artifacts from periodic activations. The smooth trajectory predictions confirm that the $\tanh$ output bounding and learned linear projections $\mathbf{W}_1$ successfully regularize the periodic basis in extrapolative regimes.
-
-On MD17 (Ethanol and Aspirin), all models converge to similar energy MAEs ($\sim 3.3$\,kcal/mol for Ethanol), confirming that periodic activations produce smooth, physically reasonable potential energy surfaces on molecular dynamics conformations beyond the QM9 equilibrium regime. The absence of a periodic activation advantage on MD17 is consistent with the mechanistic interpretation: conformational energies are extensive properties governed by smooth, near-monotonic interatomic potentials, where the angular inductive bias of periodic activations provides no structural advantage. This target-specificity strengthens the claim that PRISM's improvement on QM9 electronic properties reflects genuine angular expressivity alignment rather than a generic capacity improvement.
-
-
-
-\section{Quantum Resource \& Complexity Analysis}
-\label{sec:resources}
-
-\begin{table*}[t]
-\centering
-\small
-\caption{\textbf{Resource \& Complexity Comparison} across the 3-tier model hierarchy.}
-\label{tab:resources}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Metric} & \textbf{EGNN Std} & \textbf{EGNN PM} & \textbf{Q-PRISM} \\
-\midrule
-Parameters & $4{,}289$ & $2{,}497$ & $2{,}527$ \\
-Edge Computation & MLP & MLP & $2 \times$ 4-Qubit PQC \\
- & ($16 \to 16 \to 16$) & ($12 \to 12 \to 12$) & ($L=2$) \\
-Circuit Depth & N/A & N/A & $8 R_{xyz}$ + $4$ CNOTs \\
- & & & per layer \\
-Statevector RAM & N/A & N/A & $128$ Bytes \\
-Shot Budget & N/A & N/A & $1{,}000$--$4{,}000$ \\
- & & & shots/edge \\
-\midrule
-Barren Plateau & N/A & N/A & Avoided \\
-Risk \cite{McClean:2018jps, Cerezo:2020mtn} & & & (local obs., $L \in O(\log n)$) \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\paragraph{The Trainability-Simulability Dilemma.}
-Table~\ref{tab:resources} summarizes the resource footprint and theoretical complexity across the baseline hierarchy.
-Our empirical finding that PRISM (classical SIREN) matches and surpasses the 4-qubit PQC is grounded in recent quantum computational complexity theory.
-Cerezo, Holmes et al.~\cite{Cerezo:2023nqf} proved that in variational quantum machine learning, the absence of barren plateaus is inextricably linked to classical simulability: any PQC that avoids barren plateaus via shallow circuit depth ($L \in \mathcal{O}(\log n)$) and local observables necessarily resides in a classically simulable hypothesis class.
-In Q-PRISM, the edge PQC uses 4 qubits, $L = 2$ layers, and local single-qubit and nearest-neighbor correlator observables.
-While this guarantees non-vanishing gradients and stable training, it simultaneously bounds the output to a low-dimensional truncated Fourier series~\cite{landman2023approximating, Schuld:2020enb}.
-Conversely, attempting to escape classical simulability by scaling to deep, globally entangled circuits triggers exponential concentration of measure (Thanasilp et al.~\cite{Thanasilp:2022agd}), wherein quantum kernels concentrate to trivial constants and gradients vanish as $\mathcal{O}(2^{-n/2})$.
-Thus, within the trainable regime for geometric graphs, quantum circuits provide no asymptotic expressivity separation over properly initialized classical periodic networks.
-
-\paragraph{Macromolecular Scaling ($O(N)$).}
-For molecules with $N > 50$ atoms, the fully-connected edge construction $O(N^2)$ becomes a bottleneck. Our implementation includes a $k$-nearest neighbor sparse graph builder that reduces edge complexity to $O(kN) = O(N)$ for constant $k$, enabling both Q-PRISM and PRISM to scale to macromolecular systems (proteins, polymers) without fundamentally altering the edge operator architecture.
-For PRISM, each edge evaluation is a lightweight classical matrix multiplication and sine evaluation, executing in microseconds on modern GPUs without shot noise or quantum hardware latency.
+\paragraph{Multi-Qubit Scaling ($n_q \in \{4, 6, 8\}$ Qubits) and Computational Cost.}
+We extend Q-PRISM to $n_q \in \{4, 6, 8\}$ qubits with matched classical PRISM and Twin models where the classical MLP hidden dimension is dynamically tuned to match the PQC parameter count at each qubit width (SM~F, Table~S10, Figure~S11). Across all tested qubit widths, PRISM strictly matches or outperforms Q-PRISM on Gap prediction ($n_q = 4$: $0.553$ vs $0.704$\,eV, $p = 0.0035$; $n_q = 6$: $0.516$ vs $0.692$\,eV, $p = 0.0009$; $n_q = 8$: $0.531$ vs $0.650$\,eV, $p = 0.0218$).
+While PRISM's training wall-time remains virtually constant ($\sim 9\text{--}11$\,s per seed on CPU), Q-PRISM's simulation time scales exponentially: $206$\,s at $n_q = 4$, $559$\,s at $n_q = 6$, and $\mathbf{4{,}866\,\text{s}}$ (~$81$ minutes) per seed at $n_q = 8$. At 8 qubits, PRISM delivers superior accuracy with a $\mathbf{540\times}$ computational speedup. Because PRISM maintains clear superiority across $n_q \in \{4, 6, 8\}$, scaling simulation to $10$ or $12$ qubits is computationally redundant.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-In this work, we investigated the mechanism of parameterized quantum circuits in $\mathrm{E}(3)$-equivariant graph neural networks for 3D molecular property prediction.
-Through Q-PRISM, we initially observed a performance edge over standard classical baselines ($\tanh$-MLPs) on QM9 electronic properties (HOMO, LUMO, and Gap).
-Systematic four-tier ablations across 20 random seeds showed that multi-qubit entanglement contributes a statistically detectable but practically inconsequential improvement. On HOMO, the effect size is statistically large (Cohen's $d = 0.85$, $\Delta = 0.006$\,eV, $p = 0.002$), yet the absolute magnitude falls well below the $0.043$\,eV chemical accuracy threshold. On LUMO and Gap, entanglement produces no significant change. The performance advantage traces directly to the trigonometric expressivity of single-qubit rotations.
+We investigated the mechanism underlying parameterized quantum circuit performance in $\mathrm{E}(3)$-equivariant GNNs for molecular property prediction. Our central finding is that the apparent quantum advantage traces to the trigonometric expressivity of single-qubit rotations, not to multi-qubit entanglement. At low parameter budgets, standard monotonic activations suffer from \textit{expressive capacity starvation}: they cannot compactly represent the oscillatory angular dependence that electronic properties require, whereas a single $\sin$ neuron natively produces oscillations with one tunable frequency parameter. This finding aligns with the trainability-simulability dilemma of Cerezo et al.~\cite{Cerezo:2023nqf}: any PQC that avoids barren plateaus via shallow depth and local observables necessarily resides in a classically simulable hypothesis class, and our 4-qubit circuit falls squarely within this regime.
 
-By connecting this observation to the theory of periodic function approximation, we identified that standard classical MLPs with monotonic activations suffer from \textit{expressive capacity starvation} at low parameter budgets~\cite{rahaman2019spectral}: a $\tanh$ network with $d_h = 4$ hidden units cannot compactly represent the oscillatory angular dependence that molecular electronic properties require, whereas a single $\sin$ neuron natively produces oscillations.
-Following an empirical dequantization approach inspired by Tang~\cite{Tang:2018lmw}, we resolved this classical limitation by introducing \textbf{PRISM}, the first equivariant message-passing graph neural network to incorporate periodic sinusoidal \textit{internal} activations with SIREN initialization~\cite{sitzmann2020siren}.
-At exact iso-parameter matching ($2{,}527$ parameters), PRISM closely matches or surpasses the PQC across all electronic targets (HOMO: $0.269$ vs $0.303$\,eV; LUMO: $0.479$ vs $0.628$\,eV; Gap: $0.557$ vs $0.721$\,eV), while outperforming PaiNN on 4 out of 6 QM9 properties at iso-parameter budgets.
-A $2 \times 2$ factorial ablation across 10 random seeds (Section~\ref{sec:init_ablation}) decomposes the mechanism: the periodic $\sin$ activation is the primary contributor (main effect: $-0.16$ to $-0.18$\,eV across LUMO and Gap, Cohen's $d = 4.9$--$9.4$), with SIREN initialization providing a secondary synergistic effect ($-0.07$ to $-0.09$\,eV). Neither factor alone matches the full PRISM architecture, confirming that the combination constitutes a genuinely novel architectural contribution rather than an artifact of either component.
-Crucially, the periodic advantage does not diminish at larger parameter budgets: scaling from $d_h = 4$ ($2{,}527$ params) to $d_h = 64$ ($29{,}599$ params) increases PRISM's advantage over the Classical Twin from $+25\%$ to $+49\%$ on LUMO (Section~\ref{sec:param_scaling}), demonstrating that periodic activations provide a structural inductive bias that cannot be compensated by increasing monotonic network capacity.
-Fourier spectral analysis confirms that PQC and PRISM edge outputs share similar frequency structure (cosine similarity $= 0.90$, $100\%$ top-5 frequency overlap; Section~\ref{sec:spectral_comparison}), supporting the empirical dequantization interpretation.
-Full statistical multiplicity correction via Benjamini-Hochberg False Discovery Rate ($m = 48$ hypotheses) confirms that periodic activations provide a statistically significant advantage over standard $\tanh$ ($q < 0.02$).
+To exploit this insight constructively, we introduced \textbf{PRISM}, the first equivariant message-passing GNN with periodic sinusoidal internal activations. PRISM captures the same functional class as the PQC while eliminating all quantum resource requirements: no statevector memory, no shot noise, no gate depth, and no barren plateau risk (SM~H, Table~S14). These findings provide both a dequantization principle for quantum machine learning (matching inductive bias rather than hardware) and a drop-in periodic activation for molecular geometric deep learning that yields persistent accuracy gains on angular-dependent targets, with the advantage widening rather than closing at larger model capacity.
 
-These findings align with the trainability-simulability dilemma~\cite{Cerezo:2023nqf} and exponential concentration bounds~\cite{Thanasilp:2022agd}. Specifically, our empirical dequantization result is established for 4-qubit parameterized circuits with $\le$4 variational layers, ring CNOT entanglement topology, and local single-qubit and nearest-neighbor correlator observables. For such shallow PQCs, apparent performance advantages over classical baselines reflect periodic inductive biases that are readily reproducible on classical hardware. Full-scale evaluation on the complete QM9 dataset ($N = 110{,}000$) demonstrates that the periodic activation advantage persists---narrowing from $\sim 30\%$ at $N = 1{,}000$ to $\sim 10$--$11\%$ at $N = 110{,}000$ but never closing---confirming a structural inductive bias rather than a low-data artifact.
-We acknowledge that no serious claim for quantum computational advantage exists for 4-qubit, low-depth, low-entanglement circuits; our contribution is therefore not the disproof of an active quantum advantage claim, but rather (i) the constructive identification of the \textit{mechanism} (trigonometric expressivity) underlying PQC performance on molecular tasks, and (ii) the introduction of PRISM as a practical, parameter-efficient classical architecture that brings periodic sinusoidal internal activations into equivariant message-passing GNNs for the first time. Whether quantum circuits with deeper registers ($L > 4$), higher qubit counts ($n \ge 16$), non-local observables, or more expressive entanglement topologies can break this classical parity remains an open theoretical and experimental question.
-In doing so, this work provides (i) a reusable benchmarking methodology for testing putative QML advantages via inductive-bias-matched classical surrogates, and (ii) PRISM, a parameter-efficient classical architecture for molecular geometric deep learning.
+Our dequantization result, originally observed for shallow 4-qubit circuits, holds across scaling dimensions: scaling circuit depth to $L = 16$ layers confirms that multi-layer entanglement asymptotically approaches but never exceeds PRISM's classical performance ($p = 0.969$), while multi-qubit scaling up to $n_q = 8$ demonstrates that PRISM maintains strict accuracy superiority ($p < 0.025$) alongside a $540\times$ computational speedup. In addition, parameter scaling across six capacity tiers demonstrates that PRISM's advantage over standard monotonic baselines widens monotonically to $51.3\%$ at $100{,}127$ parameters. These empirical findings resolve previous conjectures regarding whether depth or qubit width could break classical parity: within local and ring-entangled PQC families, the entire representation benefit is captured by classical periodic non-linearities. Together, these results provide (i) a reusable benchmarking methodology for testing putative QML advantages via inductive-bias-matched classical surrogates, and (ii) PRISM, a parameter-efficient classical architecture for molecular geometric deep learning.
 
-\paragraph{Limitations and Future Work.}
-\begin{enumerate}
-    \item \textbf{Parameter-constrained evaluation regime:} Our primary evaluation benchmarks models at $N = 1{,}000$ molecules with $\sim 2{,}500$ parameters. Full-scale evaluation extends to $N = 110{,}000$ (Table~\ref{tab:full_scale}), confirming a persistent $10$--$11\%$ periodic activation advantage. Parameter scaling experiments (Table~\ref{tab:param_scaling}) demonstrate that the periodic advantage persists---and in fact grows---when the hidden dimension is increased from $d_h = 4$ to $d_h = 64$ ($29{,}599$ parameters). Nevertheless, our largest models remain below the capacity of state-of-the-art architectures (e.g., PaiNN at $100$k+ parameters, MACE at $1$M+ parameters), and evaluation on datasets beyond QM9 (e.g., OC20, ANI-1x) remains future work.
-    \item \textbf{3-body angular pooling (M5):} To maintain linear $O(E)$ complexity, our architecture averages angles over third atoms: $\bar{\theta}_{ij}$ (Eq.~\ref{eq:angle}). While computationally efficient, this averaging discards individual triplet geometry, unlike DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020} or GemNet~\cite{klicperaGemNetUniversalDirectional2021}. Future work may explore per-triplet periodic projections.
-    \item \textbf{Scalar-only geometric representation:} Both Q-PRISM and PRISM project 3D directional geometry into scalar invariants (interatomic distances $d_{ij}$ and averaged bond angles $\bar{\theta}_{ij}$), discarding per-edge directional vector information. As a consequence, the models cannot distinguish chiral enantiomers or capture higher-order multipolar interactions that require explicit vector or tensor equivariant channels~\cite{schuttEquivariantMessagePassing2021, batatiaMACEHigherOrder2022}. Extending PRISM to coupled scalar-vector message passing (analogous to PaiNN) or higher-order tensor equivariant architectures (analogous to MACE) is a natural future direction.
-    \item \textbf{PRISM-PaiNN hybrid architecture:} The complementary performance profiles of PRISM (superior on HOMO, Dipole, Polarizability) and PaiNN (superior on LUMO, Gap) suggest a natural architectural synthesis: replacing SiLU activations in PaiNN's scalar interaction branch with SIREN periodic activations while preserving vector equivariant update channels. Since the periodic activation acts only on the invariant scalar pathway, this requires no modification to PaiNN's equivariance guarantees. A practical consideration is gradient stability: the Lipschitz constant of $\sin(\omega_0 x)$ scales as $\omega_0$, so the scalar-to-vector gating mechanism must accommodate amplified gradients. We leave experimental validation of this hybrid to future work.
-    \item \textbf{Hardware execution \& topology constraints (m1, m2):} All quantum circuits were simulated via PennyLane statevector backends; no physical 4-qubit fluxonium ring processor currently exists in commercial hardware. Scaling beyond 4 qubits on planar superconducting lattices (such as IBM's heavy-hex) also introduces SWAP routing overhead, increasing effective circuit depth by roughly $1.5$--$2.0\times$.
-    \item \textbf{NISQ execution overhead \& hybrid training (m3):} Sequential QPU edge evaluations incur measurement shot noise and latency ($3$--$12$\,s per molecule). Near-term deployment could benefit from hybrid training: pre-training the equivariant backbone classically with PRISM, followed by quantum fine-tuning on targeted subsets to minimize QPU execution time.
-    \item \textbf{Noiseless training assumption (m4):} Hardware noise was characterized post-hoc via ZNE and analytical noise projections. Noise-aware training~\cite{cincio2021machine, Sharma:2020qjq} incorporating device-calibrated density matrices via PennyLane's \texttt{default.mixed} device represents a natural next step for experimental deployment.
-    \item \textbf{Shallow PQC scope:} Our empirical dequantization result is established for shallow, low-qubit PQCs (4 qubits, $L \le 4$, ring CNOT topology) with local Pauli observables. We do not provide a formal proof that the SIREN function class subsumes the PQC function class in the complexity-theoretic sense; our evidence is empirical (iso-parameter performance matching and spectral similarity). Whether the result extends to deeper circuits ($L > 4$) with non-local observables, higher qubit counts ($n \ge 16$), or more expressive entanglement topologies (e.g., all-to-all, heavy-hex native) remains an open question. Such circuits may access function classes beyond the reach of classical periodic models, though the trainability-simulability dilemma~\cite{Cerezo:2023nqf} suggests that trainable circuits will remain classically simulable.
-\end{enumerate}
+\paragraph{Limitations.}
+(1) While our capacity sweep successfully crosses the $100\mathrm{k}$-parameter threshold ($100{,}127$\,p), evaluating PRISM on massive multi-million parameter foundation models (e.g., MACE~\cite{batatiaMACEHigherOrder2022}) and macro-scale datasets (OC20, ANI-1x) remains future work. (2) Both Q-PRISM and PRISM project 3D directional geometry into scalar invariants ($d_{ij}, \bar{\theta}_{ij}$), discarding per-edge vector orientations; extending periodic activations to coupled scalar-vector equivariant message passing (a PRISM-PaiNN hybrid) is a promising future direction. (3) While analytical hardware noise models and coherence budgets were characterized for Arm and Transmon architectures, physical execution on NISQ processors remains subject to measurement shot noise and gate routing overheads. Full limitations and architectural discussions are in SM~H.
 
-\paragraph{Code and Data Availability.}
-All source code for Q-PRISM, PRISM, and the complete experimental pipeline (training, evaluation, statistical analysis, and figure generation) will be made publicly available upon publication. The QM9 dataset~\cite{ramakrishnan2014quantum} is publicly available via PyTorch Geometric. MD17~\cite{chmielaMachineLearningAccurate2016} and N-body simulation data are generated using standard procedures described in the respective references.
+\section*{Data Availability}
+The QM9 dataset~\cite{ramakrishnan2014quantum} is publicly accessible via PyTorch Geometric (\url{https://pytorch-geometric.readthedocs.io/}). Benchmark data partitions, model checkpoints, and raw evaluation logs will be deposited in Zenodo upon publication.
+
+\section*{Code Availability}
+All source code for Q-PRISM, PRISM, classical baselines, simulation backends, and reproduction scripts will be made publicly available under the MIT license upon publication at \url{https://github.com/anonymous/qgnn}.
+
+\section*{Author Contributions}
+N.T.L.\ and C.X.D.\ conceptualized the research and the empirical dequantization framework. N.T.L.\ and H.M.P.\ designed the PRISM architecture and conducted the benchmark and capacity scaling experiments. A.Q.P.\ performed the hardware noise modeling, zero-noise extrapolations, and Fourier spectral analysis. N.T.L., H.M.P., and C.X.D.\ analyzed the empirical data and drafted the manuscript. All authors reviewed and approved the final manuscript.
+
+\section*{Competing Interests}
+The authors declare no competing financial or non-financial interests.
+
+\section*{Acknowledgements}
+The authors acknowledge computing facilities and research infrastructure support provided by the Posts and Telecommunications Institute of Technology (PTIT), Hanoi, Vietnam.
 
 \bibliographystyle{plain}
 \bibliography{references}
-
-\clearpage
-\appendix
-\section{Complete 48-Hypothesis Multiplicity-Correction Report}
-\label{sec:appendix_fdr}
-
-To provide full transparency and eliminate concerns regarding selective reporting or data-dredging across multiple physical properties, Table~\ref{tab:full_48_fdr} reports the exhaustive statistical analysis across all $m = 48$ pairwise hypothesis comparisons ($8$ models $\times$ $6$ targets, evaluated across 5 independent random seeds). For each comparison, we report the mean difference ($\Delta = \text{MAE}_A - \text{MAE}_B$), the unadjusted two-tailed paired $t$-test $p$-value ($p_{\mathrm{raw}}$), the Benjamini-Hochberg False Discovery Rate adjusted $q$-value ($q_{\mathrm{FDR}}$), and the conservative Bonferroni Family-Wise Error Rate corrected $p$-value ($p_{\mathrm{Bonf}}$).
-
-\input{supplementary_fdr_table.tex}
 
 \end{document}

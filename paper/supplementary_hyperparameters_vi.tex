@@ -1,0 +1,58 @@
+% Bảng Siêu tham số Bổ sung - Cấu hình huấn luyện và chi tiết tính tái lập
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Siêu Tham số Huấn luyện} cho tất cả các mô hình trong các thí nghiệm đối chuẩn QM9. Toàn bộ các mô hình chia sẻ cùng quy trình huấn luyện trừ khi có ghi chú khác. Các siêu tham số được cố định \textit{tiên nghiệm} và không được tinh chỉnh trên tập kiểm tra.}
+\label{tab:hyperparameters}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+\textbf{Siêu tham số} & \textbf{Giá trị} & \textbf{Ghi chú} \\
+\midrule
+\multicolumn{3}{l}{\textit{Tối ưu hóa}} \\
+\quad Bộ tối ưu hóa (Optimizer) & Adam & $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-8}$ \\
+\quad Tốc độ học (Learning Rate) & $1 \times 10^{-3}$ & Cố định cho mọi mô hình \\
+\quad Bộ điều chỉnh tốc độ học (LR Scheduler) & CosineAnnealingLR & $T_{\mathrm{max}} = 15$ epoch, $\eta_{\mathrm{min}} = 10^{-5}$ \\
+\quad Suy giảm trọng số (Weight Decay) & $10^{-5}$ & Chính quy hóa $L_2$ \\
+\quad Cắt ngắn Gradient (Gradient Clipping) & Chuẩn cực đại $= 5.0$ & Áp dụng toàn cục trên mọi tham số \\
+\midrule
+\multicolumn{3}{l}{\textit{Giao thức Huấn luyện}} \\
+\quad Số Epoch & $15$ & Đối chuẩn tiêu chuẩn ($N = 1{,}000$); $20$ epoch cho toàn bộ QM9 \\
+\quad Kích thước Batch & $16$ & Đối chuẩn tiêu chuẩn ($N = 1{,}000$); $64$ cho toàn bộ QM9 \\
+\quad Dừng sớm (Early Stopping) & Không sử dụng & Ngân sách epoch cố định; lưu checkpoint cuối quá trình huấn luyện \\
+\quad Tập Kiểm định (Validation Set) & $250$ phân tử & Đánh giá trong quá trình huấn luyện \\
+\quad Hàm Mất mát (Loss Function) & Sai số Toàn phương Trung bình (MSE) & Tính trên mục tiêu chuẩn hóa ($y_{\mathrm{norm}} = (y - \mu)/\sigma$) \\
+\midrule
+\multicolumn{3}{l}{\textit{Tiền xử lý Dữ liệu}} \\
+\quad Chuẩn hóa Mục tiêu & Trung bình/độ lệch chuẩn theo mục tiêu & Tính trên tập huấn luyện; biến đổi ngược khi đánh giá (MAE tính theo eV) \\
+\quad Bán kính Cắt (Radius Cutoff) & $5.0$~\AA & Cho việc xây dựng cạnh (dự phòng $k$-NN: $k = 8$) \\
+\quad Tâm RBF & $K = 8$ & Cách đều trong $[0, 10]$~\AA$^2$ \\
+\midrule
+\multicolumn{3}{l}{\textit{Kiến trúc (dùng chung cho các mô hình đồng tham số)}} \\
+\quad Số Tầng GNN ($T$) & $2$ & Các bước truyền thông điệp \\
+\quad Số Chiều Nhúng Nút ($d_{\mathrm{node}}$) & $11$ & One-hot số hiệu nguyên tử (H, C, N, O, F: 5) $+$ bậc nút (6) \\
+\quad Số Chiều Đầu Vào Cạnh ($d_{\mathrm{edge}}$) & $13$ & Đặc trưng nút chiếu ($4$) $+$ RBF ($8$) $+$ góc liên kết ($1$) \\
+\quad Số Chiều Ẩn ($d_h$) & $4$ & Chiều ẩn đầu cạnh; mở rộng từ $4$ (XS) đến $128$ (XXL) trong Bảng~\ref{tab:param_scaling} \\
+\quad Phép Đọc ra (Readout) & Gom cụm trung bình toàn cục & $\bar{\mathbf{h}} = \frac{1}{|\mathcal{V}|}\sum_{i} \mathbf{h}_i^{(T)}$ \\
+\quad Đầu Ra (Output Head) & Tuyến tính($d_{\mathrm{hidden}}$, 1) & Dự đoán vô hướng đơn lẻ \\
+\midrule
+\multicolumn{3}{l}{\textit{Đặc thù PRISM}} \\
+\quad SIREN $\omega_0$ & $30.0$ & Cố định \textit{tiên nghiệm} theo Sitzmann et al.~\cite{sitzmann2020siren} \\
+\quad Khởi tạo SIREN ($\mathbf{W}_1$) & $\mathcal{U}(-1/d_{\mathrm{edge}}, 1/d_{\mathrm{edge}})$ & Tầng đầu tiên ($d_{\mathrm{edge}} = 13$; Sitzmann et al.~\cite{sitzmann2020siren}) \\
+\quad Khởi tạo SIREN ($\mathbf{W}_2$) & $\mathcal{U}(-\sqrt{6/d_h}/\omega_0, \sqrt{6/d_h}/\omega_0)$ & Tầng ẩn ($d_h = 4$; Sitzmann et al.~\cite{sitzmann2020siren}) \\
+\midrule
+\multicolumn{3}{l}{\textit{Đặc thù Q-PRISM (Mô phỏng PennyLane)}} \\
+\quad Backend Mô phỏng & \texttt{default.qubit} & Vector trạng thái (kỳ vọng chính xác, vô hạn shot) \\
+\quad Số Lượng Qubit & $4$ & Mỗi đầu PQC \\
+\quad Số Tầng PQC ($L$) & $2$ & Mặc định; thay đổi trong nghiên cứu mở rộng mạch \\
+\quad Phép Tính Đạo hàm & Lan truyền ngược & Qua giao diện autograd của PennyLane \\
+\midrule
+\multicolumn{3}{l}{\textit{Tài nguyên Tính toán}} \\
+\quad Phần cứng & NVIDIA A100 (40GB) & Đơn GPU cho mỗi thí nghiệm \\
+\quad Thời gian Huấn luyện (PRISM) & $\sim 20$\,giây / hạt giống & $N = 1{,}000$, $15$ epoch \\
+\quad Thời gian Huấn luyện (Q-PRISM) & $\sim 3$\,phút / hạt giống & $N = 1{,}000$, $15$ epoch (mô phỏng vector trạng thái PennyLane) \\
+\quad Hạt giống Ngẫu nhiên & $42$--$46$ (5 hạt giống); $42$--$61$ (20 hạt giống) & Kiểm soát cả khởi tạo và chia dữ liệu \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}

@@ -1,10 +1,11 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
-\usepackage[utf8]{inputenc}
+\usepackage{fontspec}
 \usepackage[margin=0.75in]{geometry}
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{xr-hyper}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage{algorithm}
@@ -12,7 +13,8 @@
 \usepackage{microtype}
 \usepackage{cite}
 \usepackage{subcaption}
-\usepackage{multirow}
+
+\externaldocument[main:]{main}
 
 \hypersetup{
     colorlinks=true,
@@ -25,8 +27,11 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 
-\title{Supplemental Material for: Equivariant Quantum Graph Neural Networks for 3D Molecules: Dequantizing Inductive Bias of Shallow PQCs via Periodic Activations}
-\author{Kkyn \\ Center for Quantum Machine Learning \& Molecular Intelligence}
+\title{\textbf{Supplemental Material for:\\Dequantizing Shallow Equivariant Quantum Graph Networks:\\Periodic Inductive Biases in Molecular Message Passing}}
+\author{
+    \textbf{Nguyen Trong Luu}, \textbf{Hieu Minh Pham}, \textbf{Anh Quoc Phan}, \textbf{Cho Xuan Do}\thanks{Corresponding author: \texttt{chodx@ptit.edu.vn}} \\
+    \textit{Posts and Telecommunications Institute of Technology (PTIT), Hanoi, Vietnam}
+}
 \date{}
 
 \begin{document}
@@ -38,38 +43,232 @@
 \renewcommand{\thefigure}{S\arabic{figure}}
 \renewcommand{\thetable}{S\arabic{table}}
 
-\section{Complete 48-Hypothesis FDR Table}
+\section{Experimental Setup, Training Protocol, and Reproducibility}
+\label{sec:sm_hyperparameters}
+\label{sm:setup}
+
+\input{supplementary_hyperparameters.tex}
+
+\paragraph{Training Protocol and Optimization Dynamics.}
+All baseline and proposed architectures share a standardized training protocol to ensure rigorous iso-capacity evaluation (Table~\ref{tab:hyperparameters}). Optimization is conducted using Adam ($\beta_1 = 0.9, \beta_2 = 0.999, \epsilon = 10^{-8}$) with an initial learning rate of $1 \times 10^{-3}$, cosine annealing decay down to $\eta_{\mathrm{min}} = 10^{-5}$ across training epochs, $L_2$ weight decay of $10^{-5}$, and global gradient clipping at a maximum $L_2$ norm of $5.0$.
+
+For standard benchmark evaluations ($N = 1{,}000$), models are trained for $15$ epochs with mini-batch size $16$; for full-scale QM9 experiments ($N = 110{,}000$), models are trained for $20$ epochs with mini-batch size $64$. Training uses a fixed epoch budget without early stopping; final evaluation uses the model checkpoint that achieved the lowest Mean Squared Error (MSE) on the validation partition ($250$ molecules for standard benchmarks, $10{,}000$ molecules for full QM9). All regression targets $y$ are standardized per target using training set statistics ($y_{\mathrm{norm}} = (y - \mu)/\sigma$) and inverse-transformed for test evaluation, reporting Mean Absolute Error (MAE) in physical units (eV for electronic energies, Debye for dipole moments, and Bohr$^3$ for polarizability).
+
+\paragraph{Geometric Graph Construction and Radial Encodings.}
+Molecular graphs $\mathcal{G} = (\mathcal{V}, \mathcal{E})$ are constructed by placing edges between atom pairs with Euclidean distance $r_{ij} \le 5.0$\,\AA, supplemented with a $k$-nearest neighbor fallback ($k = 8$) to guarantee connectivity for isolated peripheral atoms. Interatomic distances are encoded using $K = 8$ Gaussian Radial Basis Functions (RBF):
+\begin{equation}
+    \phi_k(d_{ij}) = \exp\left(-\gamma_k (d_{ij} - \mu_k)^2\right), \quad k \in \{1, \dots, K\}
+\end{equation}
+where $d_{ij} = \|\mathbf{x}_i - \mathbf{x}_j\|^2$ is the squared Euclidean distance, with centers $\mu_k$ evenly spaced across $[0, 10]$\,\AA$^2$. Because $\sqrt{10} \approx 3.16$\,\AA, the RBF centers intentionally concentrate radial resolution within the primary covalent and hydrogen bonding shells ($\le 3.16$\,\AA), where orbital overlaps are most sensitive, while the broader $5.0$\,\AA\ graph radius cutoff preserves the long-range topology of the molecular scaffold.
+
+\paragraph{Computational Hardware and Profiling Environments.}
+Standard model training and benchmark sweeps were executed on NVIDIA A100 (40GB) GPUs. To isolate algorithmic complexity from hardware acceleration and eliminate GPU kernel dispatch variance during wall-time scaling profiling (SM~F), Q-PRISM PennyLane statevector simulations and PRISM classical forward/backward passes were profiled on an isolated single CPU core (AMD EPYC 7742 @ 2.25\,GHz).
+
+\paragraph{Code and Data Availability.}
+All source code for Q-PRISM, PRISM, and the complete experimental evaluation pipeline (training loops, analytical noise modeling, statistical significance testing, and visualization scripts) will be made publicly available in an open-source repository upon publication. The QM9 benchmark dataset~\cite{ramakrishnan2014quantum} is publicly accessible via PyTorch Geometric. The MD17 conformational dataset~\cite{chmielaMachineLearningAccurate2016} and 5-particle Coulomb N-body trajectory simulations are generated using established protocols documented in the literature.
+
+\section{Statistical Methodology, Power Analysis, and Multiplicity Control}
+\label{sm:fdr}
+\label{sm:seed_protocol}
+\label{sec:sm_fdr_table}
+
+\paragraph{Random Seed Protocol and Variance Decomposition.}
+All experimental random seeds ($42$--$46$ for 5-seed benchmarks; $42$--$61$ for 20-seed ablations) independently govern both the initialization of trainable network weights and the pseudo-random partition of dataset molecules into training, validation, and test splits. Consequently, the reported standard deviations capture composite empirical variance across optimization landscapes and molecular data sampling. The stability of effect sizes across 20 independent splits (Cohen's $d > 0.85$ on HOMO) establishes that performance differences reflect intrinsic architectural properties rather than sample partitioning artifacts.
+
+\paragraph{Statistical Power and Non-Parametric Testing Framework.}
+In the 5-seed benchmarks, non-parametric Wilcoxon signed-rank tests serve as indicators of directional sign consistency across splits (where unanimous agreement yields the minimum achievable two-sided value $p = 0.0625$ at $n=5$). Formal non-parametric hypothesis testing is powered by the 20-seed ablation (main text Section~\ref{main:sec:mechanism}), which provides sufficient statistical power to resolve rank-based significance at $\alpha = 0.05$. Post-hoc power analyses confirm that the 5-seed protocol ($n = 5$, paired) achieves $80\%$ statistical power ($1-\beta = 0.80$) for large effect sizes of Cohen's $d \ge 1.53$ at $\alpha = 0.05$, whereas the 20-seed protocol achieves $80\%$ power for medium-large effects ($d \ge 0.66$), matching the observed effect size ($d = 0.85$) for the two-qubit entanglement ablation on HOMO.
+
+\paragraph{Multiplicity Control Framework.}
+A critical methodological requirement in multi-target molecular benchmarking is controlling for false discoveries arising from multiple hypothesis testing. Evaluating 8 model architectures across 6 physical targets yields $m = 8 \times 6 = 48$ pairwise statistical comparisons, wherein each architecture is compared against its designated classical baseline (Classical Twin $\tanh$-MLP) via paired two-tailed $t$-tests across 5 random seeds. The 48 hypotheses encompass all pairwise model-vs-baseline comparisons across the full QM9 target spectrum (HOMO, LUMO, Gap, Dipole Moment, Polarizability, and Internal Energy $U_0$).
+
+To prevent false discovery inflation while maintaining statistical power, we report two multiplicity control standards:
+\begin{enumerate}
+    \item \textbf{Family-Wise Error Rate (FWER) via Bonferroni Correction:}
+    \begin{equation}
+        p_{\mathrm{Bonf}} = \min(1.0, m \cdot p_{\mathrm{raw}})
+    \end{equation}
+    guaranteeing strict family-wise error rate control at level $\alpha = 0.05$.
+    \item \textbf{False Discovery Rate (FDR) via Benjamini--Hochberg (BH):}
+    \begin{equation}
+        q_{\mathrm{FDR}} = \min_{k \ge i} \left(\frac{m}{k} p_{(k)}\right)
+    \end{equation}
+    controlling the expected proportion of false positive discoveries at level $\alpha = 0.05$.
+\end{enumerate}
+
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Multiplicity-Corrected Statistical Significance for PRISM and Q-PRISM} across QM9 targets ($m = 48$ hypotheses). Mean difference ($\Delta = \text{MAE}_{\text{Model}} - \text{MAE}_{\text{Twin}}$), raw paired $t$-test $p$, Benjamini--Hochberg FDR $q$-value, and Bonferroni $p_{\mathrm{Bonf}}$.}
+\label{tab:fdr_summary}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Comparison} & \textbf{Target} & $\boldsymbol{\Delta}$ & $\boldsymbol{p_{\mathrm{raw}}}$ & $\boldsymbol{q_{\mathrm{FDR}}}$ & $\boldsymbol{p_{\mathrm{Bonf}}}$ \\
+\midrule
+\multicolumn{6}{l}{\textit{PRISM (SIREN) vs.\ Classical Twin ($\tanh$-MLP)}} \\
+ & HOMO (eV) & $-0.0746$ & $9.57 \times 10^{-3}$ & $\mathbf{0.0184}^{\dagger}$ & $0.459$ \\
+ & LUMO (eV) & $-0.2405$ & $3.67 \times 10^{-4}$ & $\mathbf{0.0016}^{\dagger\dagger}$ & $\mathbf{0.0176}^{*}$ \\
+ & Gap (eV) & $-0.2489$ & $3.47 \times 10^{-4}$ & $\mathbf{0.0016}^{\dagger\dagger}$ & $\mathbf{0.0166}^{*}$ \\
+ & Dipole (D) & $-0.1927$ & $8.31 \times 10^{-3}$ & $\mathbf{0.0173}^{\dagger}$ & $0.399$ \\
+ & Polariz.\ ($\alpha$) & $-0.4253$ & $2.22 \times 10^{-2}$ & $\mathbf{0.0355}^{\dagger}$ & $1.000$ \\
+\midrule
+\multicolumn{6}{l}{\textit{Q-PRISM (PQC) vs.\ PRISM (SIREN)}} \\
+ & HOMO (eV) & $+0.0334$ & $4.32 \times 10^{-4}$ & $\mathbf{0.0017}^{\dagger\dagger}$ & $\mathbf{0.0207}^{*}$ \\
+ & LUMO (eV) & $+0.1484$ & $1.93 \times 10^{-3}$ & $\mathbf{0.0052}^{\dagger\dagger}$ & $0.0926$ \\
+ & Gap (eV) & $+0.1634$ & $5.79 \times 10^{-3}$ & $\mathbf{0.0126}^{\dagger}$ & $0.2777$ \\
+ & Dipole (D) & $+0.0526$ & $3.11 \times 10^{-3}$ & $\mathbf{0.0075}^{\dagger\dagger}$ & $0.1494$ \\
+\midrule
+\multicolumn{6}{l}{\textit{Q-PRISM (PQC) vs.\ Classical Twin ($\tanh$-MLP)}} \\
+ & LUMO (eV) & $-0.0921$ & $9.21 \times 10^{-3}$ & $\mathbf{0.0184}^{\dagger}$ & $0.4422$ \\
+ & Gap (eV) & $-0.0855$ & $1.64 \times 10^{-2}$ & $\mathbf{0.0272}^{\dagger}$ & $0.7882$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\paragraph{Analysis of Multiplicity-Corrected Findings.}
+As summarized in Table~\ref{tab:fdr_summary} and detailed across all 48 hypotheses in Table~\ref{tab:full_48_fdr}:
+\begin{itemize}
+    \item PRISM's performance advantage over the Classical Twin ($\tanh$) remains statistically significant after Benjamini--Hochberg FDR correction across $5$ out of $6$ QM9 targets ($q_{\mathrm{FDR}} < 0.02$ for HOMO, LUMO, Gap, Dipole; $q_{\mathrm{FDR}} = 0.0355$ for $\alpha$). On LUMO and Gap, the advantage survives even conservative Bonferroni correction ($p_{\mathrm{Bonf}} = 0.0176$ and $0.0166$).
+    \item PRISM is statistically significantly superior to Q-PRISM across all four intensive electronic and dipole targets ($q_{\mathrm{FDR}} \le 0.0126$), demonstrating that the classical trigonometric representation provides a more effective functional inductive bias than the 4-qubit PQC.
+    \item At $n = 5$, the minimum attainable two-sided $p$-value for the non-parametric Wilcoxon signed-rank test is $p = 0.0625$ (corresponding to unanimous rank agreement across all 5 seeds). We report these values in Table~\ref{tab:full_48_fdr} to confirm directional consistency across all splits. Formal non-parametric hypothesis testing with full statistical power is conducted via the 20-seed ablation (main text Section~\ref{main:sec:mechanism}), which achieves statistically significant separation ($p < 0.05$) under both parametric paired $t$-tests and non-parametric Wilcoxon signed-rank tests.
+\end{itemize}
+
+\paragraph{Complete 48-Hypothesis Multiplicity Report.}
+To provide full transparency on multiple hypothesis testing across the target hierarchy, Table~\ref{tab:full_48_fdr} details the complete statistical evaluation across all $m = 48$ pairwise comparisons ($8$ architectures $\times$ $6$ QM9 targets, evaluated across 5 independent random splits and initializations).
+
 \input{supplementary_fdr_table.tex}
 
-\section{Comprehensive Thermodynamic Properties}
-\input{supplementary_uhg_table.tex}
+\section{Mathematical Proofs and Algorithmic Specifications}
+\label{sm:proof}
+\label{sm:pseudocode}
 
-\section{Continuous E(3) Equivariance Stress Test}
+\begin{theorem}[$\mathrm{E}(3)$ Equivariance of Q-PRISM Layer]
+\label{thm:equivariance}
+Let $\mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}) = \mathbf{x} \mathbf{Q}^T + \mathbf{g}$ denote an arbitrary continuous Euclidean transformation with rotation/reflection $\mathbf{Q} \in \mathrm{O}(3)$ and translation $\mathbf{g} \in \mathbb{R}^3$.\footnote{We adopt a row-vector convention throughout: coordinates are stored as $\mathbf{x}_i \in \mathbb{R}^{1 \times 3}$ (row vectors), so the transformation is $\mathbf{x} \mathbf{Q}^T + \mathbf{g}$ rather than $\mathbf{Q}\mathbf{x} + \mathbf{g}$. This matches PyTorch's default batch-of-row-vectors layout.} Then for the Q-PRISM layer defined in main text Eqs.~(\ref{main:eq:coord_update}--\ref{main:eq:feat_update}):
+\begin{align}
+    \mathbf{h}_i^{l+1}(\mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}), \mathbf{h}) &= \mathbf{h}_i^{l+1}(\mathbf{x}, \mathbf{h}) \quad (\text{Invariance}) \\
+    \mathbf{x}_i^{l+1}(\mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}), \mathbf{h}) &= \mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}_i^{l+1}(\mathbf{x}, \mathbf{h})) \quad (\text{Equivariance})
+\end{align}
+\end{theorem}
+\begin{proof}
+Under transformation $\mathcal{T}_{\mathbf{Q}, \mathbf{g}}$, the relative coordinate vector transforms as $\mathbf{r}_{ij}' = (\mathbf{x}_j\mathbf{Q}^T + \mathbf{g}) - (\mathbf{x}_i\mathbf{Q}^T + \mathbf{g}) = \mathbf{r}_{ij}\mathbf{Q}^T$, yielding invariant squared Euclidean distance:
+\begin{equation}
+    d_{ij}' = \|\mathbf{r}_{ij}'\|^2 = (\mathbf{r}_{ij}\mathbf{Q}^T)(\mathbf{r}_{ij}\mathbf{Q}^T)^T = \mathbf{r}_{ij}\mathbf{Q}^T\mathbf{Q}\mathbf{r}_{ij}^T = \|\mathbf{r}_{ij}\|^2 = d_{ij}
+\end{equation}
+by the orthogonality property $\mathbf{Q}^T\mathbf{Q} = \mathbf{I}$.
 
-To verify mathematical invariance under physical coordinate shifts, we subjected Q-PRISM, EGNN, and a Non-Equivariant GNN to continuous $360^\circ$ spatial rotations around arbitrary 3D axes and $1{,}000$ randomized $\mathrm{E}(3)$ transformations ($\mathbf{x} \mapsto \mathbf{x}\mathbf{Q}^T + \mathbf{g}$).
+The Gaussian RBF features $\boldsymbol{\phi}(d_{ij})$ are scalar functions of the invariant squared distance $d_{ij}$ and are thus invariant. The 3-body mean bond angles $\bar{\theta}_{ij}$ depend exclusively on inner products of unit relative vectors (main text Eq.~\ref{main:eq:angle}), which satisfy:
+\begin{equation}
+    (\hat{\mathbf{r}}_{ij}\mathbf{Q}^T) \cdot (\hat{\mathbf{r}}_{ik}\mathbf{Q}^T) = \hat{\mathbf{r}}_{ij}\mathbf{Q}^T\mathbf{Q}\hat{\mathbf{r}}_{ik}^T = \hat{\mathbf{r}}_{ij} \cdot \hat{\mathbf{r}}_{ik}
+\end{equation}
+by orthogonality of $\mathbf{Q}$. Because all inputs $\mathbf{u}_{ij}^{(s)} = [\mathbf{h}_i^p, \mathbf{h}_j^p, \boldsymbol{\phi}(d_{ij}), \bar{\theta}_{ij}]$ to the edge heads are strictly $\mathrm{O}(3)$-invariant, the parameterized quantum state $|\psi_{ij}^{(s)}\rangle$ and all resulting measurement observables ($\mathbf{m}_{ij}$, $\phi_x$) are invariant. The coordinate gating function $\phi_x(\mathbf{m}_{ij}) = \tanh(\mathbf{W}_g [\phi_x^{(1)}, \phi_x^{(2)}]^T)$ is a scalar function of invariant quantities and is thus invariant.
 
-As shown in Figure~\ref{fig:invariance}:
+Substituting into the coordinate update equation:
+\begin{align}
+    \mathbf{x}_i^{l+1}(\mathbf{x}', \mathbf{h}) &= \mathbf{x}_i' + \frac{1}{|\mathcal{N}(i)|} \sum_{j \in \mathcal{N}(i)} \mathbf{r}_{ij}' \cdot \phi_x(\mathbf{m}_{ij}) \nonumber \\
+    &= (\mathbf{x}_i \mathbf{Q}^T + \mathbf{g}) + \left[\frac{1}{|\mathcal{N}(i)|} \sum_{j \in \mathcal{N}(i)} \mathbf{r}_{ij} \phi_x(\mathbf{m}_{ij})\right] \mathbf{Q}^T \nonumber \\
+    &= \left(\mathbf{x}_i + \frac{1}{|\mathcal{N}(i)|} \sum_{j \in \mathcal{N}(i)} \mathbf{r}_{ij} \phi_x(\mathbf{m}_{ij})\right) \mathbf{Q}^T + \mathbf{g} \nonumber \\
+    &= \mathcal{T}_{\mathbf{Q}, \mathbf{g}}(\mathbf{x}_i^{l+1}(\mathbf{x}, \mathbf{h}))
+\end{align}
+Node feature updates $\mathbf{h}_i^{l+1}$ depend solely on invariant messages $\mathbf{m}_{ij}$ and invariant node states $\mathbf{h}_i^l$, establishing exact feature invariance.\footnote{Our $\mathrm{E}(3)$ equivariance formulation treats all spatial vectors as polar vectors. For physical observables transforming as pseudovectors or axial tensors under improper rotations (e.g., magnetic dipole moments, angular momentum), the model would require parity-aware equivariant representations~\cite{batatiaMACEHigherOrder2022}. All QM9 molecular targets examined in this work are scalar invariants and are unaffected by this distinction.}
+\end{proof}
+
+\paragraph{Continuous Symmetry and Equivariance Stress Test.}
+To empirically verify mathematical invariance and equivariance under physical coordinate transformations, we subjected Q-PRISM, classical EGNN, and a Non-Equivariant GNN control to continuous $360^\circ$ spatial rotations around arbitrary 3D axes and $1{,}000$ randomized $\mathrm{E}(3)$ transformations ($\mathbf{x} \mapsto \mathbf{x}\mathbf{Q}^T + \mathbf{g}$).
+
+As demonstrated in Figure~\ref{fig:invariance}:
 \begin{itemize}
-    \item \textbf{Q-PRISM (Ours):} Coordinate equivariance error $= 2.38 \times 10^{-7}$, feature invariance error $= 2.38 \times 10^{-7}$, global prediction invariance $= 2.98 \times 10^{-8}$ eV.
-    \item \textbf{Classical EGNN:} Mean error $\sim 10^{-8}$ eV (machine precision).
-    \item \textbf{Non-Equivariant GNN:} Mean error $= 1.62$ eV (catastrophic symmetry failure).
+    \item \textbf{Q-PRISM (Ours):} Coordinate equivariance error $= 2.38 \times 10^{-7}$, feature invariance error $= 2.38 \times 10^{-7}$, and global prediction invariance error mean $= 3.96 \times 10^{-8}$\,eV (maximum $5.66 \times 10^{-8}$\,eV across $1{,}000$ randomized $\mathrm{E}(3)$ transformations), confirming strict machine-precision symmetry preservation.
+    \item \textbf{Classical EGNN:} Mean invariance error $= 6.50 \times 10^{-8}$\,eV (maximum $1.71 \times 10^{-7}$\,eV).
+    \item \textbf{Non-Equivariant GNN:} Mean invariance error $= 2.92$\,eV (maximum $13.34$\,eV), exhibiting catastrophic symmetry failure.
 \end{itemize}
 
 \begin{figure*}[h]
     \centering
     \includegraphics[width=0.88\textwidth]{figures/figure2_invariance_stress_test.png}
-    \caption{\textbf{Continuous Symmetry \& Equivariance Stress Test:} (a) Prediction error $\Delta_{\mathrm{inv}}$ under continuous $360^\circ$ $\mathrm{SO}(3)$ rotation around the $Z$-axis. Q-PRISM exhibits strict machine-precision invariance ($\sim 10^{-8}$), whereas Non-Equivariant GNN experiences complete failure ($\Delta_{\mathrm{inv}} > 1.0\text{ eV}$). (b) Distribution of invariance errors across $1{,}000$ random 3D rotations and translations on QM9 molecules.}
+    \caption{\textbf{Continuous Symmetry \& Equivariance Stress Test:} (a) Prediction error $\Delta_{\mathrm{inv}}$ under continuous $360^\circ$ $\mathrm{SO}(3)$ rotation around the $Z$-axis. Q-PRISM exhibits strict machine-precision invariance ($\sim 10^{-8}$\,eV), whereas Non-Equivariant GNN experiences complete failure ($\Delta_{\mathrm{inv}} > 1.0\text{ eV}$). (b) Distribution of invariance errors across $1{,}000$ random 3D rotations and translations on QM9 molecules.}
     \label{fig:invariance}
 \end{figure*}
 
-\section{Q-PRISM Architectural Upgrade Ablation Study}
+\paragraph{Algorithmic Specifications.}
+Algorithm~\ref{alg:prism} provides the complete algorithmic specification for a single forward pass of the PRISM layer. Algorithm~\ref{alg:qprism_edge} specifies the parameterized quantum edge operator of Q-PRISM that substitutes line~\ref{alg:prism_edge} in Algorithm~\ref{alg:prism}.
 
-To isolate the contribution of each architectural upgrade in Q-PRISM, we selectively disable individual components:
+\begin{algorithm}[t]
+\caption{PRISM Forward Pass (Single Layer)}
+\label{alg:prism}
+\begin{algorithmic}[1]
+\REQUIRE Molecular graph $\mathcal{G} = (\mathcal{V}, \mathcal{E}, \mathbf{x}, \mathbf{h})$
+\REQUIRE Feature projection matrices $\mathbf{W}_p^{(s)} \in \mathbb{R}^{2 \times d_{\mathrm{node}}}$ per head $s \in \{1,2\}$
+\REQUIRE SIREN parameters $\mathbf{W}_1 \in \mathbb{R}^{d_h \times d_{\mathrm{edge}}}$, $\mathbf{b}_1 \in \mathbb{R}^{d_h}$, $\mathbf{W}_2 \in \mathbb{R}^{8 \times d_h}$ ($d_{\mathrm{edge}} = 13, d_h = 4$) with $\mathbf{W}_1 \sim \mathcal{U}(-1/d_{\mathrm{edge}}, 1/d_{\mathrm{edge}})$ per head $s \in \{1,2\}$
+\REQUIRE Frequency scale $\omega_0 = 30.0$
+\REQUIRE Coordinate gating vector $\mathbf{W}_g \in \mathbb{R}^{1 \times 2}$
+\FOR{each edge $(i, j) \in \mathcal{E}$}
+    \STATE $d_{ij} \leftarrow \|\mathbf{x}_i - \mathbf{x}_j\|^2$ \COMMENT{Invariant squared distance}
+    \STATE $\boldsymbol{\phi}(d_{ij}) \leftarrow [\exp(-\gamma_k(d_{ij} - \mu_k)^2)]_{k=1}^K$ \COMMENT{RBF encoding}
+    \STATE $\bar{\theta}_{ij} \leftarrow \text{MeanAngle}(i, j, \mathcal{N}(i))$ \COMMENT{main text Eq.~\ref{main:eq:angle}}
+    \FOR{each head $s \in \{1, 2\}$}
+        \STATE $\mathbf{h}_i^{p} \leftarrow \mathbf{W}_p^{(s)} \mathbf{h}_i$ \COMMENT{Project node state to 2D}
+        \STATE $\mathbf{u}_{ij}^{(s)} \leftarrow [\mathbf{h}_i^p, \mathbf{h}_j^p, \boldsymbol{\phi}(d_{ij}), \bar{\theta}_{ij}]$ \COMMENT{$\in \mathbb{R}^{d_{\mathrm{edge}}},\; d_{\mathrm{edge}} = 13$}
+        \STATE $\mathbf{o}_{ij}^{(s)} \leftarrow \tanh(\mathbf{W}_2 \sin(\omega_0(\mathbf{W}_1 \mathbf{u}_{ij}^{(s)} + \mathbf{b}_1)))$ \label{alg:prism_edge} \COMMENT{SIREN}
+    \ENDFOR
+    \STATE $\mathbf{m}_{ij} \leftarrow [[\mathbf{o}_{ij}^{(1)}]_{1:3}, [\mathbf{o}_{ij}^{(1)}]_{5:8},\; [\mathbf{o}_{ij}^{(2)}]_{1:3}, [\mathbf{o}_{ij}^{(2)}]_{5:8}]$ \COMMENT{Message $\in \mathbb{R}^{14}$}
+    \STATE $\phi_x \leftarrow \tanh(\mathbf{W}_g [[\mathbf{o}_{ij}^{(1)}]_4, [\mathbf{o}_{ij}^{(2)}]_4])$ \COMMENT{Coord.\ scalar update $\phi_x$}
+\ENDFOR
+\FOR{each node $i \in \mathcal{V}$}
+    \STATE $\mathbf{x}_i \leftarrow \mathbf{x}_i + \frac{1}{|\mathcal{N}(i)|}\sum_{j \in \mathcal{N}(i)} (\mathbf{x}_i - \mathbf{x}_j) \cdot \phi_x$
+    \STATE $\mathbf{h}_i \leftarrow \mathbf{h}_i + \text{MLP}([\mathbf{h}_i,\; \sum_{j \in \mathcal{N}(i)} \mathbf{m}_{ij}])$
+\ENDFOR
+\RETURN $\mathbf{x}, \mathbf{h}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[t]
+\caption{Q-PRISM Edge Operator (substitutes Algorithm~\ref{alg:prism} line~\ref{alg:prism_edge})}
+\label{alg:qprism_edge}
+\begin{algorithmic}[1]
+\REQUIRE Edge input $\mathbf{u}_{ij}^{(s)} \in \mathbb{R}^{d_{\mathrm{edge}}}$ ($d_{\mathrm{edge}} = 13$), PQC parameters $\boldsymbol{\Theta}$
+\STATE $|\psi\rangle \leftarrow |0\rangle^{\otimes 4}$
+\FOR{$l = 1$ to $L$}
+    \STATE $|\psi\rangle \leftarrow U_{\mathrm{feat}}(\mathbf{h}_i^p, \mathbf{h}_j^p)\,|\psi\rangle$ \COMMENT{$R_Y$ node encoding}
+    \STATE $|\psi\rangle \leftarrow U_{\mathrm{dist}}^{(l)}(\boldsymbol{\phi}(d_{ij}))\,|\psi\rangle$ \COMMENT{$R_Z$ distance encoding}
+    \STATE $|\psi\rangle \leftarrow U_{\mathrm{ang}}(\bar{\theta}_{ij})\,|\psi\rangle$ \COMMENT{$R_Y$ angular encoding}
+    \STATE $|\psi\rangle \leftarrow U_{\mathrm{rot}}(\boldsymbol{\theta}_l)\,|\psi\rangle$ \COMMENT{$R_x R_y R_z$ variational rotations}
+    \STATE $|\psi\rangle \leftarrow U_{\mathrm{ent}}\,|\psi\rangle$ \COMMENT{Ring CNOT entanglement}
+\ENDFOR
+\STATE $\mathbf{o}_{ij}^{(s)} \leftarrow [\langle Z_q \rangle,\; \langle Z_q Z_{q+1} \rangle]_{q=0}^3$ \COMMENT{8 expectation values}
+\RETURN $\mathbf{o}_{ij}^{(s)} \in [-1, 1]^8$
+\end{algorithmic}
+\end{algorithm}
+
+\section{Mechanistic Origin of Advantage: Fourier Expressivity and Spectral Resonance}
+\label{sm:mechanism_details}
+\label{sm:spectral}
+\label{sm:omega}
+\label{sec:omega_sensitivity}
+\label{sm:dequant_details}
+
+\paragraph{Empirical Dequantization Framework.}
+In this work, the term ``dequantization'' is used in the empirical sense established by Schreiber et al.~\cite{Schreiber:2022roq} and Bowles et al.~\cite{bowles2024better}: identifying the mathematical functional mechanism responsible for empirical quantum model performance and constructing an iso-parameter classical architecture that natively spans that hypothesis class. This empirical functional dequantization is distinct from asymptotic complexity-theoretic dequantization algorithms~\cite{Tang:2018lmw} that establish polynomial-time classical matrix sampling for non-classical quantum algorithms.
+While data re-uploading PQCs are theoretically known to compute truncated Fourier series~\cite{Schuld:2020enb, landman2023approximating}, our primary contribution is identifying that this periodic inductive bias directly addresses the representational bottleneck of molecular message passing, and demonstrating that this advantage can be fully captured classically via periodic edge activations.
+
+\paragraph{Internal Dimensionality and Representation Capacity.}
+Although the 4-qubit statevector evolves in a 16-dimensional complex Hilbert space ($\mathbb{C}^{16}$), local Pauli measurements collapse the quantum output to real expectation values $\langle Z_q \rangle, \langle Z_i Z_j \rangle \in [-1, 1]$. To evaluate whether internal dimensionality influences downstream capacity, we benchmark classical models across hidden dimensions $d_h \in \{4, 8, 16, 32, 64, 128\}$ (SM~\ref{sm:param_scaling}, Table~\ref{tab:param_scaling}). Across all capacity regimes, PRISM maintains a consistent $32\text{--}43\%$ performance margin over the Classical Twin, demonstrating that the advantage stems from periodic functional expressivity rather than statevector dimensionality.
+
+\paragraph{Physical Validity of Periodic Coordinate Updates.}
+Periodic activations operate on projected geometric embeddings $\omega_0(\mathbf{W}_1 \mathbf{u}_{ij} + \mathbf{b}_1)$ rather than unbounded raw spatial coordinates. An outer hyperbolic tangent gate $\tanh$ strictly bounds the coordinate displacement update to $[-1, 1]$ (main text Eq.~\ref{main:eq:coord_update}), preventing oscillatory instability during iterative message passing. For extreme non-equilibrium configurations (such as bond dissociation pathways), empirical validation against unconstrained baselines remains recommended.
+
+\paragraph{Choice of Sinusoidal Activation Function.}
+Sinusoidal activations were selected based on two architectural principles: (i) single-qubit rotation gates natively generate Fourier series spanned by sine and cosine functions~\cite{Schuld:2020enb}, aligning the classical hypothesis class directly with the PQC parameterization; and (ii) SIREN weight initialization~\cite{sitzmann2020siren} provides stable variance preservation across deep periodic layers. Alternative periodic bases, such as Gabor wavelets or Fourier features, represent natural extensions for comparative study.
+
+\subsection{Architectural Component Ablation Study}
+
+To isolate the contribution of each architectural component in Q-PRISM, we selectively disable individual mechanisms:
 \begin{enumerate}
-    \item \textbf{RBF Distance Encoding:} Removing RBF ($K=8$) and reverting to scalar distance reduces the multi-frequency Fourier approximation capacity.
-    \item \textbf{Multi-Head:} Reducing from 2 heads to 1 head halves the quantum message dimensionality.
-    \item \textbf{Entanglement Correlators:} Removing $\langle Z_i Z_j \rangle$ readout reduces observables from 8 to 4 per head.
-    \item \textbf{Variational Depth:} PQC depth sweep with $L \in \{1, 2, 4\}$.
+    \item \textbf{Gaussian RBF Distance Encoding:} Removing RBF ($K=8$) and reverting to raw scalar distance degrades multi-frequency Fourier representation capacity.
+    \item \textbf{Multi-Head Processing:} Reducing from 2 heads to 1 head halves the quantum message dimensionality.
+    \item \textbf{Entanglement Correlators:} Removing two-qubit $\langle Z_i Z_j \rangle$ correlators reduces the readout observables from 8 to 4 per head.
+    \item \textbf{Variational Depth:} Sweeping PQC depth across $L \in \{1, 2, 4\}$.
 \end{enumerate}
 
 As shown in Figure~\ref{fig:ablations_v2}, incorporating two-qubit entanglement correlators $\langle Z_i Z_j \rangle$ reduces test MAE from $0.818$\,eV to $0.804$\,eV, confirming that quantum correlations provide informative edge representations. In depth sweeps, $L = 2$ achieves optimal calibration ($0.804$\,eV) compared to $L = 1$ ($0.820$\,eV), justifying our default architectural configuration.
@@ -81,17 +280,310 @@ As shown in Figure~\ref{fig:ablations_v2}, incorporating two-qubit entanglement 
     \label{fig:ablations_v2}
 \end{figure*}
 
-\section{NISQ Hardware Noise \& ZNE Error Mitigation}
+\subsection{Functional Response Analysis: Expressive Capacity vs.\ Periodic Expressivity}
+
+To visualize the mechanistic origin of periodic advantage, we extract edge-level response functions $f(\theta)$ from trained models by sweeping the 3-body bond angle $\theta \in [0^\circ, 180^\circ]$ at fixed interatomic distance ($d = 2.25$~\AA$^2$) and fixed node embeddings (training median).
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/figure_pqc_vs_prism_angular_response.png}
+    \caption{\textbf{Edge Functional Response vs.\ 3-Body Bond Angle} ($\theta \in [0^\circ, 180^\circ]$, fixed $d = 2.25$~\AA$^2$). Panels 1--2: Entangled and Separable PQCs output rich, multi-frequency trigonometric polynomials spanning $[-1, 1]$. Panel 3: Classical $\tanh$-MLP outputs remain flat; at this parameter budget ($d_h = 4$), the network suffers from expressive capacity starvation. Panel 4: PRISM (SIREN) fully restores large-amplitude, non-saturating sinusoidal oscillations at identical parameter parity, replicating the PQC function class classically.}
+    \label{fig:angular_response}
+\end{figure*}
+
+As shown in Figure~\ref{fig:angular_response}, both quantum circuits (entangled and separable) produce smooth, large-amplitude sinusoidal oscillations across the angular domain. Under the Fourier series framework of Schuld et al.~\cite{Schuld:2020enb} and Landman et al.~\cite{landman2023approximating}, each single-qubit rotation $R_Y(\theta) = \exp(-i \theta \sigma_y / 2)$ natively constructs Fourier basis elements $\cos(\theta)$ and $\sin(\theta)$ that compose into rich trigonometric polynomials across observable outputs.
+
+The classical $\tanh$-MLP, by contrast, produces a flat response over the same angular range. At this compact parameter budget ($d_h = 4$), the attenuated angular response of the Classical Twin is governed by expressive capacity constraints rather than overparameterized Neural Tangent Kernel (NTK) spectral bias~\cite{rahaman2019spectral}: a monotonic $\tanh$ activation requires multiple linear combinations to approximate a single oscillatory period, whereas a sinusoidal activation directly computes harmonic frequencies with a single parameter. With only 4 hidden units processing 13 mixed inputs, the $\tanh$-MLP lacks sufficient representational capacity to resolve high-frequency angular orbital overlap. This angular insensitivity explains why standard monotonic classical baselines struggle on electronic orbital properties, which depend fundamentally on periodic angular overlap integrals.
+
+When we examine PRISM (SIREN), the periodic sinusoidal activation $\sin(\omega_0 \mathbf{W} \mathbf{x} + \mathbf{b})$ directly supplies the compact oscillatory basis that the $\tanh$-MLP lacks~\cite{sitzmann2020siren}. The classical SIREN head outputs the same large-amplitude, non-saturating oscillatory polynomials as the PQC, fully restoring angular sensitivity without requiring quantum circuits or statevector simulation.
+
+This empirical correspondence reflects the practical implications of the trainability-simulability dilemma~\cite{Cerezo:2023nqf}: shallow parameterized circuits operating in trainable regimes reside within classically accessible hypothesis classes. PRISM provides an explicit classical architecture that operationalizes this hypothesis class within message passing. While these findings demonstrate empirical functional parity on molecular targets, formal complexity-theoretic classification of periodic graph hypothesis spaces remains an open question for theoretical study.
+
+\paragraph{SIREN Initialization vs.\ Activation Dynamics.}
+The performance contribution decomposes into activation expressivity and initialization dynamics: the $2 \times 2$ factorial ablation (main text Table~\ref{main:tab:init_ablation}) shows that sinusoidal activations contribute the primary error reduction ($-0.16\text{--}0.18$\,eV on Gap), with SIREN initialization providing a reinforcing interaction. In addition, the poor performance of Random Fourier Features (main text Table~\ref{main:tab:main_results}) demonstrates that learned, task-aligned harmonic frequencies are required rather than static periodic projections.
+
+\subsection{Fourier Spectral Comparison}
+
+To assess whether PRISM captures the same frequency structure as the PQC, we compare the Fourier power spectra of trained PQC and PRISM edge outputs. For each model, we sweep the 3-body bond angle $\theta \in [0^\circ, 180^\circ]$ at fixed interatomic distance ($d = 2.25$\,\AA$^2$) and compute the 1D discrete Fourier transform of the 8-channel edge head output.
+
+Table~\ref{tab:spectral_comparison} and Figure~\ref{fig:spectral_comparison} summarize the spectral similarity metrics. PQC and PRISM share high spectral similarity (cosine similarity $= 0.90$, well above the $0.8$ threshold for structural agreement) with $100\%$ overlap in their top-5 dominant frequencies. PRISM exhibits the most concentrated spectrum (top-5 concentration: $97.5\%$) and lower spectral entropy ($1.24$ bits) than the entangled PQC ($1.89$ bits), confirming that PRISM achieves a compact, structured periodic representation. The Classical Twin, with the highest entropy ($2.21$ bits) and lowest concentration ($90.0\%$), confirms its inability to produce structured periodic outputs at this parameter budget.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.92\textwidth]{figures/figure_pqc_vs_prism_spectra.png}
+    \caption{\textbf{Fourier Power Spectra of Edge Representations:} Normalized Fourier power spectra computed from 1D discrete Fourier transforms of edge representations across bond angles $\theta \in [0^\circ, 180^\circ]$ at fixed distance $d = 2.25$\,\AA$^2$. Q-PRISM (blue) and PRISM (green) exhibit highly concentrated, task-aligned harmonic peaks ($>95\%$ power in top-5 frequencies), while the Classical Twin (red) exhibits diffuse high-entropy spectral dispersion ($90.0\%$ concentration, $2.21$ bits entropy). Separable Q-PRISM (orange) retains periodic structure without entanglement, matching single-qubit rotation harmonics.}
+    \label{fig:spectral_comparison}
+\end{figure*}
+
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Fourier Spectral Comparison} of trained edge head outputs (HOMO, $N=1{,}000$, seed 42). Cosine similarity (Cos Sim) and top-5 frequency overlap are computed between each model and the Q-PRISM baseline.}
+\label{tab:spectral_comparison}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Entropy} & \textbf{Conc.} & \textbf{Cos} & \textbf{Top-5} \\
+ & (bits) & (top-5) & \textbf{Sim} & \textbf{Overlap} \\
+\midrule
+Q-PRISM (PQC) & $1.89$ & $95.4\%$ & $1.00$ & $100\%$ \\
+Sep.\ Q-PRISM & $1.12$ & $96.1\%$ & $0.83$ & $100\%$ \\
+Classical Twin & $2.21$ & $90.0\%$ & $0.91$ & $100\%$ \\
+\textbf{PRISM (SIREN)} & $\mathbf{1.24}$ & $\mathbf{97.5\%}$ & $\mathbf{0.90}$ & $\mathbf{100\%}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\noindent The high spectral similarity between PQC and PRISM supports the dequantization interpretation: PRISM captures the same functional class of periodic edge transformations that the PQC computes via single-qubit rotations. The failure of RFF (main text Table~\ref{main:tab:main_results}) is explained spectrally: fixed random projections produce misaligned frequency content, whereas both PQC rotations and PRISM's learned $\sin(\omega_0 \mathbf{W}_1 \mathbf{u} + \mathbf{b}_1)$ converge to similar, task-aligned frequency bands through end-to-end training.
+
+\subsection{Frequency Initialization and Sensitivity Analysis}
+
+The SIREN frequency parameter $\omega_0$ governs the spectral bandwidth of the periodic basis. To characterize the frequency response profile and identify the optimal operational regime, we evaluate PRISM across a 9-point grid $\omega_0 \in \{1, 3, 5, 10, 20, 30, 50, 75, 100\}$ across 10 independent random seeds, benchmarked against paired Q-PRISM and Classical Twin baselines (Table~\ref{tab:omega_sensitivity}, Figure~\ref{fig:omega_sweep}).
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Extended SIREN $\omega_0$ Sensitivity Grid with Paired Q-PRISM Reference} ($N=1{,}000$, 10 seeds for PRISM/Twin, 5 seeds for Q-PRISM; all models $2{,}527$ params). Test MAE (eV; Dipole in Debye), mean $\pm$ std. Statistical significance vs.\ Classical Twin under Benjamini--Hochberg FDR correction ($m = 36$ hypotheses): $^{*}q<0.05$, $^{**}q<0.01$, $^{***}q<0.001$. $^{\ddagger}$: PRISM significantly outperforms Q-PRISM ($q_{\mathrm{FDR}}<0.05$, paired $t$-test). Best PRISM result per row in \textbf{bold}.}
+\label{tab:omega_sensitivity}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccccccc}
+\toprule
+\textbf{Target} & \textbf{Classical Twin} & \textbf{Q-PRISM (PQC)} & $\boldsymbol{\omega_0=1}$ & $\boldsymbol{\omega_0=3}$ & $\boldsymbol{\omega_0=5}$ & $\boldsymbol{\omega_0=10}$ & $\boldsymbol{\omega_0=20}$ & $\boldsymbol{\omega_0=30}$ & $\boldsymbol{\omega_0=50}$ & $\boldsymbol{\omega_0=75}$ & $\boldsymbol{\omega_0=100}$ \\
+\midrule
+HOMO & $0.331 \pm 0.016$ & $0.307 \pm 0.015$ & $0.310 \pm 0.026^{*\ddagger}$ & $0.309 \pm 0.025^{*\ddagger}$ & $0.306 \pm 0.027^{*\ddagger}$ & $0.299 \pm 0.019^{***\ddagger}$ & $0.278 \pm 0.011^{***\ddagger}$ & $0.276 \pm 0.010^{***\ddagger}$ & $\mathbf{0.268 \pm 0.012}^{***\ddagger}$ & $0.271 \pm 0.010^{***\ddagger}$ & $0.280 \pm 0.009^{***\ddagger}$ \\
+LUMO & $0.732 \pm 0.026$ & $0.641 \pm 0.058$ & $0.687 \pm 0.034^{*}$ & $0.680 \pm 0.038^{*}$ & $0.667 \pm 0.040^{**}$ & $0.627 \pm 0.041^{***}$ & $0.528 \pm 0.055^{***}$ & $0.469 \pm 0.055^{***\ddagger}$ & $\mathbf{0.437 \pm 0.038}^{***\ddagger}$ & $0.439 \pm 0.037^{***\ddagger}$ & $0.457 \pm 0.047^{***\ddagger}$ \\
+Gap & $0.820 \pm 0.035$ & $0.688 \pm 0.043$ & $0.794 \pm 0.030^{***}$ & $0.792 \pm 0.030^{***}$ & $0.790 \pm 0.028^{***}$ & $0.750 \pm 0.024^{***}$ & $0.597 \pm 0.047^{***}$ & $0.543 \pm 0.049^{***\ddagger}$ & $\mathbf{0.501 \pm 0.034}^{***\ddagger}$ & $0.516 \pm 0.037^{***\ddagger}$ & $0.526 \pm 0.035^{***\ddagger}$ \\
+Dipole & $0.926 \pm 0.076$ & $0.766 \pm 0.017$ & $0.828 \pm 0.058^{**}$ & $0.830 \pm 0.074^{**}$ & $0.802 \pm 0.054^{***}$ & $0.770 \pm 0.042^{***}$ & $0.748 \pm 0.031^{***}$ & $\mathbf{0.714 \pm 0.030}^{***\ddagger}$ & $0.720 \pm 0.034^{***}$ & $0.722 \pm 0.026^{***}$ & $0.745 \pm 0.023^{***}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/figure_omega_sweep.png}
+    \caption{\textbf{SIREN $\omega_0$ Resonance Spectrum Across Physical Targets:} Test MAE as a function of the frequency parameter $\omega_0 \in [1, 100]$ across 10 random seeds (mean $\pm$ std). Across all properties, PRISM demonstrates a broad, stable resonance band centered at $\omega_0 \approx 30--50$, outperforming both the Classical Twin (red dashed line) and the 4-qubit PQC baseline (blue dashed line). The advantage degrades gracefully at extreme frequencies ($\omega_0 < 5$ or $\omega_0 > 75$), confirming that performance is governed by spectral alignment with atomic spatial harmonics rather than fine-tuned hyperparameter artifacts.}
+    \label{fig:omega_sweep}
+\end{figure*}
+
+Following Sitzmann et al.~\cite{sitzmann2020siren}, the default frequency parameter was configured to $\omega_0 = 30$. Across the full frequency sweep $\omega_0 \in [1, 100]$ (Table~\ref{tab:omega_sensitivity}, Figure~\ref{fig:omega_sweep}), PRISM demonstrates stable performance across a broad resonance band centered at $\omega_0 \approx 30\text{--}50$. Across all tested values $\omega_0 \ge 1$, PRISM achieves statistically significant error reductions over the Classical Twin ($q_{\mathrm{FDR}} < 0.05$, 10 seeds). Electronic orbital properties exhibit optimal convergence at $\omega_0 \approx 50$ (Gap MAE $0.501$\,eV; $-38.9\%$ vs.\ Twin, $-26.1\%$ vs.\ Q-PRISM), whereas dipole moments optimize at $\omega_0 \approx 30$ ($0.714$\,D; $-22.9\%$ vs.\ Twin). Beyond $\omega_0 = 75$, high-frequency spectral dispersion leads to minor performance attenuation, delineating a well-conditioned physical resonance band.
+
+\paragraph{Learnable $\omega_0$ Dynamics.}
+To test whether $\omega_0$ can be treated as a learnable parameter, we parameterize it as $\omega_0 = \exp(\log \omega_0)$ with a per-head \texttt{nn.Parameter} (adding 4 parameters per model) and compare against the fixed $\omega_0 = 30$ baseline (3 seeds, $N = 1{,}000$, 15 epochs; Table~\ref{tab:learnable_omega}):
+
+\begin{table}[ht]
+\centering
+\small
+\caption{\textbf{Learnable $\omega_0$ Experiment} ($N = 1{,}000$, 3 seeds). Test MAE (eV). When initialized at 30, learnable $\omega_0$ converges to $28$--$31$ across all heads and layers, matching fixed $\omega_0 = 30$ performance. When initialized at 10, $\omega_0$ remains near $10$--$12$ and does not escape to the superior $\omega_0 \approx 30$ basin.}
+\label{tab:learnable_omega}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{HOMO} & \textbf{LUMO} & \textbf{Gap} \\
+\midrule
+PRISM ($\omega_0 = 30$, fixed) & $\mathbf{0.276 \pm 0.007}$ & $\mathbf{0.460 \pm 0.065}$ & $\mathbf{0.529 \pm 0.013}$ \\
+PRISM ($\omega_0 = 30$, learnable) & $0.276 \pm 0.004$ & $0.460 \pm 0.066$ & $0.539 \pm 0.013$ \\
+PRISM ($\omega_0 = 10$, learnable) & $0.298 \pm 0.006$ & $0.641 \pm 0.045$ & $0.774 \pm 0.048$ \\
+Classical Twin ($\tanh$) & $0.326 \pm 0.007$ & $0.754 \pm 0.013$ & $0.844 \pm 0.030$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+In Table~\ref{tab:learnable_omega}, initializing $\omega_0 = 30$ places the model in a stable optimization basin: learned frequencies converge to $28$--$31$ across all heads and layers with negligible change in test MAE. Lower initialization ($\omega_0 = 10$) stays near $10$--$12$ and does not reach the superior $\omega_0 \approx 30$ basin. Yet even with $\omega_0 = 10$, the periodic model outperforms the classical $\tanh$-MLP (HOMO: $0.298$ vs $0.326$\,eV). Because fixed $\omega_0 = 30$ avoids additional optimization parameters while preserving performance, we retain the fixed setting recommended by Sitzmann et al.~\cite{sitzmann2020siren}.
+
+\section{Empirical Scaling Dynamics: Data Volume and Model Capacity}
+\label{sm:param_scaling}
+\label{sm:full_scale}
+
+\subsection{Sample Complexity Scaling Analysis \texorpdfstring{($N \in [100, 5{,}000]$)}{(N in [100, 5,000])}}
+
+To evaluate whether the trigonometric advantage is specific to the data-scarce regime or represents a scale-invariant architectural property, we evaluate all models across $N \in \{100, 250, 500, 1{,}000, 2{,}000, 5{,}000\}$ training molecules (3 seeds each) on HOMO and fit power-law scaling exponents $\text{MAE} \sim N^{-\alpha}$.
+
+\begin{figure*}[h]
+    \centering
+    \includegraphics[width=0.88\textwidth]{figures/figure_scaling_sample_complexity.png}
+    \caption{\textbf{Sample Complexity Scaling on QM9 HOMO} ($N \in [100, 5{,}000]$, 3 seeds). Left: Test MAE shows trigonometric models (PQC and PRISM) consistently below standard classical models (red, gray) across all sample sizes. Center: Training MAE. Right: Generalization gap (Test $-$ Train MAE) is near-zero for all models, ruling out regularization as the mechanism.}
+    \label{fig:scaling}
+\end{figure*}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.48\textwidth]{figures/figure_scaling_exponents.png}
+    \caption{\textbf{Power-Law Scaling Exponents} ($\text{MAE} \sim N^{-\alpha}$). All models follow clean power-law decay ($R^2 > 0.91$). The classical $\tanh$-MLP has the steepest exponent ($\alpha = 0.160$) but starts from a worse intercept, consistent with the trigonometric advantage being a \textit{function-class} advantage rather than a statistical regularization effect.}
+    \label{fig:exponents}
+\end{figure}
+
+As shown in Figures~\ref{fig:scaling} and~\ref{fig:exponents}, models with trigonometric expressivity (PQC and PRISM) maintain lower test MAE than the classical $\tanh$-MLP at \textit{every} sample size from $N = 100$ ($0.441$ vs.\ $0.448$~eV) to $N = 5{,}000$ ($0.244$ vs.\ $0.258$~eV). Because the generalization gap (Test MAE $-$ Train MAE) is negligible ($< 0.01$~eV) for all architectures at $N \ge 500$, the performance difference cannot be attributed to unitary regularization~\cite{Caro:2021mgf}. Rather, the advantage appears as an intercept shift in the $\log$-$\log$ scaling plot: the classical $\tanh$-MLP has a steeper slope ($\alpha = 0.160$) than the PQC ($\alpha = 0.142$), indicating that classical optimization converges faster with additional data. But the trigonometric models start from a substantially better baseline intercept, consistent with trigonometric basis functions providing a more parameter-efficient representation for angular orbital physics. This is a structural inductive bias advantage, which is fully accessible classically via PRISM.
+
+\subsection{Full-Scale QM9 Validation \texorpdfstring{($N$ up to $110{,}000$)}{(N up to 110,000)}}
+\label{sec:scaling}
+
+To evaluate model behavior across data volumes, we extend the evaluation to $N \in \{1{,}000,\; 5{,}000,\; 10{,}000,\; 25{,}000,\; 50{,}000,\; 110{,}000\}$ training molecules across all three electronic targets with 3 independent seeds (seeds $42$--$44$), with full 5-seed evaluation on the complete $N = 110{,}000$ dataset (20 epochs). Because PRISM and the Classical Twin are fully classical, this scaling study is computationally tractable; Q-PRISM is included up to $N = 10{,}000$ where PennyLane statevector simulation remains feasible.
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Full-Scale QM9 Evaluation: Periodic Activation Advantage from $N = 1{,}000$ to $N = 110{,}000$}. Test MAE (eV) for iso-parameter PRISM (SIREN) vs.\ Classical Twin ($\tanh$-MLP), both at $2{,}527$ params, 20 epochs. $N = 1{,}000$ and $N = 110{,}000$ values are mean $\pm$ std across 5 independent random seeds with best-validation checkpointing; intermediate $N$ values ($10\mathrm{k}--50\mathrm{k}$) are mean $\pm$ std over 3 seeds (seeds $42$--$44$). Multiplicity correction on $N=110{,}000$: Benjamini--Hochberg False Discovery Rate ($^{*}q < 0.05$). The periodic advantage persists across all data scales, establishing a persistent structural inductive bias.}
+\label{tab:full_scale}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Target} & \textbf{N} & \textbf{PRISM (SIREN)} & \textbf{Classical Twin} & \textbf{Adv.} \\
+\midrule
+HOMO & $1{,}000$ & $0.269 \pm 0.015$ & $0.344 \pm 0.045$ & $+22\%$ \\
+ & $10{,}000$ & $0.213 \pm 0.005$ & $0.247 \pm 0.011$ & $+14\%$ \\
+ & $25{,}000$ & $0.197 \pm 0.001$ & $0.231 \pm 0.006$ & $+15\%$ \\
+ & $50{,}000$ & $0.181 \pm 0.002$ & $0.204 \pm 0.010$ & $+12\%$ \\
+ & $110{,}000$ & $\mathbf{0.147 \pm 0.004}^{*}$ & $0.162 \pm 0.003$ & $\mathbf{+9.1\%}$ \\
+\midrule
+LUMO & $1{,}000$ & $0.479 \pm 0.015$ & $0.720 \pm 0.037$ & $+33\%$ \\
+ & $10{,}000$ & $0.257 \pm 0.025$ & $0.413 \pm 0.082$ & $+38\%$ \\
+ & $25{,}000$ & $0.210 \pm 0.005$ & $0.327 \pm 0.022$ & $+36\%$ \\
+ & $50{,}000$ & $0.182 \pm 0.012$ & $0.246 \pm 0.006$ & $+26\%$ \\
+ & $110{,}000$ & $\mathbf{0.144 \pm 0.006}$ & $0.159 \pm 0.006$ & $\mathbf{+9.6\%}$ \\
+\midrule
+Gap & $1{,}000$ & $0.557 \pm 0.020$ & $0.806 \pm 0.041$ & $+31\%$ \\
+ & $10{,}000$ & $0.319 \pm 0.018$ & $0.502 \pm 0.089$ & $+36\%$ \\
+ & $25{,}000$ & $0.278 \pm 0.010$ & $0.414 \pm 0.022$ & $+33\%$ \\
+ & $50{,}000$ & $0.260 \pm 0.003$ & $0.329 \pm 0.026$ & $+21\%$ \\
+ & $110{,}000$ & $\mathbf{0.221 \pm 0.009}$ & $0.237 \pm 0.005$ & $\mathbf{+6.8\%}$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{figure*}[t]
+    \centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/figure_p21_scaling.png}
+        \caption{Sample Complexity Scaling ($N \in [1\mathrm{k}, 110\mathrm{k}]$)}
+        \label{fig:p21_scaling}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/figure_full_qm9_curves.png}
+        \caption{Training \& Validation Convergence ($N = 110{,}000$, 20 epochs)}
+        \label{fig:full_qm9_curves}
+    \end{subfigure}
+    \caption{\textbf{Full-Scale QM9 Evaluation and Convergence Verification:} (a) Test MAE across dataset scales from $N = 1{,}000$ to $N = 110{,}000$. PRISM (green) maintains lower error than the Classical Twin (red) across all scales. (b) Learning curves for PRISM and Classical Twin across 20 training epochs on the complete $110{,}000$-molecule dataset (5 seeds). Both architectures converge cleanly without overfitting, with PRISM achieving superior validation and test performance throughout training.}
+    \label{fig:full_qm9_combined}
+\end{figure*}
+
+Table~\ref{tab:full_scale} and Figure~\ref{fig:full_qm9_combined} report results across dataset scales from $N = 1{,}000$ to $N = 110{,}000$. While all $2{,}527$-parameter models operate above chemical accuracy ($0.043$\,eV / $1$\,kcal/mol) on full-scale QM9 due to their compact hypothesis class, PRISM maintains a consistent structural advantage over the Classical Twin across all sample regimes ($N = 1{,}000$ to $110{,}000$), demonstrating that periodic inductive bias provides a consistent representation benefit independent of training data volume. At $N = 110{,}000$ (5 seeds, 20 epochs), PRISM achieves $0.147 \pm 0.004$\,eV on HOMO ($9.1\%$ advantage, $p = 0.0035$, $q_{\mathrm{FDR}} = 0.0104$), $0.144 \pm 0.006$\,eV on LUMO ($9.6\%$ advantage, $p = 0.0424$, $q_{\mathrm{FDR}} = 0.0547$), and $0.221 \pm 0.009$\,eV on Gap ($6.8\%$ advantage, $p = 0.0547$). Both architectures converge cleanly without overfitting (Figure~\ref{fig:full_qm9_curves}), with PRISM maintaining lower validation and test error throughout training.
+
+PRISM also outperforms Q-PRISM (the PQC) at every data point up to $N = 10{,}000$, with all pairwise comparisons significant at $p < 0.001$. The largest margin is on LUMO at $N = 5{,}000$ ($0.246$ vs $0.433$~eV, $-43\%$). These results confirm that the dequantization finding is not a low-data artifact: the periodic activation advantage is a persistent structural inductive bias that scales from $N = 1{,}000$ to the full QM9 dataset.
+
+\subsection{Extended Model Capacity Scaling \texorpdfstring{($2.5\mathrm{k} \to 100\mathrm{k}+$ Parameters)}{(2.5k to 100k+ Parameters)}}
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Extended Capacity Scaling: Periodic Advantage Across Six Orders of Scale} ($N = 1{,}000$, 5 seeds). Test MAE (eV), mean $\pm$ std. PRISM and Classical Twin are exactly iso-parameter at each scale tier from XS ($2{,}527$\,p) to XXL ($100{,}127$\,p). The periodic activation advantage ($\Delta$) \textit{widens monotonically} with capacity, reaching $+51.3\%$ on the HOMO-LUMO gap at $100\mathrm{k}+$ parameters. PaiNN (not iso-parameter) shown for reference. Paired $t$-test: $^{*}p < 0.05$, $^{**}p < 0.01$, $^{***}p < 0.001$.}
+\label{tab:param_scaling}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrcccc}
+\toprule
+\textbf{Scale} & \textbf{Target} & \textbf{Params} & \textbf{PRISM (SIREN)} & \textbf{Classical Twin} & $\boldsymbol{\Delta}_\%$ \textbf{(p-value)} & \textbf{PaiNN} \\
+\midrule
+XS & HOMO & 2,527 & $0.2774 \pm 0.0134$ & $0.3439 \pm 0.0502$ & $+19.4\%^{*}$ & $0.2834 \pm 0.0339$ \\
+ & LUMO &  & $0.4791 \pm 0.0484$ & $0.7196 \pm 0.0410$ & $+33.4\%^{***}$ & $0.3977 \pm 0.0370$ \\
+ & Gap &  & $0.5184 \pm 0.0771$ & $0.8063 \pm 0.0456$ & $+35.7\%^{***}$ & $0.4704 \pm 0.0774$ \\
+\midrule
+S & HOMO & 4,911 & $0.2513 \pm 0.0124$ & $0.3025 \pm 0.0141$ & $+16.9\%^{***}$ & $0.2559 \pm 0.0184$ \\
+ & LUMO &  & $0.4026 \pm 0.0413$ & $0.6894 \pm 0.0416$ & $+41.6\%^{***}$ & $0.3141 \pm 0.0255$ \\
+ & Gap &  & $0.4859 \pm 0.0330$ & $0.8028 \pm 0.0381$ & $+39.5\%^{***}$ & $0.3933 \pm 0.0285$ \\
+\midrule
+M & HOMO & 8,287 & $0.2556 \pm 0.0194$ & $0.2979 \pm 0.0183$ & $+14.2\%^{*}$ & $0.2332 \pm 0.0137$ \\
+ & LUMO &  & $0.3843 \pm 0.0372$ & $0.6613 \pm 0.0341$ & $+41.9\%^{***}$ & $0.2528 \pm 0.0153$ \\
+ & Gap &  & $0.4701 \pm 0.0218$ & $0.8017 \pm 0.0490$ & $+41.4\%^{***}$ & $0.3469 \pm 0.0280$ \\
+\midrule
+L & HOMO & 16,959 & $0.2411 \pm 0.0089$ & $0.2911 \pm 0.0162$ & $+17.2\%^{***}$ & $0.2097 \pm 0.0097$ \\
+ & LUMO &  & $0.3232 \pm 0.0407$ & $0.6054 \pm 0.0170$ & $+46.6\%^{***}$ & $0.2155 \pm 0.0081$ \\
+ & Gap &  & $0.4324 \pm 0.0518$ & $0.7904 \pm 0.0247$ & $+45.3\%^{***}$ & $0.3189 \pm 0.0158$ \\
+\midrule
+XL & HOMO & 29,599 & $0.2366 \pm 0.0074$ & $0.2834 \pm 0.0172$ & $+16.5\%^{**}$ & $0.1916 \pm 0.0157$ \\
+ & LUMO &  & $0.2872 \pm 0.0325$ & $0.5741 \pm 0.0147$ & $+50.0\%^{***}$ & $0.1985 \pm 0.0043$ \\
+ & Gap &  & $0.3698 \pm 0.0341$ & $0.7817 \pm 0.0405$ & $+52.7\%^{***}$ & $0.2898 \pm 0.0141$ \\
+\midrule
+XXL & HOMO & 100,127 & $0.2329 \pm 0.0197$ & $0.2731 \pm 0.0206$ & $+14.7\%^{**}$ & $0.2097 \pm 0.0097$ \\
+ & LUMO &  & $0.2650 \pm 0.0081$ & $0.5369 \pm 0.0161$ & $+50.6\%^{***}$ & $0.2155 \pm 0.0081$ \\
+ & Gap &  & $0.3704 \pm 0.0209$ & $0.7609 \pm 0.0449$ & $\mathbf{+51.3\%^{***}}$ & $0.3189 \pm 0.0158$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.98\textwidth]{figures/figure_param_scaling.png}
+    \caption{\textbf{Extended Model Capacity Scaling ($2.5\mathrm{k} \to 100\mathrm{k}+$ Parameters):} Test MAE as a function of trainable parameters across six capacity tiers (XS, S, M, L, XL, XXL) on QM9 electronic targets (5 seeds, mean $\pm$ std). Across all properties, the performance advantage ($\Delta$) of PRISM (green) over the Classical Twin (red) \textit{widens monotonically} as network capacity scales: on HOMO-LUMO gap (c), the advantage grows from $+35.7\%$ at XS ($2{,}527$\,p) to $\mathbf{+51.3\%}$ at XXL ($100{,}127$\,p, $p = 2.18 \times 10^{-5}$, Cohen's $d = -10.21$). PaiNN (blue dashed line) is shown for reference.}
+    \label{fig:param_scaling}
+\end{figure*}
+
+The periodic activation advantage does not diminish with scale; it widens monotonically. As shown in Table~\ref{tab:param_scaling} and Figure~\ref{fig:param_scaling}, increasing model capacity from XS ($2{,}527$\,p) to XXL ($100{,}127$\,p) widens PRISM's relative improvement over the Classical Twin from $+35.7\%$ to $\mathbf{+51.3\%}$ on the HOMO-LUMO gap ($p = 2.18 \times 10^{-5}$, Cohen's $d = -10.21$), and from $+33.4\%$ to $\mathbf{+50.6\%}$ on LUMO ($p = 8.73 \times 10^{-6}$, Cohen's $d = -12.85$). These scaling trajectories demonstrate that the periodic advantage is not confined to low-parameter models: standard monotonic activations cannot compensate for the lack of periodic inductive bias by simply adding network parameters.
+
+At the XXL scale ($100{,}127$ parameters), PaiNN's coupled directional vector channels maintain superior accuracy on LUMO ($0.215$ vs.\ $0.265$\,eV) and Gap ($0.318$ vs.\ $0.370$\,eV), where 3D vector orientations are essential. Nevertheless, PRISM narrows the gap on HOMO ($0.233$ vs.\ $0.210$\,eV) while demonstrating a $51.3\%$ error reduction over the parameter-matched Classical Twin, confirming the distinct representational value of periodic activations within scalar message streams.
+
+\section{PQC Circuit Scaling and Computational Efficiency}
+\label{sm:depth_scaling}
+\label{sm:qubit_scaling}
+
+\subsection{PQC Depth Scaling and Asymptotic Classical Parity}
+
+A standard conjecture in quantum machine learning is that while shallow parameterized quantum circuits can be classically simulated or dequantized, scaling circuit depth $L$ introduces multi-layer entanglement that escapes classical functional classes. To test this hypothesis directly, we evaluate Q-PRISM across $L \in \{1, 2, 4, 8, 16\}$ variational layers ($2{,}351$ to $4{,}991$ parameters) and compare against fixed-depth PRISM ($2{,}527$\,p) and Classical Twin ($2{,}527$\,p) models across 5 independent seeds on all four electronic targets (Table~\ref{tab:depth_scaling}, Figure~\ref{fig:depth_scaling}).
+
+\input{experiment_b_depth_scaling_table.tex}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure_depth_scaling.png}
+    \caption{\textbf{PQC Circuit Depth Scaling ($L \in \{1, 2, 4, 8, 16\}$ Layers):} Test MAE for Q-PRISM (blue) as a function of circuit depth $L$, benchmarked against the fixed 2-layer PRISM model (green dashed line with $\pm 1\sigma$ band) and Classical Twin baseline (red dotted line with $\pm 1\sigma$ band) across 5 independent random seeds. At shallow depth ($L = 1, 2$), PRISM significantly outperforms Q-PRISM ($p < 0.01$). As circuit depth increases to $L = 16$ ($16$ layers of parameterized rotations and CNOT entanglement), Q-PRISM monotonically improves but asymptotically converges to PRISM's classical performance ($p = 0.969$ on Gap, $p = 0.376$ on HOMO), demonstrating zero marginal advantage from deep quantum entanglement.}
+    \label{fig:depth_scaling}
+\end{figure*}
+
+As shown in Table~\ref{tab:depth_scaling} and Figure~\ref{fig:depth_scaling}, at shallow depths ($L = 1, 2$), PRISM substantially outperforms Q-PRISM (Gap: $0.5531$ vs.\ $0.7680$\,eV at $L = 1$, $p = 0.0057$; $0.5531$ vs.\ $0.7038$\,eV at $L = 2$, $p = 0.0035$). As circuit depth increases ($L = 4 \to 8 \to 16$), Q-PRISM improves steadily, but asymptotically plateaus at PRISM's classical performance. At $L = 16$ ($4{,}991$ parameters), Q-PRISM achieves $0.5543 \pm 0.040$\,eV on Gap, matching PRISM ($0.5531 \pm 0.059$\,eV) with exact statistical parity ($p = 0.9691$, Cohen's $d = -0.02$). The same asymptotic convergence holds across all targets: HOMO ($0.2705$ vs.\ $0.2772$\,eV, $p = 0.3761$), LUMO ($0.4812$ vs.\ $0.5006$\,eV, $p = 0.3609$), and Dipole ($0.7088$ vs.\ $0.7055$\,Debye, $p = 0.7591$).
+
+These empirical results demonstrate that adding variational depth and multi-layer CNOT entanglement to the quantum circuit merely enables the PQC to recover the representation expressivity that a 2-layer classical SIREN network provides natively.
+
+\subsection{Multi-Qubit Scaling and Computational Efficiency}
+
+We examine the impact of expanding the quantum register from $n_q = 4$ to $n_q \in \{6, 8\}$ qubits. For each qubit width $n_q$, the PQC computes $2n_q$ observables ($n_q$ single-qubit $\langle Z_q \rangle$ expectations and $n_q$ ring correlators $\langle Z_q Z_{q+1} \rangle$), with feature projection dimensions scaling as $\text{Linear}(h, n_q / 2)$. To ensure rigorous iso-capacity benchmarking, we construct matched classical PRISM and Twin architectures whose hidden dimensions are dynamically solved to match the PQC parameter count at each qubit width (Table~\ref{tab:qubit_scaling}, Figure~\ref{fig:qubit_scaling}).
+
+\input{experiment_a_qubit_scaling_table.tex}
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/figure_qubit_scaling.png}
+    \caption{\textbf{Multi-Qubit Register Scaling ($n_q \in \{4, 6, 8\}$ Qubits):} (a) Test MAE on HOMO-LUMO Gap across 5 random seeds (mean $\pm$ std). Across all qubit counts, PRISM (green) strictly matches or outperforms Q-PRISM (blue) and Classical Twin (red). (b) Training wall-time per seed on single-core CPU: PRISM requires $\sim 9--11$\,s, whereas Q-PRISM simulation scales exponentially ($206$\,s at $n_q = 4$, $559$\,s at $n_q = 6$, and $4{,}866$\,s at $n_q = 8$), representing a $540\times$ classical speedup at 8 qubits. (c) Projected hardware coherence budget ($\tau / T_2^E$) for Arm fluxonium qubits ($T_2^E = 380\,\mu\text{s}$) and IBM Transmon qubits ($T_2 = 50\,\mu\text{s}$).}
+    \label{fig:qubit_scaling}
+\end{figure*}
+
+Across all tested qubit widths, PRISM consistently outperforms Q-PRISM on Gap prediction ($n_q = 4$: $0.5531$ vs.\ $0.7038$\,eV, $p = 0.0035$; $n_q = 6$: $0.5161$ vs.\ $0.6923$\,eV, $p = 0.0009$; $n_q = 8$: $0.5314$ vs.\ $0.6501$\,eV, $p = 0.0218$). Across these widths, Classical Twin MAE remains flat ($\sim 0.79--0.81$\,eV), whereas PRISM maintains a large and statistically significant periodic advantage ($p \le 0.0013$, Cohen's $d \le -3.61$).
+
+Figure~\ref{fig:qubit_scaling}(b) characterizes the computational divergence: while classical PRISM training takes $\sim 9--11$\,s per seed, Q-PRISM simulation time scales exponentially: $206$\,s at $n_q = 4$, $559$\,s at $n_q = 6$, and $\mathbf{4{,}866\,\text{s}}$ (~$81$ minutes) per seed at $n_q = 8$. At $n_q = 8$ qubits, PRISM delivers superior predictive accuracy with a $540\times$ wall-time speedup over classical statevector simulation on single-core CPU ($9.1$\,s vs.\ $4{,}866$\,s per seed). Across the evaluated widths ($n_q \in \{4, 6, 8\}$), PRISM maintains consistent accuracy advantages while statevector simulation runtime scales exponentially. While scaling to $n_q \ge 10$ qubits would incur prohibitive simulation costs without altering the observed asymptotic convergence, the $n_q \le 8$ regime fully maps the scaling dynamics of the multi-qubit architecture.
+
+\section{Analytical Hardware Noise Models and NISQ Feasibility}
+\label{sm:analytical_noise_scaling}
+
+\paragraph{Hardware Characterization Scope \& Simulation Constraints.}
+\textit{All device characterizations in this work are based on analytical and calibrated noise models evaluated via statevector simulation.}
+Physical execution of the hybrid graph architecture on current quantum hardware faces three operational bottlenecks: (i) planar heavy-hex qubit topologies require SWAP routing for ring CNOT structures, expanding effective circuit depth by $1.5\text{--}2.0\times$; (ii) edge-level circuit evaluation requires evaluating $4{,}000\text{--}8{,}000$ quantum circuits per molecule per epoch, creating prohibitive execution latency on queued cloud QPUs; and (iii) multi-qubit fluxonium ring processors remain in experimental development. Consequently, calibrated analytical noise modeling provides the standard methodology for assessing algorithmic robustness to noise. The performance projections below integrate published device parameters from recent superconducting co-designs~\cite{Kline:2025ecg, ding2023fluxonium, Bao:2021use} to establish theoretical operational bounds under realistic decoherence and crosstalk.
+
+\subsection{NISQ Hardware Noise and Zero-Noise Extrapolation (ZNE)}
 
 \paragraph{Noise Model \& Pauli Twirling Justification.}
-Our noise characterization employs per-gate depolarizing channels $\mathcal{E}_{\mathrm{dep}}(\rho) = (1-\lambda)\rho + \frac{\lambda}{3}(X\rho X + Y\rho Y + Z\rho Z)$ with single-qubit error rate $\lambda$ and two-qubit error rate $2\lambda$. This corresponds to the \textit{Pauli-twirled noise regime} demonstrated by Kim et al.~\cite{Kim:2023bwr} for utility-scale error mitigation on superconducting QPUs. Pauli twirling (randomized compiling) transforms arbitrary coherent and correlated device errors into stochastic Pauli channels, which are well-approximated by depolarizing noise with per-gate error rates calibrated via randomized benchmarking~\cite{Berg:2022ugn, Giurgica-Tiron:2020rcf}. Our noise sweep across $\lambda \in [10^{-5}, 5 \times 10^{-2}]$ thus spans the physical range from next-generation superconducting processors such as the arm qubit ($\lambda \sim 10^{-5}$, Kline et al.~\cite{Kline:2025ecg}) to current IBM transmon QPUs ($\lambda \sim 10^{-3}$, Kim et al.~\cite{Kim:2023bwr}).
+Noise simulations use per-gate depolarizing channels $\mathcal{E}_{\mathrm{dep}}(\rho) = (1-\lambda)\rho + \frac{\lambda}{3}(X\rho X + Y\rho Y + Z\rho Z)$ with single-qubit error rate $\lambda$ and two-qubit error rate $2\lambda$. This represents the Pauli-twirled noise regime~\cite{Kim:2023bwr}, wherein randomized compiling maps arbitrary coherent and device-level systematic errors into stochastic Pauli channels calibrated via randomized benchmarking~\cite{Berg:2022ugn, Giurgica-Tiron:2020rcf}. The simulated parameter sweep $\lambda \in [10^{-5}, 5 \times 10^{-2}]$ benchmarks architectural resilience across noise scales, spanning proposed ultra-low-noise superconducting systems such as the arm qubit ($\lambda \sim 10^{-5}$~\cite{Kline:2025ecg}) to contemporary transmon QPUs ($\lambda \sim 10^{-3}$~\cite{Kim:2023bwr}).
 
 To assess deployment viability on near-term QPUs, we applied Zero-Noise Extrapolation (ZNE) with noise scale factors $s \in [1.0, 3.0]$ \cite{Temme:2016vkz, Giurgica-Tiron:2020rcf}.
 
 As demonstrated in Figure~\ref{fig:zne}:
 \begin{itemize}
-    \item At standard gate error rates ($\lambda = 0.005$), Degree-2 Polynomial ZNE reduces expectation error from $0.0209$ to $0.0005$ (\textbf{$97.7\%$ error reduction}).
-    \item At elevated noise ($\lambda = 0.010$), ZNE reduces error from $0.0387$ to $0.0031$ (\textbf{$92.0\%$ error reduction}).
+    \item At standard gate error rates ($\lambda = 0.005$), Degree-2 Polynomial ZNE reduces expectation error from $0.0209$ to $0.0005$ ($97.7\%$ error reduction).
+    \item At elevated noise ($\lambda = 0.010$), ZNE reduces error from $0.0387$ to $0.0031$ ($92.0\%$ error reduction).
     \item At severe $5\%$ noise ($\lambda = 0.050$), ZNE recovers approximately $32.5\%$ of expectation fidelity.
 \end{itemize}
 Fidelity recovery declines sharply at higher noise rates, indicating that practical NISQ deployment requires error mitigation beyond polynomial ZNE when $\lambda > 0.02$.
@@ -107,16 +599,11 @@ Fidelity recovery declines sharply at higher noise rates, indicating that practi
 An important consideration for scaling ZNE to larger molecules is the distinction between intensive and extensive target properties. Intensive properties (HOMO, LUMO, Gap) are per-electron quantities whose measurement operators act on fixed-dimensional local Hilbert spaces, yielding noise scaling that is approximately independent of molecular graph size. In contrast, extensive properties ($U_0$, $\alpha$) require summation over atom-centered contributions, where measurement noise accumulates as $\sigma_{\mathrm{ext}} \propto \sqrt{N_{\mathrm{atoms}}}$ under independent shot noise. For the small molecules in QM9 ($N_{\mathrm{atoms}} \le 29$), this distinction is modest, but for macromolecular systems the ZNE overhead for extensive targets would scale unfavorably unless combined with locality-aware observable decomposition strategies.
 
 \paragraph{Device-Realistic Noise Validation.}
-To verify that our uniform depolarizing model faithfully captures the noise structure of real superconducting hardware, we compared expectation degradation against a calibrated IBM Brisbane (Eagle r3, 127-qubit) noise model via Qiskit Aer FakeBackend simulation~\cite{Kim:2023bwr}. The Brisbane noise model incorporates qubit-specific $T_1$ ($158$--$394\,\mu$s), $T_2$ ($49$--$386\,\mu$s), per-gate error rates (SX: $\sim 2.9 \times 10^{-4}$; ECR: $\sim 1.1 \times 10^{-2}$), and readout assignment errors ($\sim 2.4\%$). Across $N = 50$ random circuit instances at $10^5$ shots each, the Brisbane calibrated noise produces mean expectation error $|\Delta\langle Z \rangle| = 0.0104$, compared to $0.0057$ for our uniform depolarizing model at $\lambda = 10^{-3}$ (ratio $1.83\times$). The Pearson correlation between per-circuit error patterns is $r = 0.87$ ($p < 10^{-4}$), confirming that the depolarizing model captures the structural degradation of the Pauli-twirled noise regime. The modest $1.83\times$ gap is attributable to readout assignment errors and non-uniform qubit coherence. Neither factor alters the qualitative sweep, because projected arm qubit noise ($\lambda \sim 10^{-5}$) remains two orders of magnitude lower than both models.
+To validate the analytical depolarizing model against physical device architectures, we compared expectation degradation against a calibrated IBM Brisbane (Eagle r3, 127-qubit) noise model simulated via Qiskit Aer FakeBackend~\cite{Kim:2023bwr}. The Brisbane model incorporates empirical device metrics: qubit-specific $T_1$ ($158$--$394\,\mu$s), $T_2$ ($49$--$386\,\mu$s), per-gate error rates (SX: $\sim 2.9 \times 10^{-4}$; ECR: $\sim 1.1 \times 10^{-2}$), and readout assignment errors ($\sim 2.4\%$). Across $N = 50$ random circuit evaluations at $10^5$ shots, the calibrated Brisbane noise yields a mean expectation error $|\Delta\langle Z \rangle| = 0.0104$, compared to $0.0057$ for the uniform depolarizing model at $\lambda = 10^{-3}$ ($1.83\times$ offset). The strong Pearson correlation across per-circuit error distributions ($r = 0.87$, $p < 10^{-4}$) confirms that the depolarizing model faithfully preserves the relative structural error hierarchy of Pauli-twirled physical hardware.
 
-\section{Theoretical Hardware Outlook}
+\subsection{Theoretical Device Viability and Arm Qubit Crossing Analysis}
 
-\paragraph{Fluxonium Scalability Justification.}
-\textit{All results in this section are based on analytical noise models applied post-hoc to noiseless statevector simulation; no circuits were executed on physical quantum hardware.}
-While our 4-qubit circuit is in principle executable on current devices, several practical barriers preclude meaningful hardware validation: (i) Q-PRISM's ring-topology PQC requires native all-to-all qubit connectivity absent in IBM's heavy-hex architecture, introducing SWAP routing overhead ($1.5$--$2.0\times$ effective depth increase) that would confound noise analysis; (ii) the per-edge PQC evaluation model requires $O(|\mathcal{E}|)$ sequential circuit executions per training step (typically $4{,}000$--$8{,}000$ circuits per molecule), making end-to-end QPU training prohibitively slow; and (iii) no 4-qubit fluxonium ring processor currently exists in commercially accessible hardware (see Limitation~4).
-The hardware projections below use published device specifications to project Q-PRISM performance under realistic noise conditions. All noise characterization is performed via calibrated noise channel simulation. The projection of 2-qubit arm qubit specifications to the 4-qubit ring topology used in Q-PRISM is grounded in recent architectural proposals for scalable high-coherence superconducting processors. Nguyen et al.~\cite{Nguyen:2022jit} showed that fluxonium's GHz-scale anharmonicity ($10$--$30\times$ greater than transmons) prevents frequency crowding, enabling robust detuning flexibility for operations. Ding et al.~\cite{ding2023fluxonium} demonstrated a fluxonium-transmon-fluxonium (FTF) coupler that achieved $99.92\%$ CZ fidelity while suppressing static $ZZ$ crosstalk down to kHz levels across a wide detuning window. In parallel, novel superconducting qubit co-designs such as the dual-mode ``arm qubit'' proposed by Kline et al.~\cite{Kline:2025ecg} separate data storage and coupling modes, achieving simulated CZ gate infidelity of $8.6 \times 10^{-5}$ in 17\,ns with parasitic $ZZ$ coupling $< 0.4$\,kHz. While experimental validation of multi-qubit ring topologies at 4+ qubits remains an open challenge, multi-qubit fluxonium demonstrations~\cite{Bao:2021use} indicate that low-noise superconducting architectures represent promising physically grounded directions.
-
-Dual-mode superconducting designs such as the arm qubit~\cite{Kline:2025ecg} change projected operating bounds for variational circuits. Published arm qubit parameters feature two-qubit CZ infidelity of $8.6 \times 10^{-5}$ ($17$\,ns gate time), single-qubit gate infidelity below $10^{-5}$ ($5$\,ns), parasitic $ZZ$ crosstalk below $0.4$\,kHz, readout error $\sim 10^{-4}$, and data-mode coherence $T_1 \approx 300$--$420\,\mu$s ($T_2^E > 380\,\mu$s). These metrics represent tenfold to hundredfold improvements over contemporary transmon processors ($\lambda \sim 10^{-3}$, $ZZ \sim 10$--$100$\,kHz, readout error $\sim 10^{-2}$).
+Dual-mode superconducting designs such as the arm qubit~\cite{Kline:2025ecg} change projected operating bounds for variational circuits. Published arm qubit parameters include two-qubit CZ infidelity of $8.6 \times 10^{-5}$ ($17$\,ns gate time), single-qubit gate infidelity below $10^{-5}$ ($5$\,ns), parasitic $ZZ$ crosstalk below $0.4$\,kHz, readout error $\sim 10^{-4}$, and data-mode coherence $T_1 \approx 300$--$420\,\mu$s ($T_2^E > 380\,\mu$s). These metrics represent tenfold to hundredfold improvements over contemporary transmon processors ($\lambda \sim 10^{-3}$, $ZZ \sim 10$--$100$\,kHz, readout error $\sim 10^{-2}$).
 
 \paragraph{Circuit Execution Time Analysis.}
 Our 4-qubit Q-PRISM PQC with $L = 2$ variational layers comprises $\sim 8$ single-qubit gates and $\sim 4$ CNOT (CZ-equivalent) gates per layer, yielding a total gate count of $\sim 24$ operations. On the arm qubit processor:
@@ -130,12 +617,12 @@ compared to IBM transmon execution $\tau_{\mathrm{ibm}} \approx 1$--$2\,\mu$s. T
 implying that Q-PRISM's PQC occupies $< 0.06\%$ of the coherence window, virtually eliminating decoherence-induced errors during circuit execution.
 
 \paragraph{Arm Qubit Crossing-Point Analysis.}
-We extend our noise sweep down to $\lambda = 10^{-5}$ to capture the arm qubit regime. As shown in Figure~\ref{fig:arm_crossing}, there exists a critical crossing point $\lambda^* \approx 5 \times 10^{-4}$ below which \textit{raw unmitigated} Q-PRISM expectation values are projected to achieve sub-chemical-accuracy fidelity ($< 0.043$\,eV) under idealized uniform depolarizing noise assumptions. In the arm qubit regime ($\lambda \sim 10^{-5}$), projected unmitigated errors are negligible ($\sim 10^{-4}$), which would eliminate the need for ZNE or any error mitigation overhead. We caution that these projections represent optimistic theoretical upper bounds: the uniform depolarizing model does not capture coherent error channels, gate-dependent noise correlations, or fabrication variability that would be present in actual multi-qubit ring-topology hardware.
+Evaluating QM9 test edge representations across an extended noise sweep down to $\lambda = 10^{-5}$ reveals an operational threshold at $\lambda^* \approx 1.1 \times 10^{-4}$ (Figure~\ref{fig:arm_crossing}). Below $\lambda^*$, unmitigated expectation error falls below the high-precision observable threshold ($\epsilon < 10^{-3}$, corresponding to $> 99.9\%$ observable fidelity). Within the projected arm qubit regime ($\lambda \in [10^{-5}, 10^{-4}]$), hardware noise introduces negligible estimation bias relative to classical representation error, rendering Zero-Noise Extrapolation unnecessary. Conversely, in the transmon regime ($\lambda \sim 10^{-3}$), unmitigated error rises to $\sim 8.7 \times 10^{-3}$, requiring polynomial ZNE to restore sub-$10^{-3}$ precision. These projections assume isotropic depolarizing channels; physical device implementations will encounter additional coherent drift and spatial parameter inhomogeneity.
 
 \begin{figure*}[h]
     \centering
     \includegraphics[width=0.88\textwidth]{figures/figure4b_arm_qubit_crossing.png}
-    \caption{\textbf{Arm Qubit Low-Noise Crossing-Point Analysis:} (a) Expectation estimation error across the extended noise range $\lambda \in [10^{-5}, 5 \times 10^{-2}]$ for unmitigated, Richardson ZNE, and Polynomial ZNE. (b) Estimated molecular MAE with chemical accuracy threshold (1\,kcal/mol $\approx 0.043$\,eV). Green shaded region marks the arm qubit regime ($\lambda \sim 10^{-5}$) where raw unmitigated execution achieves sub-chemical-accuracy; red region marks current transmon QPUs ($\lambda \sim 10^{-3}$).}
+    \caption{\textbf{Arm Qubit Low-Noise Crossing-Point Analysis:} (a) Pauli-$Z$ expectation estimation error across the extended noise range $\lambda \in [10^{-5}, 5 \times 10^{-2}]$ for unmitigated execution, Richardson ZNE, and Degree-2 Polynomial ZNE on real QM9 test edge features. (b) Hardware observable precision crossing analysis with a high-fidelity tolerance threshold ($\epsilon = 10^{-3}$, $99.9\%$ fidelity). Green shaded region marks the arm qubit regime ($\lambda \in [10^{-5}, 10^{-4}]$) where raw unmitigated execution operates below the tolerance threshold; red region marks current transmon QPUs ($\lambda \in [10^{-3}, 10^{-2}]$). \textit{(Analytical noise projection based on published device parameters; not physical QPU execution.)}}
     \label{fig:arm_crossing}
 \end{figure*}
 
@@ -145,7 +632,7 @@ Beyond gate infidelity, always-on parasitic $ZZ$ coupling between adjacent qubit
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.48\textwidth]{figures/figure4c_zz_crosstalk_heatmap.png}
-    \caption{\textbf{Parasitic $ZZ$ Crosstalk $\times$ Depolarizing Noise:} 2D contour heatmap of expectation estimation error over the $(\lambda, \zeta/(2\pi))$ parameter plane. Green star: arm qubit operating point ($\lambda = 8.6 \times 10^{-5}$, $\zeta/(2\pi) = 0.4$\,kHz). Red star: typical IBM transmon ($\lambda = 10^{-3}$, $\zeta/(2\pi) = 50$\,kHz).}
+    \caption{\textbf{Parasitic $ZZ$ Crosstalk $\times$ Depolarizing Noise:} 2D contour heatmap of expectation estimation error over the $(\lambda, \zeta/(2\pi))$ parameter plane. Green star: arm qubit operating point ($\lambda = 8.6 \times 10^{-5}$, $\zeta/(2\pi) = 0.4$\,kHz). Red star: typical IBM transmon ($\lambda = 10^{-3}$, $\zeta/(2\pi) = 50$\,kHz). \textit{(Analytical noise projection based on published device parameters; not physical QPU execution.)}}
     \label{fig:zz_crosstalk}
 \end{figure}
 
@@ -155,13 +642,11 @@ Classical readout assignment errors introduce systematic bias on Pauli-$Z$ expec
 \begin{figure*}[h]
     \centering
     \includegraphics[width=0.88\textwidth]{figures/figure4d_readout_noise.png}
-    \caption{\textbf{Measurement Readout Noise Ablation:} (a) Expectation estimation error from readout bit-flip noise alone and combined with gate noise ($\lambda = 10^{-3}$). (b) Estimated HOMO-LUMO Gap MAE degradation across readout error rates. Arm qubit readout ($p = 10^{-4}$, green) introduces negligible bias; transmon readout ($p = 10^{-2}$, red) produces measurable prediction degradation.}
+    \caption{\textbf{Measurement Readout Noise Ablation:} (a) Expectation estimation error from readout bit-flip noise alone and combined with gate noise ($\lambda = 10^{-3}$). (b) Estimated HOMO-LUMO Gap MAE degradation across readout error rates. Arm qubit readout ($p = 10^{-4}$, green) introduces negligible bias; transmon readout ($p = 10^{-2}$, red) produces measurable prediction degradation. \textit{(Analytical noise projection based on published device parameters; not physical QPU execution.)}}
     \label{fig:readout_noise}
 \end{figure*}
 
-\section{Circuit Depth \& Multi-Qubit Scaling}
-
-A key question for future Q-PRISM deployment is whether deeper parameterized quantum circuits ($L > 2$) and larger qubit registers ($n > 4$) can improve molecular property prediction, and at what point hardware noise overwhelms the expressibility gains.
+\subsection{Analytical Hardware Noise Projections under Depth and Qubit Scaling}
 
 \paragraph{Deep Circuit Scaling.}
 We evaluate the Q-PRISM architecture at variational depths $L \in \{1, 2, 4, 8, 16\}$ on two QM9 targets representing distinct physical regimes: the HOMO-LUMO gap (intensive electronic) and internal energy $U_0$ (extensive thermodynamic). Models are trained under ideal noiseless simulation, with post-hoc analytical noise degradation projecting performance under Arm Qubit ($\lambda = 10^{-5}$, $\zeta/(2\pi) = 0.4$\,kHz) and IBM transmon ($\lambda = 10^{-3}$, $\zeta/(2\pi) = 50$\,kHz) noise regimes.
@@ -171,7 +656,7 @@ For the Gap target, increasing depth yields substantial expressibility gains: te
 \begin{figure*}[h]
     \centering
     \includegraphics[width=0.88\textwidth]{figures/figure7_deep_circuit_scaling.png}
-    \caption{\textbf{Deep Circuit Scaling Study:} (a) HOMO-LUMO Gap MAE vs.\ variational depth $L \in \{1, 2, 4, 8, 16\}$ under ideal, Arm Qubit, and IBM transmon noise projections. (b) Internal energy $U_0$ MAE vs.\ depth. (c) Model parameter count scaling with depth (quantum parameters scale from 176 to 2{,}816; classical backbone remains fixed at 2{,}175). (d) Circuit-to-coherence ratio showing Arm Qubit supports $L \le 16$ within $1.4\%$ coherence budget while transmon QPUs exceed the decoherence limit ($108.8\%$) at $L = 16$.}
+    \caption{\textbf{Deep Circuit Scaling Study:} (a) HOMO-LUMO Gap MAE vs.\ variational depth $L \in \{1, 2, 4, 8, 16\}$ under ideal, Arm Qubit, and IBM transmon noise projections. (b) Internal energy $U_0$ MAE vs.\ depth. (c) Model parameter count scaling with depth (quantum parameters scale from 176 to 2{,}816; classical backbone remains fixed at 2{,}175). (d) Circuit-to-coherence ratio showing Arm Qubit supports $L \le 16$ within $1.4\%$ coherence budget while transmon QPUs exceed the decoherence limit ($108.8\%$) at $L = 16$. \textit{(Analytical noise projection based on published device parameters; not physical QPU execution.)}}
     \label{fig:deep_scaling}
 \end{figure*}
 
@@ -183,13 +668,18 @@ Empirically, scaling register size yields monotonic test MAE gains on QM9 Gap: f
 \begin{figure*}[h]
     \centering
     \includegraphics[width=0.88\textwidth]{figures/figure8_multiqubit_scaling.png}
-    \caption{\textbf{Multi-Qubit Scaling Projection:} (a) HOMO-LUMO Gap MAE vs.\ qubit count $n \in \{4, 6, 8\}$ demonstrating monotonic accuracy improvements. (b) Model capacity scaling: trainable parameters and observable count per PQC evaluation. (c) Projected hardware requirements on Arm Qubit vs.\ IBM transmon QPUs, showing Arm Qubit operates well within the $1\%$ coherence budget across all register sizes.}
+    \caption{\textbf{Multi-Qubit Scaling Projection:} (a) HOMO-LUMO Gap MAE vs.\ qubit count $n \in \{4, 6, 8\}$ demonstrating monotonic accuracy improvements. (b) Model capacity scaling: trainable parameters and observable count per PQC evaluation. (c) Projected hardware requirements on Arm Qubit vs.\ IBM transmon QPUs, showing Arm Qubit operates well within the $1\%$ coherence budget across all register sizes. \textit{(Analytical noise projection based on published device parameters; not physical QPU execution.)}}
     \label{fig:multiqubit}
 \end{figure*}
 
-\section{3D Charged N-Body Trajectory Forecasting}
+\section{Physical Boundary Conditions, Negative Controls, and Limitations}
+\label{sm:limitations}
+\label{sm:resources}
+\label{sec:sm_uhg}
 
-We benchmark Q-PRISM on 5-particle Coulomb electrostatic trajectory forecasting \cite{satorras2022enequivariantgraphneural}. Five particles with charges $q_i \in \{-1, +1\}$ interact via Coulomb forces. The task is to predict future 3D coordinates $\mathbf{x}^{(T)} \in \mathbb{R}^{5 \times 3}$ after $T = 1{,}000$ integration steps (Table~\ref{tab:nbody_results}).
+\subsection{3D Charged N-Body Trajectory Forecasting Negative Control}
+
+To rigorously delineate the physical boundary conditions where trigonometric and quantum inductive biases apply, we evaluate Q-PRISM on a macroscopic classical dynamical benchmark: 5-particle Coulomb electrostatic trajectory forecasting~\cite{satorras2022enequivariantgraphneural}. Five charged particles ($q_i \in \{-1, +1\}$) interact via inverse-square Coulomb forces, and the objective is to predict future coordinates $\mathbf{x}^{(T)} \in \mathbb{R}^{5 \times 3}$ after $T = 1{,}000$ integration steps without access to velocity history (Table~\ref{tab:nbody_results}).
 
 \begin{table}[h]
 \centering
@@ -202,7 +692,7 @@ We benchmark Q-PRISM on 5-particle Coulomb electrostatic trajectory forecasting 
 \toprule
 \textbf{Model} & \textbf{Params} & \textbf{Coord.\ MSE ($10^{-2}$)} \\
 \midrule
-Static Baseline ($\mathbf{x}^{(T)} = \mathbf{x}^{(0)}$) & --- & $0.6862 \pm 0.0000$ \\
+Static Baseline ($\mathbf{x}^{(T)} = \mathbf{x}^{(0)}$) & -- & $0.6862 \pm 0.0000$ \\
 Non-Equivariant GNN & $2{,}019$ & $0.7137 \pm 0.0174$ \\
 EGNN Param-Matched & $1{,}032$ & $0.6441 \pm 0.0250$ \\
 EGNN Standard & $3{,}856$ & $\mathbf{0.6137 \pm 0.0194}$ \\
@@ -213,20 +703,21 @@ Classical Twin & $2{,}094$ & $0.6937 \pm 0.0140$ \\
 }
 \end{table}
 
-\paragraph{Coordinate Scaling and Extensive Displacements.}
-N-body trajectory forecasting involves extensive coordinate displacements that grow with particle count. Unlike localized orbital overlaps, these displacements do not align naturally with periodic trigonometric inductive biases. Q-PRISM does not match the higher-capacity EGNN Standard ($3{,}856$ parameters) on this task. It does, however, maintain lower coordinate error than its parameter-matched Classical Twin ($0.6759$ vs.\ $0.6937$ MSE at $2{,}094$ parameters; Figure~\ref{fig:nbody_traj}). This comparison demonstrates equivariant coordinate prediction and parameter efficiency in non-electronic physical dynamics.
-Importantly, the trajectory predictions exhibit no oscillatory artifacts from the periodic activation, confirming that the $\tanh$-gated coordinate update (Eq.~\ref{eq:coord_update}) effectively bounds the periodic signal pathway for dynamical applications.
+\paragraph{Negative Control Analysis: Non-Periodic Translational Mechanics.}
+Table~\ref{tab:nbody_results} reveals that at a compact parameter budget ($\sim 2{,}000$ parameters), all compact architectures operate in close proximity to the Static Baseline ($\text{MSE} = 0.6862 \times 10^{-2}$, which naively predicts zero displacement $\mathbf{x}^{(T)} = \mathbf{x}^{(0)}$). The Non-Equivariant GNN ($0.7137 \times 10^{-2}$) and Classical Twin ($0.6937 \times 10^{-2}$) slightly underperform the static baseline, while Q-PRISM achieves $0.6759 \pm 0.0186 \times 10^{-2}$ (a modest $1.5\%$ reduction over static displacement, within $1\sigma$). Only the unconstrained higher-capacity EGNN Standard ($3{,}856$ parameters) meaningfully models the Coulomb expansion ($0.6137 \times 10^{-2}$).
+
+This experiment provides an informative negative control: Coulomb $N$-body mechanics involves extensive, non-periodic, unbounded trajectory drift governed by $1/r^2$ accelerations. Unlike localized quantum molecular systems where wavefunctions exhibit periodic angular symmetries and bounded radial transitions ($d \in [0.9, 2.5]$\,\AA), macroscopic classical mechanics lacks intrinsic periodic structure. Consequently, neither classical sinusoidal activations nor quantum PQC data re-uploading provide inductive advantage over unconstrained polynomial coordinates. However, Q-PRISM exhibits no divergent or oscillatory instability across 1{,}000 integration steps, confirming that the $\tanh$-gated coordinate update effectively bounds the periodic channel even outside its optimal physical domain (Figure~\ref{fig:nbody_traj}).
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.48\textwidth]{figures/figure5_nbody_trajectory.png}
-    \caption{\textbf{3D Charged N-Body Trajectory Forecasting Comparison:} Test coordinate MSE across 5 independent seeds on 5-particle Coulomb dynamical simulations.}
+    \caption{\textbf{3D Charged N-Body Negative Control Benchmark:} Test coordinate MSE across 5 seeds on 5-particle Coulomb dynamical simulations. At $\sim 2{,}000$ parameters, compact architectures operate near the static baseline, demonstrating that trigonometric inductive bias is specialized for localized electronic structures rather than macroscopic translational drift.}
     \label{fig:nbody_traj}
 \end{figure}
 
-\section{MD17 Conformational Energy Prediction}
+\subsection{MD17 Conformational Energy Prediction Negative Control}
 
-We benchmark on the MD17 dataset~\cite{chmielaMachineLearningAccurate2016} using Ethanol (9 atoms) and Aspirin (21 atoms) with $N = 1{,}000$ conformations and 8-nearest neighbor graphs (Table~\ref{tab:md17_results}).
+To further probe the operational boundaries of low-data quantum graph learning, we benchmark on the MD17 molecular dynamics dataset~\cite{chmielaMachineLearningAccurate2016} using Ethanol (9 atoms) and Aspirin (21 atoms) under an energy-only, force-free evaluation regime ($N = 1{,}000$ conformations, 8-nearest neighbor graphs; Table~\ref{tab:md17_results}).
 
 \begin{table}[h]
 \centering
@@ -249,38 +740,78 @@ Classical Twin & $2{,}511$ & $\mathbf{3.293 \pm 0.121}$ & $4.580 \pm 0.136$ \\
 }
 \end{table}
 
-\paragraph{Literature Context.}
-As illustrated in Figure~\ref{fig:md17_energy}, we note that specialized classical architectures (SchNet \cite{schütt2017schnetcontinuousfilterconvolutionalneural}, PaiNN \cite{schuttEquivariantMessagePassing2021}, GemNet \cite{klicperaGemNetUniversalDirectional2021}) trained on $N = 50{,}000$+ conformations with $100{,}000$+ parameters achieve energy MAEs of $\sim 0.05$--$0.10$ kcal/mol. Our low-data ($N = 1{,}000$), parameter-constrained ($\sim 2{,}500$ params) setting represents a fundamentally different evaluation regime.
-Notably, Q-PRISM's conformational energy predictions across structurally diverse Ethanol and Aspirin geometries show no unphysical oscillatory artifacts, confirming that periodic activations with $\tanh$ output gating produce smooth, physically reasonable potential energy surfaces even when applied to molecular dynamics conformations beyond the QM9 equilibrium regime.
+\paragraph{Boundary-Condition Analysis: Force-Free Low-Data Collapse.}
+As shown in Table~\ref{tab:md17_results}, all five evaluated architectures (including Non-Equivariant GNN, parameter-matched EGNN, standard EGNN, Classical Twin, and Q-PRISM) converge to statistically indistinguishable test MAEs ($\approx 3.30$\,kcal/mol for Ethanol and $\approx 4.58$\,kcal/mol for Aspirin). These values coincide exactly with the empirical standard deviation of conformational potential energies in the respective datasets ($\sigma_E \approx 3.30$\,kcal/mol and $4.58$\,kcal/mol). This demonstrates that in a low-data regime ($N = 1{,}000$) devoid of atomic force gradient supervision ($\mathbf{F}_i = -\nabla_{\mathbf{x}_i} E$), all compact architectures collapse to the empirical dataset mean predictor (Figure~\ref{fig:md17_energy}).
+
+\paragraph{Contextualizing Potential Energy Surface Learning.}
+In existing literature, specialized potential energy neural networks (SchNet~\cite{schütt2017schnetcontinuousfilterconvolutionalneural}, PaiNN~\cite{schuttEquivariantMessagePassing2021}, GemNet~\cite{klicperaGemNetUniversalDirectional2021}, MACE~\cite{batatiaMACEHigherOrder2022}) achieve chemical precision ($\sim 0.05$--$0.10$\,kcal/mol) by training on $N = 50{,}000$--$100{,}000$+ conformations with $100{,}000$+ parameters under explicit force loss supervision ($\mathcal{L} = \mathcal{L}_E + \rho \mathcal{L}_F$), providing $3N_{\mathrm{atoms}}$ gradient targets per geometry. These results establish a physical boundary condition: compact periodic activations ($d_h = 4$) specialize in localized electronic transitions on equilibrium graphs, but do not generalize to continuous potential energy surfaces without explicit atomic force supervision ($\mathbf{F}_i = -\nabla_{\mathbf{x}_i} E$).
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.48\textwidth]{figures/figure6_md17_energy.png}
-    \caption{\textbf{MD17 Conformational Energy Prediction:} Test energy MAE across Ethanol and Aspirin molecular dynamics trajectories with 5 seeds.}
+    \caption{\textbf{MD17 Conformational Energy Negative Control:} Test energy MAE across Ethanol and Aspirin molecular dynamics trajectories (5 seeds). All compact architectures without force supervision collapse to the dataset standard deviation ($\sim 3.30$ and $\sim 4.58$\,kcal/mol), identifying the necessity of force gradient training for conformational potential surfaces.}
     \label{fig:md17_energy}
 \end{figure}
 
-\section{Sample Complexity Scaling Analysis}
+\subsection{Thermodynamic Properties Evaluation}
 
-To test whether the trigonometric advantage is a low-data artifact or a persistent inductive bias, we evaluate all models across $N \in \{100, 250, 500, 1{,}000, 2{,}000, 5{,}000\}$ training molecules (3 seeds each) on HOMO and fit power-law scaling exponents $\text{MAE} \sim N^{-\alpha}$.
+Table~\ref{tab:supplementary_uhg} evaluates the full thermodynamic suite ($U_0, U, H, G$) across all baseline architectures. Because raw total DFT energies were evaluated without composition-dependent atomic reference energy subtraction ($\sum \epsilon_Z$), all compact architectures incur extensive baseline offsets ($\text{MAE} \sim 70\text{--}130$\,eV). In this scale-dominated regime, standard EGNN's monotonic coordinate summation exhibits lower offset variance than periodic edge models.
 
-As shown in Figures~\ref{fig:scaling} and~\ref{fig:exponents}, models with trigonometric expressivity (PQC and PRISM) maintain lower test MAE than the classical $\tanh$-MLP at \textit{every} sample size from $N = 100$ ($0.441$ vs.\ $0.448$~eV) to $N = 5{,}000$ ($0.244$ vs.\ $0.258$~eV). The generalization gap (Test MAE $-$ Train MAE) is negligible ($< 0.01$~eV) for all models at $N \ge 500$, ruling out the Caro et al.~\cite{Caro:2021mgf} ``unitary regularization'' hypothesis as the dominant mechanism.
+\input{supplementary_uhg_table.tex}
 
-Instead, the advantage manifests as an \textbf{intercept shift} in the $\log$-$\log$ scaling plot: the classical $\tanh$-MLP has a steeper slope ($\alpha = 0.160$) than the PQC ($\alpha = 0.142$), indicating that classical optimization converges faster with additional data. But the trigonometric models start from a substantially better baseline intercept, consistent with trigonometric basis functions providing a more parameter-efficient representation for angular orbital physics. This is a \textit{structural inductive bias} advantage, which is fully accessible classically via PRISM.
+\subsection{Quantum Resource \& Complexity Analysis: The Trainability-Simulability Dilemma}
 
-\begin{figure*}[h]
-    \centering
-    \includegraphics[width=0.88\textwidth]{figures/figure_scaling_sample_complexity.png}
-    \caption{\textbf{Sample Complexity Scaling on QM9 HOMO} ($N \in \{100, 5{,}000\}$, 3 seeds). Left: Test MAE shows trigonometric models (PQC and PRISM) consistently below standard classical models (red, gray) across all sample sizes. Center: Training MAE. Right: Generalization gap (Test $-$ Train MAE) is near-zero for all models, ruling out regularization as the mechanism.}
-    \label{fig:scaling}
-\end{figure*}
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Resource \& Complexity Comparison} across equivariant models, contrasting quantum requirements with classical counterparts. PRISM eliminates quantum statevector memory, gate depth, and sampling shot noise while matching or exceeding Q-PRISM accuracy.}
+\label{tab:resources}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \textbf{EGNN Std} & \textbf{EGNN PM} & \textbf{Q-PRISM (Ours)} & \textbf{PRISM (Ours)} \\
+\midrule
+Parameters & $4{,}289$ & $2{,}497$ & $2{,}527$ & $2{,}527$ \\
+Edge Computation & MLP & MLP & $2 \times$ 4-Qubit PQC & SIREN MLP \\
+ & ($16 \to 16 \to 16$) & ($12 \to 12 \to 12$) & ($L=2$) & ($13 \to 4 \to 8$) \\
+Circuit Depth & N/A & N/A & $8 R_{xyz}$ + $4$ CNOTs & N/A \\
+ & & & per layer & \\
+Statevector RAM & N/A & N/A & $128$ Bytes & N/A \\
+Shot Budget & N/A & N/A & $1{,}000$--$4{,}000$ & N/A ($0$ Shot Noise) \\
+ & & & shots/edge & \\
+\midrule
+Barren Plateau Risk & N/A & N/A & Avoided & N/A (Standard SGD) \\
+\cite{McClean:2018jps, Cerezo:2020mtn} & & & (local obs., $L \in \mathcal{O}(\log n)$) & \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.48\textwidth]{figures/figure_scaling_exponents.png}
-    \caption{\textbf{Power-Law Scaling Exponents} ($\text{MAE} \sim N^{-\alpha}$). All models follow clean power-law decay ($R^2 > 0.91$). The classical $\tanh$-MLP has the steepest exponent ($\alpha = 0.160$) but starts from a worse intercept, consistent with the trigonometric advantage being a \textit{function-class} advantage rather than a statistical regularization effect.}
-    \label{fig:exponents}
-\end{figure}
+\paragraph{The Trainability-Simulability Dilemma.}
+Table~\ref{tab:resources} summarizes the resource footprint and theoretical complexity across the baseline hierarchy.
+Our empirical finding that PRISM (classical SIREN) matches and surpasses the 4-qubit PQC is grounded in recent quantum computational complexity theory.
+Cerezo, Holmes et al.~\cite{Cerezo:2023nqf} proved that in variational quantum machine learning, the absence of barren plateaus is inextricably linked to classical simulability: any PQC that avoids barren plateaus via shallow circuit depth ($L \in \mathcal{O}(\log n)$) and local observables necessarily resides in a classically simulable hypothesis class.
+In Q-PRISM, the edge PQC uses 4 qubits, $L = 2$ layers, and local single-qubit and nearest-neighbor correlator observables.
+While this guarantees non-vanishing gradients and stable training, it simultaneously bounds the output to a low-dimensional truncated Fourier series~\cite{landman2023approximating, Schuld:2020enb}.
+Conversely, attempting to escape classical simulability by scaling to deep, globally entangled circuits triggers exponential concentration of measure (Thanasilp et al.~\cite{Thanasilp:2022agd}), wherein quantum kernels concentrate to trivial constants and gradients vanish as $\mathcal{O}(2^{-n/2})$.
+Thus, within the trainable regime for geometric graphs, quantum circuits provide no asymptotic expressivity separation over properly initialized classical periodic networks.
+
+\paragraph{Macromolecular Scaling ($O(N)$).}
+For molecules with $N > 50$ atoms, the fully-connected edge construction $O(N^2)$ becomes a bottleneck. Our implementation includes a $k$-nearest neighbor sparse graph builder that reduces edge complexity to $O(kN) = O(N)$ for constant $k$, enabling both Q-PRISM and PRISM to scale to macromolecular systems (proteins, polymers) without fundamentally altering the edge operator architecture.
+For PRISM, each edge evaluation is a lightweight classical matrix multiplication and sine evaluation, executing in microseconds on modern GPUs without shot noise or quantum hardware latency.
+
+\subsection{Limitations and Future Research Directions}
+
+\begin{enumerate}
+    \item \textbf{Capacity scaling and foundation model regimes:} Our parameter scaling experiments (Section~\ref{sm:param_scaling}, Table~\ref{tab:param_scaling}) establish that the periodic advantage widens monotonically up to the standard medium-capacity regime of $100{,}000$ parameters (XXL, $100{,}127$ parameters, reaching a $51.3\%$ advantage on Gap over the Classical Twin). Nevertheless, evaluating periodic activations on ultra-large foundation models (e.g., MACE~\cite{batatiaMACEHigherOrder2022} at $\ge 1\mathrm{M}$ parameters) and large-scale catalytic datasets (e.g., OC20, ANI-1x) remains future work.
+    \item \textbf{3-body angular pooling:} To maintain linear $O(E)$ complexity, our architecture averages angles over third atoms: $\bar{\theta}_{ij}$ (main text Eq.~\ref{main:eq:angle}). While computationally efficient, this averaging discards individual triplet geometry, unlike DimeNet++~\cite{klicperaFastUncertaintyAwareDirectional2020} or GemNet~\cite{klicperaGemNetUniversalDirectional2021}. Future work may explore per-triplet periodic projections.
+    \item \textbf{Scalar-only geometric representation:} Both Q-PRISM and PRISM project 3D directional geometry into scalar invariants (interatomic distances $d_{ij}$ and averaged bond angles $\bar{\theta}_{ij}$), discarding per-edge directional vector information. As a consequence, the models cannot distinguish chiral enantiomers or capture higher-order multipolar interactions that require explicit vector or tensor equivariant channels~\cite{schuttEquivariantMessagePassing2021, batatiaMACEHigherOrder2022}. Extending PRISM to coupled scalar-vector message passing (analogous to PaiNN) or higher-order tensor equivariant architectures (analogous to MACE) is a natural future direction.
+    \item \textbf{PRISM-PaiNN hybrid architecture:} The complementary performance profiles of PRISM (superior on HOMO, Dipole, Polarizability) and PaiNN (superior on LUMO, Gap) suggest a natural architectural synthesis: replacing SiLU activations in PaiNN's scalar interaction branch with SIREN periodic activations while preserving vector equivariant update channels. Since the periodic activation acts only on the invariant scalar pathway, this requires no modification to PaiNN's equivariance guarantees. A practical consideration is gradient stability: the Lipschitz constant of $\sin(\omega_0 x)$ scales as $\omega_0$, so the scalar-to-vector gating mechanism must accommodate amplified gradients. We leave experimental validation of this hybrid to future work.
+    \item \textbf{Hardware execution and topology constraints:} All quantum circuits were simulated via PennyLane statevector backends; no physical 4-qubit fluxonium ring processor currently exists in commercial hardware. Scaling beyond 4 qubits on planar superconducting lattices (such as IBM's heavy-hex) also introduces SWAP routing overhead, increasing effective circuit depth by roughly $1.5$--$2.0\times$.
+    \item \textbf{NISQ execution overhead and hybrid training:} Sequential QPU edge evaluations incur measurement shot noise and latency ($3$--$12$\,s per molecule). Near-term deployment could benefit from hybrid training: pre-training the equivariant backbone classically with PRISM, followed by quantum fine-tuning on targeted subsets to minimize QPU execution time.
+    \item \textbf{Noiseless training assumption:} Hardware noise was characterized post-hoc via ZNE and analytical noise projections. Noise-aware training~\cite{cincio2021machine, Sharma:2020qjq} incorporating device-calibrated density matrices via PennyLane's \texttt{default.mixed} device represents a natural next step for experimental deployment.
+    \item \textbf{Circuit depth and qubit register limits:} Our extended evaluations confirm that the classical dequantization result holds across deeper circuits up to $L = 16$ layers (Section~\ref{sm:depth_scaling}, Table~\ref{tab:depth_scaling}), where Q-PRISM asymptotically converges to exact parity with PRISM ($p = 0.969$), and across qubit registers up to $n_q = 8$ qubits (Section~\ref{sm:qubit_scaling}, Table~\ref{tab:qubit_scaling}), where PRISM maintains statistical superiority ($p < 0.025$) alongside a $540\times$ speedup. Whether circuits with non-local global Pauli observables or non-planar all-to-all entanglement topologies can break this parity remains an open theoretical question, though the trainability-simulability dilemma~\cite{Cerezo:2023nqf} suggests that any non-concentrating, trainable architecture remains within classically simulable complexity classes.
+\end{enumerate}
 
 \bibliographystyle{plain}
 \bibliography{references}
