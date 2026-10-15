@@ -159,24 +159,30 @@ pixi run python visualization/plot_summary_figures.py
 ## 6. Repository Structure
 
 ```
-qgnn/
-├── paper/                  # LaTeX manuscript (main.tex, supplementary.tex, references.bib)
-│   ├── figures/            # 23 active publication figures (PNG)
-│   └── literature/         # Key reference PDFs
-├── models/                 # Model implementations
-│   ├── q_prism.py          # Q-PRISM 4-qubit PQC model
-│   ├── prism.py            # PRISM periodic SIREN architecture
+prism/
+├── README.md               # Overview, quickstart, and reproduction guide
+├── LICENSE                 # MIT Open Source License
+├── pixi.toml               # Reproducible environment specification
+├── models/                 # Equivariant and classical model implementations
+│   ├── prism.py            # PRISM: SIREN periodic equivariant GNN
+│   ├── q_prism.py          # Q-PRISM: 4-qubit PQC equivariant GNN
 │   ├── classical_twin.py   # Iso-parameter tanh/SiLU baseline
 │   ├── classical_trig_twin.py # PRISM and Fourier heads
 │   ├── classical_baselines.py # SchNet, PaiNN, Non-Equiv GNN
 │   └── egnn_baseline.py    # EGNN-PM and EGNN-Std
 ├── datasets/               # PyG dataset loaders (QM9, MD17, N-body)
-├── training/               # Paper-aligned training pipelines and experiment runners
+├── training/               # Paper-aligned training pipelines and experiment sweeps
 ├── benchmarks/             # Hardware noise, ZNE, symmetry, and Fourier tests
 ├── visualization/          # Paper figure generation scripts (Figs 1-3, S7, S9, Summary)
-├── data/                   # Processed datasets (QM9, MD17, nbody)
-├── results/                # Active JSON benchmark results and LaTeX tables
-└── archive/                # Safely preserved historical scripts and superseded results
+├── results/                # Published JSON benchmark outputs and LaTeX tables
+└── paper/                  # Publication manuscript and supplementary material
+    ├── main.pdf            # Pre-compiled Main Manuscript (Nature format)
+    ├── supplementary.pdf   # Pre-compiled Supplementary Information
+    ├── main.tex            # LaTeX source (11-page Research Article)
+    ├── supplementary.tex   # Supplementary LaTeX source (23 pages)
+    ├── references.bib      # Complete bibliography
+    ├── figures/            # 23 active publication figures (PNG)
+    └── translations/       # Author drafts and translations (Vietnamese)
 ```
 
 ---

@@ -80,3 +80,18 @@ paper/literature/*.pdf
 paper/arxiv_package/
 paper/arxiv_package.tar.gz
 *.tar.gz
+
+# Internal research proposals and scratch notes
+RESEARCH_PROPOSAL.md
+notes/
+scratch/
+
+# Local archive of superseded experiments (preserved in git commit history)
+archive/
+
+# LaTeX build residues in subdirectories
+paper/**/*.aux
+paper/**/*.log
+paper/**/*.out
+paper/**/*.bbl
+paper/**/*.blg
