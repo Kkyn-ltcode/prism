@@ -75,3 +75,8 @@ paper/literature/*.pdf
 *.swp
 *.swo
 *~
+
+# arXiv packaging artifacts & tarballs
+paper/arxiv_package/
+paper/arxiv_package.tar.gz
+*.tar.gz
