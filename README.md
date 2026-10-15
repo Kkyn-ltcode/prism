@@ -181,8 +181,7 @@ prism/
     ├── main.tex            # LaTeX source (11-page Research Article)
     ├── supplementary.tex   # Supplementary LaTeX source (23 pages)
     ├── references.bib      # Complete bibliography
-    ├── figures/            # 23 active publication figures (PNG)
-    └── translations/       # Author drafts and translations (Vietnamese)
+    └── figures/            # 23 active publication figures (PNG)
 ```
 
 ---
