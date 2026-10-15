@@ -1,0 +1,80 @@
+\begin{table*}[t]
+\centering
+\caption{PQC Depth Scaling: Test MAE for Q-PRISM at varying circuit depth $L$
+  vs.\ fixed-depth PRISM and Classical Twin baselines ($N{=}1{,}000$, 5 seeds).}
+\label{tab:depth_scaling}
+\small
+\begin{subtable}{0.48\textwidth}
+\centering
+\caption{HOMO (eV)}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rccccc}
+\toprule
+$L$ & Q-PRISM & PRISM & Twin & $\Delta_\%$ & $p$ \\
+\midrule
+1 & $0.3158\pm0.0179$ & $0.2772\pm0.0182$ & $0.3357\pm0.0332$ & $-13.9\%$ & $<0.001$ \\
+2 & $0.3030\pm0.0144$ & $0.2772\pm0.0182$ & $0.3357\pm0.0332$ & $-9.3\%$ & $<0.001$ \\
+4 & $0.2926\pm0.0133$ & $0.2772\pm0.0182$ & $0.3357\pm0.0332$ & $-5.6\%$ & $0.113$ \\
+8 & $0.2782\pm0.0087$ & $0.2772\pm0.0182$ & $0.3357\pm0.0332$ & $-0.4\%$ & $0.884$ \\
+16 & $0.2705\pm0.0195$ & $0.2772\pm0.0182$ & $0.3357\pm0.0332$ & $+2.4\%$ & $0.376$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{subtable}
+\hfill
+\begin{subtable}{0.48\textwidth}
+\centering
+\caption{LUMO (eV)}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rccccc}
+\toprule
+$L$ & Q-PRISM & PRISM & Twin & $\Delta_\%$ & $p$ \\
+\midrule
+1 & $0.6741\pm0.0420$ & $0.5006\pm0.0279$ & $0.7213\pm0.0363$ & $-34.7\%$ & $0.002$ \\
+2 & $0.6276\pm0.0247$ & $0.5006\pm0.0279$ & $0.7213\pm0.0363$ & $-25.4\%$ & $0.002$ \\
+4 & $0.5919\pm0.0317$ & $0.5006\pm0.0279$ & $0.7213\pm0.0363$ & $-18.2\%$ & $0.012$ \\
+8 & $0.5422\pm0.0467$ & $0.5006\pm0.0279$ & $0.7213\pm0.0363$ & $-8.3\%$ & $0.042$ \\
+16 & $0.4812\pm0.0315$ & $0.5006\pm0.0279$ & $0.7213\pm0.0363$ & $+3.9\%$ & $0.361$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{subtable}
+
+\vspace{0.8em}
+
+\begin{subtable}{0.48\textwidth}
+\centering
+\caption{Gap (eV)}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rccccc}
+\toprule
+$L$ & Q-PRISM & PRISM & Twin & $\Delta_\%$ & $p$ \\
+\midrule
+1 & $0.7680\pm0.0497$ & $0.5531\pm0.0592$ & $0.8068\pm0.0447$ & $-38.9\%$ & $0.006$ \\
+2 & $0.7038\pm0.0416$ & $0.5531\pm0.0592$ & $0.8068\pm0.0447$ & $-27.3\%$ & $0.003$ \\
+4 & $0.6333\pm0.0171$ & $0.5531\pm0.0592$ & $0.8068\pm0.0447$ & $-14.5\%$ & $0.038$ \\
+8 & $0.5882\pm0.0474$ & $0.5531\pm0.0592$ & $0.8068\pm0.0447$ & $-6.3\%$ & $0.115$ \\
+16 & $0.5543\pm0.0404$ & $0.5531\pm0.0592$ & $0.8068\pm0.0447$ & $-0.2\%$ & $0.969$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{subtable}
+\hfill
+\begin{subtable}{0.48\textwidth}
+\centering
+\caption{Dipole (Debye)}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rccccc}
+\toprule
+$L$ & Q-PRISM & PRISM & Twin & $\Delta_\%$ & $p$ \\
+\midrule
+1 & $0.7891\pm0.0165$ & $0.7055\pm0.0340$ & $0.9128\pm0.0996$ & $-11.9\%$ & $0.005$ \\
+2 & $0.7619\pm0.0365$ & $0.7055\pm0.0340$ & $0.9128\pm0.0996$ & $-8.0\%$ & $0.014$ \\
+4 & $0.7591\pm0.0253$ & $0.7055\pm0.0340$ & $0.9128\pm0.0996$ & $-7.6\%$ & $0.001$ \\
+8 & $0.7231\pm0.0143$ & $0.7055\pm0.0340$ & $0.9128\pm0.0996$ & $-2.5\%$ & $0.286$ \\
+16 & $0.7088\pm0.0291$ & $0.7055\pm0.0340$ & $0.9128\pm0.0996$ & $-0.5\%$ & $0.759$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{subtable}
+\end{table*}

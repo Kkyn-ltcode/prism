@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\small
+\caption{\textbf{Full-scale QM9, 5 seeds} (standard 110k/10k/10{,}831 split; test set fixed across $N$ per seed). Test MAE (eV) at the best-validation epoch, mean $\pm$ std. $\Delta$: relative improvement of PRISM over the Classical Twin with 95\% CI of the paired difference. Paired $t$-test, Benjamini--Hochberg corrected ($^{*}q<0.05$, $^{**}q<0.01$, $^{***}q<0.001$). Both models: 2{,}527 parameters.}
+\label{tab:full_qm9_5seed}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lrccc}
+\toprule
+\textbf{Target} & $N$ & \textbf{PRISM} & \textbf{Classical Twin} & $\boldsymbol{\Delta}$ (95\% CI, eV) \\
+\midrule
+HOMO & $110{,}000$ & $\mathbf{0.147 \pm 0.004}$ & $0.162 \pm 0.003$ & $+9.1\%^{*}$ \; [-0.021, -0.008] \\
+LUMO & $110{,}000$ & $\mathbf{0.144 \pm 0.006}$ & $0.159 \pm 0.006$ & $+9.6\%^{}$ \; [-0.030, -0.001] \\
+Gap & $110{,}000$ & $\mathbf{0.221 \pm 0.009}$ & $0.237 \pm 0.005$ & $+6.8\%^{}$ \; [-0.033, +0.001] \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

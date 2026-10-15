@@ -1,0 +1,16 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Extended SIREN $\omega_0$ sensitivity with paired Q-PRISM reference} ($N=1{,}000$, 2{,}527 params). Test MAE (eV; Dipole in Debye), mean $\pm$ std. Markers: paired $t$-test vs.\ Classical Twin, Benjamini--Hochberg corrected over the whole $\omega_0\times$target family ($^{*}q<0.05$, $^{**}q<0.01$, $^{***}q<0.001$). $^{\ddagger}$: PRISM significantly better than Q-PRISM ($q<0.05$, paired). Best PRISM value per row in \textbf{bold}.}
+\label{tab:omega_sweep_extended}
+\begin{tabular}{lccccccccccc}
+\toprule
+\textbf{Target} & \textbf{Twin} & \textbf{Q-PRISM} & $\omega_0=1$ & $\omega_0=3$ & $\omega_0=5$ & $\omega_0=10$ & $\omega_0=20$ & $\omega_0=30$ & $\omega_0=50$ & $\omega_0=75$ & $\omega_0=100$ \\
+\midrule
+HOMO & $0.331 \pm 0.016$ & $0.307 \pm 0.015$ & $0.310 \pm 0.026^{*}^{\ddagger}$ & $0.309 \pm 0.025^{*}^{\ddagger}$ & $0.306 \pm 0.027^{*}^{\ddagger}$ & $0.299 \pm 0.019^{***}^{\ddagger}$ & $0.278 \pm 0.011^{***}^{\ddagger}$ & $0.276 \pm 0.010^{***}^{\ddagger}$ & $\mathbf{0.268 \pm 0.012}^{***}^{\ddagger}$ & $0.271 \pm 0.010^{***}^{\ddagger}$ & $0.280 \pm 0.009^{***}^{\ddagger}$ \\
+LUMO & $0.732 \pm 0.026$ & $0.641 \pm 0.058$ & $0.687 \pm 0.034^{*}$ & $0.680 \pm 0.038^{*}$ & $0.667 \pm 0.040^{**}$ & $0.627 \pm 0.041^{***}$ & $0.528 \pm 0.055^{***}$ & $0.469 \pm 0.055^{***}^{\ddagger}$ & $\mathbf{0.437 \pm 0.038}^{***}^{\ddagger}$ & $0.439 \pm 0.037^{***}^{\ddagger}$ & $0.457 \pm 0.047^{***}^{\ddagger}$ \\
+Gap & $0.820 \pm 0.035$ & $0.688 \pm 0.043$ & $0.794 \pm 0.030^{***}$ & $0.792 \pm 0.030^{***}$ & $0.790 \pm 0.028^{***}$ & $0.750 \pm 0.024^{***}$ & $0.597 \pm 0.047^{***}$ & $0.543 \pm 0.049^{***}^{\ddagger}$ & $\mathbf{0.501 \pm 0.034}^{***}^{\ddagger}$ & $0.516 \pm 0.037^{***}^{\ddagger}$ & $0.526 \pm 0.035^{***}^{\ddagger}$ \\
+Dipole & $0.926 \pm 0.076$ & $0.766 \pm 0.017$ & $0.828 \pm 0.058^{**}$ & $0.830 \pm 0.074^{**}$ & $0.802 \pm 0.054^{***}$ & $0.770 \pm 0.042^{***}$ & $0.748 \pm 0.031^{***}$ & $\mathbf{0.714 \pm 0.030}^{***}^{\ddagger}$ & $0.720 \pm 0.034^{***}$ & $0.722 \pm 0.026^{***}$ & $0.745 \pm 0.023^{***}$ \\
+\bottomrule
+\end{tabular}
+\end{table*}

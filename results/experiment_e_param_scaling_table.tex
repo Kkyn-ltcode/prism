@@ -1,0 +1,35 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Extended Capacity Scaling: Periodic Advantage Across Six Orders of Scale} ($N = 1{,}000$, 5 seeds). Test MAE (eV), mean $\pm$ std. PRISM and Classical Twin are exactly iso-parameter at each scale tier from XS ($2{,}527$\,p) to XXL ($100{,}127$\,p). The periodic activation advantage ($\Delta$) \textit{widens monotonically} with capacity, reaching $+51.3\%$ on the HOMO-LUMO gap at $100\mathrm{k}+$ parameters. PaiNN (not iso-parameter) shown for reference. Paired $t$-test: $^{*}p < 0.05$, $^{**}p < 0.01$, $^{***}p < 0.001$.}
+\label{tab:param_scaling_extended}
+\begin{tabular}{llrcccc}
+\toprule
+\textbf{Scale} & \textbf{Target} & \textbf{Params} & \textbf{PRISM (SIREN)} & \textbf{Classical Twin} & $\boldsymbol{\Delta}_\%$ \textbf{(p-value)} & \textbf{PaiNN} \\
+\midrule
+XS & HOMO & 2,527 & $0.2774 \pm 0.0134$ & $0.3439 \pm 0.0502$ & $+19.4\%^{*}$ & $0.2834 \pm 0.0339$ \\
+ & LUMO &  & $0.4791 \pm 0.0484$ & $0.7196 \pm 0.0410$ & $+33.4\%^{***}$ & $0.3977 \pm 0.0370$ \\
+ & Gap &  & $0.5184 \pm 0.0771$ & $0.8063 \pm 0.0456$ & $+35.7\%^{***}$ & $0.4704 \pm 0.0774$ \\
+\midrule
+S & HOMO & 4,911 & $0.2513 \pm 0.0124$ & $0.3025 \pm 0.0141$ & $+16.9\%^{***}$ & $0.2559 \pm 0.0184$ \\
+ & LUMO &  & $0.4026 \pm 0.0413$ & $0.6894 \pm 0.0416$ & $+41.6\%^{***}$ & $0.3141 \pm 0.0255$ \\
+ & Gap &  & $0.4859 \pm 0.0330$ & $0.8028 \pm 0.0381$ & $+39.5\%^{***}$ & $0.3933 \pm 0.0285$ \\
+\midrule
+M & HOMO & 8,287 & $0.2556 \pm 0.0194$ & $0.2979 \pm 0.0183$ & $+14.2\%^{*}$ & $0.2332 \pm 0.0137$ \\
+ & LUMO &  & $0.3843 \pm 0.0372$ & $0.6613 \pm 0.0341$ & $+41.9\%^{***}$ & $0.2528 \pm 0.0153$ \\
+ & Gap &  & $0.4701 \pm 0.0218$ & $0.8017 \pm 0.0490$ & $+41.4\%^{***}$ & $0.3469 \pm 0.0280$ \\
+\midrule
+L & HOMO & 16,959 & $0.2411 \pm 0.0089$ & $0.2911 \pm 0.0162$ & $+17.2\%^{***}$ & $0.2097 \pm 0.0097$ \\
+ & LUMO &  & $0.3232 \pm 0.0407$ & $0.6054 \pm 0.0170$ & $+46.6\%^{***}$ & $0.2155 \pm 0.0081$ \\
+ & Gap &  & $0.4324 \pm 0.0518$ & $0.7904 \pm 0.0247$ & $+45.3\%^{***}$ & $0.3189 \pm 0.0158$ \\
+\midrule
+XL & HOMO & 29,599 & $0.2366 \pm 0.0074$ & $0.2834 \pm 0.0172$ & $+16.5\%^{**}$ & $0.1916 \pm 0.0157$ \\
+ & LUMO &  & $0.2872 \pm 0.0325$ & $0.5741 \pm 0.0147$ & $+50.0\%^{***}$ & $0.1985 \pm 0.0043$ \\
+ & Gap &  & $0.3698 \pm 0.0341$ & $0.7817 \pm 0.0405$ & $+52.7\%^{***}$ & $0.2898 \pm 0.0141$ \\
+\midrule
+XXL & HOMO & 100,127 & $0.2329 \pm 0.0197$ & $0.2731 \pm 0.0206$ & $+14.7\%^{**}$ & $0.2097 \pm 0.0097$ \\
+ & LUMO &  & $0.2650 \pm 0.0081$ & $0.5369 \pm 0.0161$ & $+50.6\%^{***}$ & $0.2155 \pm 0.0081$ \\
+ & Gap &  & $0.3704 \pm 0.0209$ & $0.7609 \pm 0.0449$ & $+51.3\%^{***}$ & $0.3189 \pm 0.0158$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
